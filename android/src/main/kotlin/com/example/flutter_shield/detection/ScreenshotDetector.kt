@@ -1,0 +1,64 @@
+package com.example.flutter_shield.detection
+
+import android.app.Activity
+import android.os.Build
+
+/**
+ * Screenshot & Screen Recording Protection —
+ * docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
+ *
+ * Push-only: unlike [EmulatorDetector]/[DebuggerDetector], there is no
+ * meaningful request/response "check" for this — a screenshot is a discrete
+ * past event, not a stable state to poll. This class only ever calls
+ * [onScreenshotTaken] the moment the OS reports one; it exposes no
+ * MethodChannel-facing `check()` of its own (no MethodCode exists for one —
+ * confirmed absent from Step 4's `method_codes.dart`, and intentionally not
+ * added here since Step 5 is bridge/native only, not a Dart-detector
+ * change).
+ *
+ * Android 14 (API 34, `UPSIDE_DOWN_CAKE`) only, by design decision recorded
+ * in Step 5's Architecture Verification Report: `Activity
+ * .registerScreenCaptureCallback()` is the only *reliable* Android
+ * screenshot signal (design doc §7.1). The pre-14 `MediaStore`
+ * `ContentObserver` heuristic described in the same section is deliberately
+ * **not implemented** here — it requires `READ_MEDIA_IMAGES`/
+ * `READ_EXTERNAL_STORAGE`, a manifest permission this plugin does not
+ * declare and was explicitly instructed not to add silently. Below API 34,
+ * [isSupported] is `false` and [start] is a no-op — never a fabricated
+ * "no screenshot occurred" signal, matching this feature's own "never a
+ * false, confident answer" rule (design doc §13).
+ */
+object ScreenshotDetector {
+    private var callback: Activity.ScreenCaptureCallback? = null
+
+    /** Pure version check, separated from the real [Build.VERSION.SDK_INT]
+     * read below so it can be unit-tested with synthetic inputs — the same
+     * constraint [EmulatorDetector]/[DebuggerDetector] already document for
+     * `Build.*`/`Debug.*`. */
+    internal fun isSupported(sdkInt: Int): Boolean = sdkInt >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+
+    val isSupported: Boolean
+        get() = isSupported(Build.VERSION.SDK_INT)
+
+    /**
+     * Begins observing [activity] for screenshots, if supported. A no-op
+     * (not an error) below API 34, and a no-op if already observing —
+     * matches [ScreenCaptureProtection]'s own idempotent shape.
+     */
+    fun start(activity: Activity, onScreenshotTaken: () -> Unit) {
+        if (!isSupported) return
+        if (callback != null) return
+
+        val newCallback = Activity.ScreenCaptureCallback { onScreenshotTaken() }
+        callback = newCallback
+        activity.registerScreenCaptureCallback(activity.mainExecutor, newCallback)
+    }
+
+    /** Stops observing. Safe to call even if [start] was never called, or
+     * already stopped. */
+    fun stop(activity: Activity) {
+        val existing = callback ?: return
+        activity.unregisterScreenCaptureCallback(existing)
+        callback = null
+    }
+}
