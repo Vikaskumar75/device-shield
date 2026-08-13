@@ -94,9 +94,13 @@ void main() {
     expect(bridge.invokedMethods, [MethodCodes.isScreenCaptureActive]);
   });
 
-  test('both new detectors run alongside Emulator/Debugger in the same '
-      'bounded-concurrent batch, all four DetectorFactory-constructed, '
+  test('all six built-in detectors run together in the same '
+      'bounded-concurrent batch, all DetectorFactory-constructed, '
       'aggregated correctly with no cross-contamination', () async {
+    // Kept as the one place that iterates every `factory.availableTypes`
+    // together — updated here, not duplicated in
+    // root_jailbreak_detector_integration_test.dart, each time a new
+    // built-in detector is added.
     final bridge = _FakeNativeBridge({
       MethodCodes.checkEmulator: {
         'detected': false,
@@ -112,6 +116,18 @@ void main() {
         'isCaptured': false,
         'supported': false,
       },
+      MethodCodes.checkRoot: {
+        'detected': false,
+        'confidence': 0.0,
+        'signals': <String>[],
+        'applicable': true,
+      },
+      MethodCodes.checkJailbreak: {
+        'detected': false,
+        'confidence': 0.0,
+        'signals': <String>[],
+        'applicable': false,
+      },
     });
     final factory = DetectorFactory(nativeBridge: bridge);
     final manager = DefaultDetectionManager(
@@ -125,11 +141,17 @@ void main() {
 
     final results = await manager.runAllChecks();
 
-    expect(results, hasLength(4));
+    expect(results, hasLength(6));
     expect(
       results.map((r) => r.type).toSet(),
-      {'emulator', 'debugger', ScreenshotDetector.typeId,
-        ScreenRecordingDetector.typeId},
+      {
+        'emulator',
+        'debugger',
+        ScreenshotDetector.typeId,
+        ScreenRecordingDetector.typeId,
+        'root',
+        'jailbreak',
+      },
     );
     // The Android-unsupported shape must never fabricate a false positive,
     // even sitting in a mixed batch with other detectors.
@@ -137,5 +159,10 @@ void main() {
         .firstWhere((r) => r.type == ScreenRecordingDetector.typeId);
     expect(recording.detected, isFalse);
     expect(recording.evidence['supported'], isFalse);
+    // Same honesty requirement for the new not-applicable-on-this-
+    // platform shape.
+    final jailbreak = results.firstWhere((r) => r.type == 'jailbreak');
+    expect(jailbreak.detected, isFalse);
+    expect(jailbreak.evidence['applicable'], isFalse);
   });
 }

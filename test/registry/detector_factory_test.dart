@@ -1,6 +1,8 @@
 import 'package:flutter_shield/src/bridge/native_bridge.dart';
 import 'package:flutter_shield/src/detectors/debugger_detector.dart';
 import 'package:flutter_shield/src/detectors/emulator_detector.dart';
+import 'package:flutter_shield/src/detectors/jailbreak_detector.dart';
+import 'package:flutter_shield/src/detectors/root_detector.dart';
 import 'package:flutter_shield/src/detectors/screen_recording_detector.dart';
 import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
 import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
@@ -38,7 +40,9 @@ void main() {
       expect(factory.availableTypes, contains(DebuggerDetector.typeId));
       expect(factory.availableTypes, contains(ScreenshotDetector.typeId));
       expect(factory.availableTypes, contains(ScreenRecordingDetector.typeId));
-      expect(factory.availableTypes, hasLength(4));
+      expect(factory.availableTypes, contains(RootDetector.typeId));
+      expect(factory.availableTypes, contains(JailbreakDetector.typeId));
+      expect(factory.availableTypes, hasLength(6));
     });
   });
 
@@ -87,6 +91,28 @@ void main() {
       expect((detector as ScreenRecordingDetector).nativeBridge, same(bridge));
     });
 
+    test('constructs a fresh RootDetector wired to the same NativeBridge '
+        'for a known built-in type', () {
+      final bridge = _FakeNativeBridge();
+      final factory = DetectorFactory(nativeBridge: bridge);
+
+      final detector = factory.create(RootDetector.typeId);
+
+      expect(detector, isA<RootDetector>());
+      expect((detector as RootDetector).nativeBridge, same(bridge));
+    });
+
+    test('constructs a fresh JailbreakDetector wired to the same '
+        'NativeBridge for a known built-in type', () {
+      final bridge = _FakeNativeBridge();
+      final factory = DetectorFactory(nativeBridge: bridge);
+
+      final detector = factory.create(JailbreakDetector.typeId);
+
+      expect(detector, isA<JailbreakDetector>());
+      expect((detector as JailbreakDetector).nativeBridge, same(bridge));
+    });
+
     test('each call returns a distinct instance, not a cached singleton',
         () {
       final factory = DetectorFactory(nativeBridge: _FakeNativeBridge());
@@ -102,10 +128,10 @@ void main() {
       final factory = DetectorFactory(nativeBridge: _FakeNativeBridge());
 
       expect(
-        () => factory.create('root'),
+        () => factory.create('nonexistent_type'),
         throwsA(isA<DetectionException>()
             .having((e) => e.code, 'code', 'DETECTOR_TYPE_UNKNOWN')
-            .having((e) => e.type, 'type', 'root')),
+            .having((e) => e.type, 'type', 'nonexistent_type')),
       );
     });
 

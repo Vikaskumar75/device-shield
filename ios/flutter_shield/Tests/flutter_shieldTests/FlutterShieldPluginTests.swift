@@ -60,6 +60,40 @@ final class FlutterShieldPluginTests: XCTestCase {
     wait(for: [expectation], timeout: 1)
   }
 
+  func testCheckJailbreakReturnsAJailbreakDetectionMap() {
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "checkJailbreak", arguments: nil)
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      let response = result as? [String: Any]
+      XCTAssertNotNil(response?["detected"])
+      XCTAssertNotNil(response?["confidence"])
+      XCTAssertNotNil(response?["signals"])
+      XCTAssertEqual(response?["applicable"] as? Bool, true)
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testCheckRootReturnsTheHonestNotApplicableMap() {
+    // "Root" is not an iOS concept — never a false "not rooted".
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "checkRoot", arguments: nil)
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      let response = result as? [String: Any]
+      XCTAssertEqual(response?["detected"] as? Bool, false)
+      XCTAssertEqual(response?["confidence"] as? Double, 0.0)
+      XCTAssertEqual(response?["applicable"] as? Bool, false)
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+  }
+
   func testSetScreenshotProtectionEnabled_reportsAppliedWhenARootViewExists() {
     // "applied: true" here only proves the re-parenting call executed —
     // NOT that a black-screenshot effect occurs. Live Simulator testing

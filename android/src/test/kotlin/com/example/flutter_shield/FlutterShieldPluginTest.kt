@@ -3,6 +3,7 @@ package com.example.flutter_shield
 import android.app.Activity
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.view.Window
 import android.view.WindowManager
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -35,7 +36,12 @@ internal class FlutterShieldPluginTest {
      * run against a mocked [FlutterPlugin.FlutterPluginBinding] whose
      * `applicationContext` is a mocked [Context] reporting [debuggable] via
      * its `applicationInfo.flags` — the dependency `checkDebugger`'s
-     * dispatch needs that `checkEmulator`'s doesn't.
+     * dispatch needs that `checkEmulator`'s doesn't. Also stubs
+     * `context.packageManager` to throw `NameNotFoundException` for every
+     * package lookup — the realistic "nothing installed" default
+     * `RootDetector.anyPackageInstalled` needs, since an unstubbed
+     * Mockito mock otherwise returns `null` for `packageManager` itself,
+     * not a `PackageManager` that throws per-lookup.
      */
     private fun attachedPlugin(debuggable: Boolean = false): FlutterShieldPlugin {
         val plugin = FlutterShieldPlugin()
@@ -45,6 +51,10 @@ internal class FlutterShieldPluginTest {
             flags = if (debuggable) ApplicationInfo.FLAG_DEBUGGABLE else 0
         }
         `when`(context.applicationInfo).thenReturn(applicationInfo)
+        val packageManager: PackageManager = mock(PackageManager::class.java)
+        `when`(packageManager.getPackageInfo(Mockito.anyString(), Mockito.anyInt()))
+            .thenThrow(PackageManager.NameNotFoundException())
+        `when`(context.packageManager).thenReturn(packageManager)
         val binding: FlutterPlugin.FlutterPluginBinding =
             mock(FlutterPlugin.FlutterPluginBinding::class.java)
         `when`(binding.binaryMessenger).thenReturn(messenger)
@@ -116,6 +126,41 @@ internal class FlutterShieldPluginTest {
         assertEquals(true, response["detected"])
         @Suppress("UNCHECKED_CAST")
         assertEquals(listOf("debuggable_flag"), response["signals"] as List<String>)
+    }
+
+    @Test
+    fun onMethodCall_checkRoot_returnsARootDetectionMap() {
+        val plugin = attachedPlugin(debuggable = false)
+        val call = MethodCall("checkRoot", null)
+        val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
+
+        plugin.onMethodCall(call, mockResult)
+
+        val captor = org.mockito.ArgumentCaptor.forClass(Map::class.java)
+        verify(mockResult).success(captor.capture())
+        val response = captor.value
+        assertTrue(response.containsKey("detected"))
+        assertTrue(response.containsKey("confidence"))
+        assertTrue(response.containsKey("signals"))
+        assertEquals(true, response["applicable"])
+    }
+
+    @Test
+    fun onMethodCall_checkJailbreak_returnsTheHonestNotApplicableMap() {
+        // "Jailbreak" is not an Android concept — never a false "not
+        // jailbroken".
+        val plugin = FlutterShieldPlugin()
+        val call = MethodCall("checkJailbreak", null)
+        val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
+
+        plugin.onMethodCall(call, mockResult)
+
+        val captor = org.mockito.ArgumentCaptor.forClass(Map::class.java)
+        verify(mockResult).success(captor.capture())
+        val response = captor.value
+        assertEquals(false, response["detected"])
+        assertEquals(0.0, response["confidence"])
+        assertEquals(false, response["applicable"])
     }
 
     /** A mocked [ActivityPluginBinding] whose `activity` has a mocked

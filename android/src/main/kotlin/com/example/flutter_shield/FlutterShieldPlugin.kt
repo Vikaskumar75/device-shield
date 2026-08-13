@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import com.example.flutter_shield.detection.DebuggerDetector
 import com.example.flutter_shield.detection.EmulatorDetector
+import com.example.flutter_shield.detection.RootDetector
 import com.example.flutter_shield.detection.ScreenRecordingDetector
 import com.example.flutter_shield.detection.ScreenshotDetector
 import com.example.flutter_shield.protection.ScreenCaptureProtection
@@ -96,6 +97,18 @@ class FlutterShieldPlugin :
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
             "checkEmulator" -> result.success(EmulatorDetector.check())
             "checkDebugger" -> result.success(DebuggerDetector.check(applicationContext))
+            "checkRoot" -> result.success(RootDetector.check(applicationContext))
+            // "Jailbreak" is not an Android concept — an honest
+            // not-applicable answer, never a false "not jailbroken"
+            // (design doc: docs/features/ROOT_JAILBREAK_DETECTION.md).
+            "checkJailbreak" -> result.success(
+                mapOf(
+                    "detected" to false,
+                    "confidence" to 0.0,
+                    "signals" to emptyList<String>(),
+                    "applicable" to false,
+                )
+            )
             "setScreenshotProtection" -> applyFlagSecure(call, result)
             "isScreenCaptureActive" -> result.success(ScreenRecordingDetector.check())
             // On Android this is intentionally the exact same FLAG_SECURE

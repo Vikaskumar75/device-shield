@@ -68,6 +68,18 @@ public class FlutterShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
       result(EmulatorDetector.check())
     case "checkDebugger":
       result(DebuggerDetector.check())
+    case "checkJailbreak":
+      result(JailbreakDetector.check())
+    case "checkRoot":
+      // "Root" is not an iOS concept — an honest not-applicable answer,
+      // never a false "not rooted" (design doc:
+      // docs/features/ROOT_JAILBREAK_DETECTION.md).
+      result([
+        "detected": false,
+        "confidence": 0.0,
+        "signals": [String](),
+        "applicable": false,
+      ])
     case "setScreenshotProtection":
       // See ScreenCaptureProtection.swift's own top-of-file warning
       // before touching this — NOT a supported Apple API, and its

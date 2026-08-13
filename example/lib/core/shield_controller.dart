@@ -6,6 +6,8 @@ import 'package:flutter_shield/src/bridge/default_native_bridge.dart';
 import 'package:flutter_shield/src/bridge/native_bridge.dart';
 import 'package:flutter_shield/src/detectors/debugger_detector.dart';
 import 'package:flutter_shield/src/detectors/emulator_detector.dart';
+import 'package:flutter_shield/src/detectors/jailbreak_detector.dart';
+import 'package:flutter_shield/src/detectors/root_detector.dart';
 import 'package:flutter_shield/src/detectors/screen_recording_detector.dart';
 import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
 import 'package:flutter_shield/src/models/flutter_shield_config.dart';
@@ -83,6 +85,8 @@ class ShieldController extends ChangeNotifier {
     _screenshotDetector = ScreenshotDetector(nativeBridge: _nativeBridge);
     _screenRecordingDetector =
         ScreenRecordingDetector(nativeBridge: _nativeBridge);
+    _rootDetector = RootDetector(nativeBridge: _nativeBridge);
+    _jailbreakDetector = JailbreakDetector(nativeBridge: _nativeBridge);
   }
 
   late final NativeBridge _nativeBridge;
@@ -90,6 +94,8 @@ class ShieldController extends ChangeNotifier {
   late final DebuggerDetector _debuggerDetector;
   late final ScreenshotDetector _screenshotDetector;
   late final ScreenRecordingDetector _screenRecordingDetector;
+  late final RootDetector _rootDetector;
+  late final JailbreakDetector _jailbreakDetector;
   final DemoRule _demoRule = DemoRule();
   final DemoCustomDetector _demoCustomDetector = DemoCustomDetector();
 
@@ -164,6 +170,8 @@ class ShieldController extends ChangeNotifier {
     DebuggerDetector.typeId: false,
     ScreenshotDetector.typeId: false,
     ScreenRecordingDetector.typeId: false,
+    RootDetector.typeId: false,
+    JailbreakDetector.typeId: false,
   };
   final Set<String> _detectorsPendingRemovalOnReinit = {};
 
@@ -367,6 +375,10 @@ class ShieldController extends ChangeNotifier {
         return _screenshotDetector;
       case ScreenRecordingDetector.typeId:
         return _screenRecordingDetector;
+      case RootDetector.typeId:
+        return _rootDetector;
+      case JailbreakDetector.typeId:
+        return _jailbreakDetector;
       default:
         return _demoCustomDetector;
     }

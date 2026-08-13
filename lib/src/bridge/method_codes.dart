@@ -16,6 +16,19 @@ class MethodCodes {
   /// FR-04 (SRS §5.4): debugger detection.
   static const String checkDebugger = 'checkDebugger';
 
+  /// FR-01 (SRS §5.1): root detection (Android). Called on both
+  /// platforms — Android answers with real signal evaluation, iOS
+  /// answers with an honest `{'applicable': false, ...}` map, since
+  /// "root" is not an iOS concept (not a capability gap — see
+  /// `docs/features/ROOT_JAILBREAK_DETECTION.md`).
+  static const String checkRoot = 'checkRoot';
+
+  /// FR-02 (SRS §5.2): jailbreak detection (iOS). Called on both
+  /// platforms — iOS answers with real signal evaluation, Android
+  /// answers with an honest `{'applicable': false, ...}` map, since
+  /// "jailbreak" is not an Android concept.
+  static const String checkJailbreak = 'checkJailbreak';
+
   /// Screenshot/Screen Recording Protection — Dart→native command.
   /// `{'enabled': bool}` argument; returns `{'applied': bool}`. Android:
   /// sets/clears `FLAG_SECURE`. iOS: re-parents the Flutter root view's

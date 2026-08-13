@@ -1,3 +1,37 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.example.flutter_shield">
+
+  <!--
+    FR-01 root detection (RootDetector.kt) — Android 11+ (API 30) restricts
+    PackageManager#getPackageInfo() for a specific package name to
+    NameNotFoundException unless declared here or covered by the
+    QUERY_ALL_PACKAGES permission (deliberately not used — see
+    RootDetector.kt's own doc comment). These <package> entries merge into
+    the host app's manifest automatically via Gradle; no host-app change
+    required. Declaring a package here does not request any permission and
+    triggers no runtime prompt.
+  -->
+  <queries>
+    <package android:name="com.topjohnwu.magisk" />
+    <package android:name="eu.chainfire.supersu" />
+    <package android:name="com.noshufou.android.su" />
+    <package android:name="com.noshufou.android.su.elite" />
+    <package android:name="com.koushikdutta.superuser" />
+    <package android:name="com.thirdparty.superuser" />
+    <package android:name="com.yellowes.su" />
+    <package android:name="com.kingroot.kinguser" />
+    <package android:name="com.kingo.root" />
+    <package android:name="com.smedialink.oneclickroot" />
+    <package android:name="com.zhiqupk.root.global" />
+    <package android:name="me.phh.superuser" />
+    <package android:name="com.ramdroid.appquarantine" />
+    <package android:name="com.amphoras.hidemyroot" />
+    <package android:name="com.amphoras.hidemyrootadfree" />
+    <package android:name="com.formyhm.hideroot" />
+    <package android:name="com.formyhm.hiderootpremium" />
+    <package android:name="com.zachspong.temprootremovejb" />
+    <package android:name="com.devadvance.rootcloak" />
+    <package android:name="com.devadvance.rootcloakplus" />
+    <package android:name="com.saurik.substrate" />
+  </queries>
 </manifest>

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_shield/src/detectors/debugger_detector.dart';
 import 'package:flutter_shield/src/detectors/emulator_detector.dart';
+import 'package:flutter_shield/src/detectors/jailbreak_detector.dart';
+import 'package:flutter_shield/src/detectors/root_detector.dart';
 import 'package:flutter_shield/src/detectors/screen_recording_detector.dart';
 import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
 import 'package:flutter_shield/src/models/detection_result.dart';
@@ -42,6 +44,16 @@ const _detectors = [
     typeId: ScreenRecordingDetector.typeId,
     label: 'Screen Recording Detector',
     platformSupport: 'iOS only — Android honestly reports unsupported',
+  ),
+  _DetectorMeta(
+    typeId: RootDetector.typeId,
+    label: 'Root Detector',
+    platformSupport: 'Android only — iOS honestly reports not applicable',
+  ),
+  _DetectorMeta(
+    typeId: JailbreakDetector.typeId,
+    label: 'Jailbreak Detector',
+    platformSupport: 'iOS only — Android honestly reports not applicable',
   ),
 ];
 

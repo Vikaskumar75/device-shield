@@ -44,6 +44,17 @@ class AboutScreen extends StatelessWidget {
                   ios: 'Full support',
                 ),
                 _FeatureRow(
+                  feature: 'Root detection',
+                  android: 'Full support — 9-signal heuristic',
+                  ios: 'Not applicable (root is not an iOS concept)',
+                ),
+                _FeatureRow(
+                  feature: 'Jailbreak detection',
+                  android: 'Not applicable (jailbreak is not an Android '
+                      'concept)',
+                  ios: 'Full support — 5-signal heuristic',
+                ),
+                _FeatureRow(
                   feature: 'Screenshot detection',
                   android: 'API 34+ only (registerScreenCaptureCallback)',
                   ios: 'Any version (userDidTakeScreenshotNotification)',
