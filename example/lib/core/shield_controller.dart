@@ -7,6 +7,7 @@ import 'package:flutter_shield/src/bridge/native_bridge.dart';
 import 'package:flutter_shield/src/detectors/debugger_detector.dart';
 import 'package:flutter_shield/src/detectors/emulator_detector.dart';
 import 'package:flutter_shield/src/detectors/jailbreak_detector.dart';
+import 'package:flutter_shield/src/detectors/mock_location_detector.dart';
 import 'package:flutter_shield/src/detectors/root_detector.dart';
 import 'package:flutter_shield/src/detectors/screen_recording_detector.dart';
 import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
@@ -87,6 +88,7 @@ class ShieldController extends ChangeNotifier {
         ScreenRecordingDetector(nativeBridge: _nativeBridge);
     _rootDetector = RootDetector(nativeBridge: _nativeBridge);
     _jailbreakDetector = JailbreakDetector(nativeBridge: _nativeBridge);
+    _mockLocationDetector = MockLocationDetector(nativeBridge: _nativeBridge);
   }
 
   late final NativeBridge _nativeBridge;
@@ -96,6 +98,7 @@ class ShieldController extends ChangeNotifier {
   late final ScreenRecordingDetector _screenRecordingDetector;
   late final RootDetector _rootDetector;
   late final JailbreakDetector _jailbreakDetector;
+  late final MockLocationDetector _mockLocationDetector;
   final DemoRule _demoRule = DemoRule();
   final DemoCustomDetector _demoCustomDetector = DemoCustomDetector();
 
@@ -172,6 +175,7 @@ class ShieldController extends ChangeNotifier {
     ScreenRecordingDetector.typeId: false,
     RootDetector.typeId: false,
     JailbreakDetector.typeId: false,
+    MockLocationDetector.typeId: false,
   };
   final Set<String> _detectorsPendingRemovalOnReinit = {};
 
@@ -379,6 +383,8 @@ class ShieldController extends ChangeNotifier {
         return _rootDetector;
       case JailbreakDetector.typeId:
         return _jailbreakDetector;
+      case MockLocationDetector.typeId:
+        return _mockLocationDetector;
       default:
         return _demoCustomDetector;
     }

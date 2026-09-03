@@ -33,5 +33,21 @@
     <package android:name="com.devadvance.rootcloak" />
     <package android:name="com.devadvance.rootcloakplus" />
     <package android:name="com.saurik.substrate" />
+
+    <!--
+      FR-06 mock location detection (MockLocationDetector.kt) — same
+      Android 11+ <queries> requirement as the root-detection block
+      above, for the fake-GPS app package list.
+    -->
+    <package android:name="com.lexa.fakegps" />
+    <package android:name="com.incorporateapps.fakegps.fre" />
+    <package android:name="com.blogspot.newapphorizons.fakegps" />
+    <package android:name="com.gsmartstudio.fakegps" />
+    <package android:name="com.evezzon.fakegps" />
+    <package android:name="com.rosteam.gpsemulator" />
+    <package android:name="com.fakegps.mock" />
+    <package android:name="com.theappninjas.fakegpsjoystick" />
+    <package android:name="com.jinseiapp.fakegps" />
+    <package android:name="ru.gavrikov.mocklocations" />
   </queries>
 </manifest>

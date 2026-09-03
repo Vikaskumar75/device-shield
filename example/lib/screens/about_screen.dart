@@ -78,6 +78,12 @@ class AboutScreen extends StatelessWidget {
                   android: 'Alias for screenshot protection (same flag)',
                   ios: 'Full support (blur overlay, public API only)',
                 ),
+                _FeatureRow(
+                  feature: 'Mock location detection',
+                  android: '5-signal heuristic — strongest signal needs '
+                      'location permission the SDK never requests itself',
+                  ios: '3-signal heuristic (no OS "mocked" flag exists)',
+                ),
               ],
             ),
             SectionCard(

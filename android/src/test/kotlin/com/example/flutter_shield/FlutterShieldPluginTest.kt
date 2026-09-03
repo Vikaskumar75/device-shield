@@ -163,6 +163,27 @@ internal class FlutterShieldPluginTest {
         assertEquals(false, response["applicable"])
     }
 
+    @Test
+    fun onMethodCall_checkMockLocation_returnsAMockLocationDetectionMap() {
+        val plugin = attachedPlugin(debuggable = false)
+        val call = MethodCall("checkMockLocation", null)
+        val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
+
+        plugin.onMethodCall(call, mockResult)
+
+        val captor = org.mockito.ArgumentCaptor.forClass(Map::class.java)
+        verify(mockResult).success(captor.capture())
+        val response = captor.value
+        assertTrue(response.containsKey("detected"))
+        assertTrue(response.containsKey("confidence"))
+        assertTrue(response.containsKey("signals"))
+        assertTrue(response.containsKey("permissionGranted"))
+        assertTrue(response.containsKey("locationAvailable"))
+        // Unlike checkJailbreak on Android, mock location is a real
+        // concept on both platforms — never a false "not applicable".
+        assertEquals(true, response["applicable"])
+    }
+
     /** A mocked [ActivityPluginBinding] whose `activity` has a mocked
      * [Window], for Screenshot & Screen Recording Protection's
      * Activity-dependent calls. */

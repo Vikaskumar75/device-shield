@@ -29,6 +29,14 @@ class MethodCodes {
   /// "jailbreak" is not an Android concept.
   static const String checkJailbreak = 'checkJailbreak';
 
+  /// FR-06: mock/spoofed GPS location detection (Android + iOS). Called
+  /// on both platforms with real signal evaluation on each — unlike
+  /// [checkRoot]/[checkJailbreak], mock location is a real concept on
+  /// both, so there is no honest "not applicable" branch here; the
+  /// platform difference is signal strength, not existence. See
+  /// `docs/features/MOCK_LOCATION_DETECTION.md`.
+  static const String checkMockLocation = 'checkMockLocation';
+
   /// Screenshot/Screen Recording Protection — Dart→native command.
   /// `{'enabled': bool}` argument; returns `{'applied': bool}`. Android:
   /// sets/clears `FLAG_SECURE`. iOS: re-parents the Flutter root view's

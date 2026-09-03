@@ -94,6 +94,27 @@ final class FlutterShieldPluginTests: XCTestCase {
     wait(for: [expectation], timeout: 1)
   }
 
+  func testCheckMockLocationReturnsAMockLocationDetectionMap() {
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "checkMockLocation", arguments: nil)
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      let response = result as? [String: Any]
+      XCTAssertNotNil(response?["detected"])
+      XCTAssertNotNil(response?["confidence"])
+      XCTAssertNotNil(response?["signals"])
+      XCTAssertNotNil(response?["permissionGranted"])
+      XCTAssertNotNil(response?["locationAvailable"])
+      // Unlike checkRoot on iOS, mock location is a real concept on both
+      // platforms — never a false "not applicable".
+      XCTAssertEqual(response?["applicable"] as? Bool, true)
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+  }
+
   func testSetScreenshotProtectionEnabled_reportsAppliedWhenARootViewExists() {
     // "applied: true" here only proves the re-parenting call executed —
     // NOT that a black-screenshot effect occurs. Live Simulator testing

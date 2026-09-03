@@ -94,7 +94,7 @@ void main() {
     expect(bridge.invokedMethods, [MethodCodes.isScreenCaptureActive]);
   });
 
-  test('all six built-in detectors run together in the same '
+  test('all seven built-in detectors run together in the same '
       'bounded-concurrent batch, all DetectorFactory-constructed, '
       'aggregated correctly with no cross-contamination', () async {
     // Kept as the one place that iterates every `factory.availableTypes`
@@ -128,6 +128,14 @@ void main() {
         'signals': <String>[],
         'applicable': false,
       },
+      MethodCodes.checkMockLocation: {
+        'detected': false,
+        'confidence': 0.0,
+        'signals': <String>[],
+        'applicable': true,
+        'permissionGranted': false,
+        'locationAvailable': false,
+      },
     });
     final factory = DetectorFactory(nativeBridge: bridge);
     final manager = DefaultDetectionManager(
@@ -141,7 +149,7 @@ void main() {
 
     final results = await manager.runAllChecks();
 
-    expect(results, hasLength(6));
+    expect(results, hasLength(7));
     expect(
       results.map((r) => r.type).toSet(),
       {
@@ -151,6 +159,7 @@ void main() {
         ScreenRecordingDetector.typeId,
         'root',
         'jailbreak',
+        'mock_location',
       },
     );
     // The Android-unsupported shape must never fabricate a false positive,

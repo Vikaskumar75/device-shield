@@ -2,6 +2,7 @@ import '../bridge/native_bridge.dart';
 import '../detectors/debugger_detector.dart';
 import '../detectors/emulator_detector.dart';
 import '../detectors/jailbreak_detector.dart';
+import '../detectors/mock_location_detector.dart';
 import '../detectors/root_detector.dart';
 import '../detectors/screen_recording_detector.dart';
 import '../detectors/screenshot_detector.dart';
@@ -60,6 +61,10 @@ class DetectorFactory {
     _register(
       JailbreakDetector.typeId,
       () => JailbreakDetector(nativeBridge: nativeBridge),
+    );
+    _register(
+      MockLocationDetector.typeId,
+      () => MockLocationDetector(nativeBridge: nativeBridge),
     );
   }
 

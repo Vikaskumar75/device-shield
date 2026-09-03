@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import com.example.flutter_shield.detection.DebuggerDetector
 import com.example.flutter_shield.detection.EmulatorDetector
+import com.example.flutter_shield.detection.MockLocationDetector
 import com.example.flutter_shield.detection.RootDetector
 import com.example.flutter_shield.detection.ScreenRecordingDetector
 import com.example.flutter_shield.detection.ScreenshotDetector
@@ -109,6 +110,10 @@ class FlutterShieldPlugin :
                     "applicable" to false,
                 )
             )
+            // FR-06: real signal evaluation on both platforms — mock
+            // location is a real concept on Android and iOS alike, unlike
+            // checkRoot/checkJailbreak's platform-exclusive concepts.
+            "checkMockLocation" -> result.success(MockLocationDetector.check(applicationContext))
             "setScreenshotProtection" -> applyFlagSecure(call, result)
             "isScreenCaptureActive" -> result.success(ScreenRecordingDetector.check())
             // On Android this is intentionally the exact same FLAG_SECURE

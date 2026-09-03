@@ -80,6 +80,11 @@ public class FlutterShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
         "signals": [String](),
         "applicable": false,
       ])
+    case "checkMockLocation":
+      // FR-06: real signal evaluation on both platforms — mock location
+      // is a real concept on iOS and Android alike, unlike checkRoot's
+      // platform-exclusive concept.
+      result(MockLocationDetector.check())
     case "setScreenshotProtection":
       // See ScreenCaptureProtection.swift's own top-of-file warning
       // before touching this — NOT a supported Apple API, and its

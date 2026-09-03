@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_shield/src/detectors/debugger_detector.dart';
 import 'package:flutter_shield/src/detectors/emulator_detector.dart';
 import 'package:flutter_shield/src/detectors/jailbreak_detector.dart';
+import 'package:flutter_shield/src/detectors/mock_location_detector.dart';
 import 'package:flutter_shield/src/detectors/root_detector.dart';
 import 'package:flutter_shield/src/detectors/screen_recording_detector.dart';
 import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
@@ -54,6 +55,13 @@ const _detectors = [
     typeId: JailbreakDetector.typeId,
     label: 'Jailbreak Detector',
     platformSupport: 'iOS only — Android honestly reports not applicable',
+  ),
+  _DetectorMeta(
+    typeId: MockLocationDetector.typeId,
+    label: 'Mock Location Detector',
+    platformSupport: 'Android & iOS — real signals on both; Android is '
+        'strongest, and only if the host app already holds location '
+        'permission (this SDK never requests it itself)',
   ),
 ];
 
