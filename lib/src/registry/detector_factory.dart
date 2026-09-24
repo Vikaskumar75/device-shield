@@ -1,6 +1,11 @@
 import '../bridge/native_bridge.dart';
 import '../detectors/debugger_detector.dart';
 import '../detectors/emulator_detector.dart';
+import '../detectors/jailbreak_detector.dart';
+import '../detectors/mock_location_detector.dart';
+import '../detectors/root_detector.dart';
+import '../detectors/screen_recording_detector.dart';
+import '../detectors/screenshot_detector.dart';
 import '../models/flutter_shield_exception.dart';
 import 'detector.dart';
 
@@ -40,6 +45,26 @@ class DetectorFactory {
     _register(
       DebuggerDetector.typeId,
       () => DebuggerDetector(nativeBridge: nativeBridge),
+    );
+    _register(
+      ScreenshotDetector.typeId,
+      () => ScreenshotDetector(nativeBridge: nativeBridge),
+    );
+    _register(
+      ScreenRecordingDetector.typeId,
+      () => ScreenRecordingDetector(nativeBridge: nativeBridge),
+    );
+    _register(
+      RootDetector.typeId,
+      () => RootDetector(nativeBridge: nativeBridge),
+    );
+    _register(
+      JailbreakDetector.typeId,
+      () => JailbreakDetector(nativeBridge: nativeBridge),
+    );
+    _register(
+      MockLocationDetector.typeId,
+      () => MockLocationDetector(nativeBridge: nativeBridge),
     );
   }
 

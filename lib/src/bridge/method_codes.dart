@@ -15,4 +15,52 @@ class MethodCodes {
 
   /// FR-04 (SRS §5.4): debugger detection.
   static const String checkDebugger = 'checkDebugger';
+
+  /// FR-01 (SRS §5.1): root detection (Android). Called on both
+  /// platforms — Android answers with real signal evaluation, iOS
+  /// answers with an honest `{'applicable': false, ...}` map, since
+  /// "root" is not an iOS concept (not a capability gap — see
+  /// `docs/features/ROOT_JAILBREAK_DETECTION.md`).
+  static const String checkRoot = 'checkRoot';
+
+  /// FR-02 (SRS §5.2): jailbreak detection (iOS). Called on both
+  /// platforms — iOS answers with real signal evaluation, Android
+  /// answers with an honest `{'applicable': false, ...}` map, since
+  /// "jailbreak" is not an Android concept.
+  static const String checkJailbreak = 'checkJailbreak';
+
+  /// FR-06: mock/spoofed GPS location detection (Android + iOS). Called
+  /// on both platforms with real signal evaluation on each — unlike
+  /// [checkRoot]/[checkJailbreak], mock location is a real concept on
+  /// both, so there is no honest "not applicable" branch here; the
+  /// platform difference is signal strength, not existence. See
+  /// `docs/features/MOCK_LOCATION_DETECTION.md`.
+  static const String checkMockLocation = 'checkMockLocation';
+
+  /// Screenshot/Screen Recording Protection — Dart→native command.
+  /// `{'enabled': bool}` argument; returns `{'applied': bool}`. Android:
+  /// sets/clears `FLAG_SECURE`. iOS: re-parents the Flutter root view's
+  /// layer under a `UITextField.isSecureTextEntry` field's secure
+  /// rendering layer — **not** a supported Apple API, an undocumented-
+  /// internals technique accepted with that risk explicit (see
+  /// `ScreenCaptureProtection.swift`'s own top-of-file warning). See
+  /// `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §9.4/§7/§18.5.
+  static const String setScreenshotProtection = 'setScreenshotProtection';
+
+  /// Screenshot/Screen Recording Protection — Dart→native poll. No
+  /// arguments; returns `{'isCaptured': bool}` on iOS, or an explicit
+  /// unsupported marker on Android (§7.1: no reliable discrete Android
+  /// signal exists). See
+  /// `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §9.4/§7.
+  static const String isScreenCaptureActive = 'isScreenCaptureActive';
+
+  /// App-switcher/background-snapshot redaction — Dart→native command.
+  /// `{'enabled': bool}` argument; returns `{'applied': bool}`. Android:
+  /// delegates to the same `FLAG_SECURE` toggle as [setScreenshotProtection]
+  /// — it is genuinely the same native mechanism there, not a separate one.
+  /// iOS: a real, independent mechanism — a blur overlay shown immediately
+  /// before the OS captures the app-switcher snapshot, removed when the app
+  /// becomes active again. See
+  /// `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §17.
+  static const String setAppSwitcherProtection = 'setAppSwitcherProtection';
 }

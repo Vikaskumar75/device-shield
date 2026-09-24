@@ -47,6 +47,38 @@ void main() {
             .having((e) => e.code, 'code', 'INVALID_TIMEOUT')),
       );
     });
+
+    test('accepts screenshotRecordingRiskScoreWeight at the 0.0 lower bound',
+        () {
+      const config =
+          FlutterShieldConfig(screenshotRecordingRiskScoreWeight: 0.0);
+      expect(validator.validate(config), same(config));
+    });
+
+    test('accepts screenshotRecordingRiskScoreWeight at the 1.0 upper bound',
+        () {
+      const config =
+          FlutterShieldConfig(screenshotRecordingRiskScoreWeight: 1.0);
+      expect(validator.validate(config), same(config));
+    });
+
+    test('rejects screenshotRecordingRiskScoreWeight below 0.0', () {
+      expect(
+        () => validator.validate(const FlutterShieldConfig(
+            screenshotRecordingRiskScoreWeight: -0.1)),
+        throwsA(isA<ConfigurationException>()
+            .having((e) => e.code, 'code', 'INVALID_RISK_WEIGHT')),
+      );
+    });
+
+    test('rejects screenshotRecordingRiskScoreWeight above 1.0', () {
+      expect(
+        () => validator.validate(const FlutterShieldConfig(
+            screenshotRecordingRiskScoreWeight: 1.1)),
+        throwsA(isA<ConfigurationException>()
+            .having((e) => e.code, 'code', 'INVALID_RISK_WEIGHT')),
+      );
+    });
   });
 
   group('Architecture Correction 2 — ConfigurationManager no longer validates', () {

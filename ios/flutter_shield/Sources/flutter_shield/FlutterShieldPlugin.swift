@@ -16,6 +16,15 @@ import UIKit
 /// with its own callback name and payload; this class only shapes and
 /// forwards it, with no interpretation of what either means. Functionally
 /// mirrors the Android (`FlutterShieldPlugin.kt`) implementation.
+///
+/// Screenshot & Screen Recording Protection (see
+/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md) adds
+/// `setScreenshotProtection`/`isScreenCaptureActive` and starts observing
+/// for screenshots/capture-state changes at registration time. Unlike
+/// Android, this needs no `ActivityAware`-equivalent lifecycle hook —
+/// `UIScreen`/`UIApplication`/`NotificationCenter` are all globally
+/// available the instant `register(with:)` runs, so observation can begin
+/// immediately rather than waiting for any attachment step.
 public class FlutterShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
   // Phase 7 bridge event sink.
   private var eventSink: FlutterEventSink?
@@ -46,6 +55,9 @@ public class FlutterShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
     )
     eventChannel.setStreamHandler(instance)
     instance.eventChannel = eventChannel
+
+    instance.startObservingScreenCapture()
+    AppSwitcherProtection.start()
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -56,11 +68,78 @@ public class FlutterShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
       result(EmulatorDetector.check())
     case "checkDebugger":
       result(DebuggerDetector.check())
+    case "checkJailbreak":
+      result(JailbreakDetector.check())
+    case "checkRoot":
+      // "Root" is not an iOS concept — an honest not-applicable answer,
+      // never a false "not rooted" (design doc:
+      // docs/features/ROOT_JAILBREAK_DETECTION.md).
+      result([
+        "detected": false,
+        "confidence": 0.0,
+        "signals": [String](),
+        "applicable": false,
+      ])
+    case "checkMockLocation":
+      // FR-06: real signal evaluation on both platforms — mock location
+      // is a real concept on iOS and Android alike, unlike checkRoot's
+      // platform-exclusive concept.
+      result(MockLocationDetector.check())
+    case "setScreenshotProtection":
+      // See ScreenCaptureProtection.swift's own top-of-file warning
+      // before touching this — NOT a supported Apple API, and its
+      // black-screenshot effect is UNCONFIRMED (design doc §18.5: live
+      // Simulator testing showed the re-parenting executes but the
+      // capture-exclusion did not occur; untested on real hardware).
+      // `applied: true` proves only that the re-parenting call executed.
+      // An honest "not applied" if there's no root view to protect yet.
+      let enabled = (call.arguments as? [String: Any])?["enabled"] as? Bool ?? false
+      let applied: Bool
+      if enabled {
+        if let root = ScreenCaptureProtection.currentRootView() {
+          applied = ScreenCaptureProtection.enable(protecting: root)
+        } else {
+          applied = false
+        }
+      } else {
+        ScreenCaptureProtection.disable()
+        applied = true
+      }
+      result(["applied": applied])
+    case "isScreenCaptureActive":
+      result(ScreenRecordingDetector.check())
+    case "setAppSwitcherProtection":
+      // Unlike setScreenshotProtection, this is a real, working mechanism
+      // on iOS (AppSwitcherProtection's own doc comment) — the first
+      // protection call in this SDK that can honestly report
+      // `applied: true` here.
+      let enabled = (call.arguments as? [String: Any])?["enabled"] as? Bool ?? false
+      let applied = enabled ? AppSwitcherProtection.enable() : AppSwitcherProtection.disable()
+      result(["applied": applied])
     default:
       // Bridge transport is registered; most detector/security method
       // handlers don't exist yet — that is out of scope until each one's
       // own milestone lands.
       result(FlutterMethodNotImplemented)
+    }
+  }
+
+  private func startObservingScreenCapture() {
+    ScreenshotDetector.start { [weak self] in
+      self?.sendEvent(
+        callback: "onScreenshotTaken",
+        data: [
+          "detected": true,
+          "confidence": 1.0,
+          "signals": ["screenshot_notification"],
+        ]
+      )
+    }
+    ScreenRecordingDetector.start { [weak self] isCaptured in
+      self?.sendEvent(
+        callback: "onScreenCaptureStateChanged",
+        data: ["isCaptured": isCaptured]
+      )
     }
   }
 
@@ -93,5 +172,8 @@ public class FlutterShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
     bridgeChannel?.setMethodCallHandler(nil)
     eventChannel?.setStreamHandler(nil)
     eventSink = nil
+    ScreenshotDetector.stop()
+    ScreenRecordingDetector.stop()
+    AppSwitcherProtection.stop()
   }
 }

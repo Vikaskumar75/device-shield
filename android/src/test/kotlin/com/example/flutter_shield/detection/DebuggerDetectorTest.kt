@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 
 /*
  * Exercises DebuggerDetector.evaluate() (the pure decision logic) with
- * synthetic inputs rather than real android.os.Debug.*/Context calls,
+ * synthetic inputs rather than real android.os.Debug.* / Context calls,
  * which throw in a plain JVM unit test without Robolectric — the same
  * constraint EmulatorDetectorTest.kt already documents for android.os.Build.
  */

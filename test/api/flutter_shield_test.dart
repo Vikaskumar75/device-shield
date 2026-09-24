@@ -180,6 +180,115 @@ void main() {
     });
   });
 
+  group('FlutterShield — screenshot/screen-recording protection API '
+      '(Step 10)', () {
+    test('isScreenshotProtectionEnabled is false before initialize() — '
+        'never throws, mirroring status\'s own always-answerable pattern',
+        () {
+      expect(FlutterShield.isScreenshotProtectionEnabled, isFalse);
+    });
+
+    test('enableScreenshotProtection delegates all the way to a real '
+        'NativeBridge — with no native handler in this test environment, '
+        'the honest result is a propagated NativeBridgeException, proving '
+        'the call reaches the platform boundary rather than being '
+        'short-circuited anywhere along the way', () async {
+      await FlutterShield.initialize();
+
+      await expectLater(
+        FlutterShield.enableScreenshotProtection(),
+        throwsA(isA<NativeBridgeException>()),
+      );
+    });
+
+    test('disableScreenshotProtection delegates the same way', () async {
+      await FlutterShield.initialize();
+
+      await expectLater(
+        FlutterShield.disableScreenshotProtection(),
+        throwsA(isA<NativeBridgeException>()),
+      );
+    });
+
+    test('isScreenshotProtectionEnabled remains false after a failed '
+        'enable attempt', () async {
+      await FlutterShield.initialize();
+      try {
+        await FlutterShield.enableScreenshotProtection();
+      } catch (_) {
+        // Expected in this environment — see the test above.
+      }
+
+      expect(FlutterShield.isScreenshotProtectionEnabled, isFalse);
+    });
+  });
+
+  group('FlutterShield — onScreenshot / onScreenRecordingChanged (Step 10)',
+      () {
+    test('onScreenshot only receives events whose type is the screenshot '
+        "detector's typeId — pure filtering over subscribe(), nothing "
+        'else', () async {
+      await FlutterShield.initialize();
+      final screenshotEvents = <SecurityEvent>[];
+      final recordingEvents = <SecurityEvent>[];
+      final screenshotSub = FlutterShield.onScreenshot(screenshotEvents.add);
+      final recordingSub =
+          FlutterShield.onScreenRecordingChanged(recordingEvents.add);
+
+      await FlutterShield.registerDetector(_ProbeDetector('screenshot'));
+      await FlutterShield.checkNow();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(screenshotEvents, hasLength(1));
+      expect(screenshotEvents.single.type, 'screenshot');
+      expect(recordingEvents, isEmpty);
+
+      await screenshotSub.cancel();
+      await recordingSub.cancel();
+    });
+
+    test('onScreenRecordingChanged only receives events whose type is the '
+        "screen-recording detector's typeId", () async {
+      await FlutterShield.initialize();
+      final screenshotEvents = <SecurityEvent>[];
+      final recordingEvents = <SecurityEvent>[];
+      final screenshotSub = FlutterShield.onScreenshot(screenshotEvents.add);
+      final recordingSub =
+          FlutterShield.onScreenRecordingChanged(recordingEvents.add);
+
+      await FlutterShield.registerDetector(_ProbeDetector('screen_recording'));
+      await FlutterShield.checkNow();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(recordingEvents, hasLength(1));
+      expect(recordingEvents.single.type, 'screen_recording');
+      expect(screenshotEvents, isEmpty);
+
+      await screenshotSub.cancel();
+      await recordingSub.cancel();
+    });
+
+    test('an unrelated event type is delivered to neither convenience '
+        'subscription', () async {
+      await FlutterShield.initialize();
+      final screenshotEvents = <SecurityEvent>[];
+      final recordingEvents = <SecurityEvent>[];
+      final screenshotSub = FlutterShield.onScreenshot(screenshotEvents.add);
+      final recordingSub =
+          FlutterShield.onScreenRecordingChanged(recordingEvents.add);
+
+      await FlutterShield.registerDetector(_ProbeDetector('emulator'));
+      await FlutterShield.checkNow();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(screenshotEvents, isEmpty);
+      expect(recordingEvents, isEmpty);
+
+      await screenshotSub.cancel();
+      await recordingSub.cancel();
+    });
+  });
+
   group('FlutterShield — shutdown / reinitialize / dispose', () {
     test('shutdown reaches stopped', () async {
       await FlutterShield.initialize();
@@ -216,6 +325,27 @@ void main() {
         completes,
       );
       expect(FlutterShield.status, SDKState.running);
+    });
+
+    test('screenshot protection state resets across shutdown/reinitialize '
+        '— a fresh ScreenCaptureController is wired each cycle, not a '
+        'stale or disposed one (Step 11 coverage-gap closure)', () async {
+      await FlutterShield.initialize();
+      expect(FlutterShield.isScreenshotProtectionEnabled, isFalse);
+      await FlutterShield.shutdown();
+
+      await FlutterShield.reinitialize();
+
+      expect(FlutterShield.status, SDKState.running);
+      expect(FlutterShield.isScreenshotProtectionEnabled, isFalse);
+      // The freshly-wired ScreenCaptureController must still correctly
+      // attempt delegation to a real NativeBridge — proving it's a live,
+      // newly constructed instance after reinit, not a disposed reference
+      // silently no-op'ing.
+      await expectLater(
+        FlutterShield.enableScreenshotProtection(),
+        throwsA(isA<NativeBridgeException>()),
+      );
     });
 
     test('dispose fully resets — a subsequent initialize() starts clean',

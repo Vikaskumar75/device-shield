@@ -1,5 +1,6 @@
 import 'package:flutter_shield/src/bootstrap/plugin_initializer.dart';
 import 'package:flutter_shield/src/bootstrap/service_container.dart';
+import 'package:flutter_shield/src/bridge/native_bridge.dart';
 import 'package:flutter_shield/src/config/configuration_manager.dart';
 import 'package:flutter_shield/src/core/logger.dart';
 import 'package:flutter_shield/src/events/default_event_manager.dart';
@@ -89,6 +90,7 @@ void main() {
         configurationManager: container.resolve<ConfigurationManager>(),
         lifecycle: container.resolve<Lifecycle>(),
         logger: container.resolve<Logger>(),
+        nativeBridge: container.resolve<NativeBridge>(),
       );
     });
 

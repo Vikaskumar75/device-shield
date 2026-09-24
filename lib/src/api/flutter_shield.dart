@@ -151,4 +151,97 @@ class FlutterShield {
       _requireContainer
           .resolve<EventManager>()
           .subscribe(handler, filter: filter);
+
+  /// Screenshot & Screen Recording Protection — the imperative, proactive
+  /// protection command (design doc §11.1), independent of detection/
+  /// policy entirely. Pure delegation to [SecurityManager
+  /// .enableScreenshotProtection] — never reaches `NativeBridge` directly
+  /// (Step 10's Architecture Verification Report §7: `SecurityManager` is
+  /// the only reachable path to the owned `ScreenCaptureController`).
+  /// Returns the native "applied" answer honestly. iOS: `true` when a
+  /// root view was available to protect, via an undocumented-internals
+  /// technique — not a supported Apple API. **This does not confirm a
+  /// black-screenshot effect actually occurs** — only that the
+  /// technique's re-parenting call executed; live Simulator testing
+  /// found the capture-exclusion did not occur, and it remains
+  /// unconfirmed on real hardware (design doc §18.5;
+  /// `ScreenCaptureProtection.swift`'s own warning). `false` only if
+  /// called before any window exists yet.
+  static Future<bool> enableScreenshotProtection() => _requireContainer
+      .resolve<SecurityManager>()
+      .enableScreenshotProtection();
+
+  /// The imperative disable — symmetric to [enableScreenshotProtection].
+  static Future<bool> disableScreenshotProtection() => _requireContainer
+      .resolve<SecurityManager>()
+      .disableScreenshotProtection();
+
+  /// Last-known local state, mirroring [status]'s own synchronous,
+  /// always-answerable read pattern — `false` before [initialize] has
+  /// ever been called, never a throw, since checking this is a reasonable
+  /// thing to do at any time (same reasoning [status] itself documents).
+  static bool get isScreenshotProtectionEnabled {
+    final container = _container;
+    if (container == null || !container.isRegistered<SecurityManager>()) {
+      return false;
+    }
+    return container.resolve<SecurityManager>().isScreenshotProtectionEnabled;
+  }
+
+  /// Subscribes [handler] to screenshot-detection events only — pure sugar
+  /// over [subscribe], introducing no new capability or logic (matching
+  /// this facade's own "owns no logic of its own" rule). Filters on the
+  /// literal string `'screenshot'`, matching
+  /// `ScreenshotDetector.typeId`/`DetectionResult.type` exactly (verified
+  /// against the actual implementation, not the design doc's own earlier
+  /// illustrative `'screenshot_taken'` text — that string is the native
+  /// callback *name*, a different namespace, never the emitted
+  /// `SecurityEvent.type`). Deliberately a string literal, not an import
+  /// of the concrete `ScreenshotDetector` class — this facade is
+  /// forbidden from depending on any concrete `Detector`
+  /// (ARCHITECTURE_CONTRACTS.md Part 2).
+  static StreamSubscription<SecurityEvent> onScreenshot(
+    void Function(SecurityEvent event) handler,
+  ) =>
+      subscribe(handler, filter: (event) => event.type == 'screenshot');
+
+  /// App-switcher/background-snapshot redaction (design doc §17) — the
+  /// same imperative, pure-delegation shape as [enableScreenshotProtection].
+  /// Android: a documented alias for [enableScreenshotProtection] (the
+  /// same underlying `FLAG_SECURE` flag — see `ScreenCaptureController
+  /// .enableAppSwitcherProtection`'s own doc comment for why). iOS: a
+  /// real, independent, working protection — a blur overlay covers the
+  /// window immediately before the OS captures the app-switcher snapshot,
+  /// removed when the app becomes active again. This is the first
+  /// protection call in this SDK that can honestly report `applied: true`
+  /// on iOS.
+  static Future<bool> enableAppSwitcherProtection() => _requireContainer
+      .resolve<SecurityManager>()
+      .enableAppSwitcherProtection();
+
+  /// The imperative disable — symmetric to [enableAppSwitcherProtection].
+  static Future<bool> disableAppSwitcherProtection() => _requireContainer
+      .resolve<SecurityManager>()
+      .disableAppSwitcherProtection();
+
+  /// Last-known local state, mirroring [isScreenshotProtectionEnabled]'s
+  /// own synchronous, always-answerable read pattern.
+  static bool get isAppSwitcherProtectionEnabled {
+    final container = _container;
+    if (container == null || !container.isRegistered<SecurityManager>()) {
+      return false;
+    }
+    return container
+        .resolve<SecurityManager>()
+        .isAppSwitcherProtectionEnabled;
+  }
+
+  /// Subscribes [handler] to screen-recording-state-change events only —
+  /// pure sugar over [subscribe], same reasoning as [onScreenshot].
+  /// Filters on `'screen_recording'`, matching
+  /// `ScreenRecordingDetector.typeId`/`DetectionResult.type` exactly.
+  static StreamSubscription<SecurityEvent> onScreenRecordingChanged(
+    void Function(SecurityEvent event) handler,
+  ) =>
+      subscribe(handler, filter: (event) => event.type == 'screen_recording');
 }

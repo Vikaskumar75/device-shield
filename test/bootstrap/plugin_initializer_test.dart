@@ -9,6 +9,7 @@ import 'package:flutter_shield/src/events/event_manager.dart';
 import 'package:flutter_shield/src/managers/detection_manager.dart';
 import 'package:flutter_shield/src/managers/policy_manager.dart';
 import 'package:flutter_shield/src/managers/security_manager.dart';
+import 'package:flutter_shield/src/models/detection_result.dart';
 import 'package:flutter_shield/src/models/flutter_shield_config.dart';
 import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
 import 'package:flutter_shield/src/models/sdk_state.dart';
@@ -106,6 +107,27 @@ class _FakeSecurityManager implements SecurityManager, SecurityLifecycleHandler 
 
   @override
   Future<void> checkNow() async {}
+
+  @override
+  Future<void> processResult(DetectionResult result) async {}
+
+  @override
+  Future<bool> enableScreenshotProtection() async => false;
+
+  @override
+  Future<bool> disableScreenshotProtection() async => false;
+
+  @override
+  bool get isScreenshotProtectionEnabled => false;
+
+  @override
+  Future<bool> enableAppSwitcherProtection() async => false;
+
+  @override
+  Future<bool> disableAppSwitcherProtection() async => false;
+
+  @override
+  bool get isAppSwitcherProtectionEnabled => false;
 
   @override
   Future<void> onResume() async {}

@@ -429,6 +429,10 @@ class PluginInitializer {
           configurationManager: container.resolve<ConfigurationManager>(),
           lifecycle: container.resolve<Lifecycle>(),
           logger: container.resolve<Logger>(),
+          // Handed off solely to construct ScreenCaptureController — never
+          // retained as a field on DefaultSecurityManager itself. Already
+          // registered by step 4, long before this step runs.
+          nativeBridge: container.resolve<NativeBridge>(),
         ),
       );
     }

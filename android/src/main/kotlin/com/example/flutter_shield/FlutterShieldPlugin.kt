@@ -1,9 +1,17 @@
 package com.example.flutter_shield
 
+import android.app.Activity
 import android.content.Context
 import com.example.flutter_shield.detection.DebuggerDetector
 import com.example.flutter_shield.detection.EmulatorDetector
+import com.example.flutter_shield.detection.MockLocationDetector
+import com.example.flutter_shield.detection.RootDetector
+import com.example.flutter_shield.detection.ScreenRecordingDetector
+import com.example.flutter_shield.detection.ScreenshotDetector
+import com.example.flutter_shield.protection.ScreenCaptureProtection
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -27,9 +35,20 @@ import io.flutter.plugin.common.MethodChannel.Result
  * default_native_bridge.dart): a future detector/protection calls this with
  * its own callback name and payload; this class only shapes and forwards
  * it, with no interpretation of what either means.
+ *
+ * Screenshot & Screen Recording Protection (see
+ * docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md) adds
+ * `setScreenshotProtection`/`isScreenCaptureActive` and implements
+ * [ActivityAware] — `FLAG_SECURE`
+ * ([com.example.flutter_shield.protection.ScreenCaptureProtection]) and the
+ * API-34 screenshot callback
+ * ([com.example.flutter_shield.detection.ScreenshotDetector]) are both
+ * `Activity`/`Window`-level APIs; this plugin previously only held a bare
+ * `Context`, which has no `Window`.
  */
 class FlutterShieldPlugin :
     FlutterPlugin,
+    ActivityAware,
     MethodCallHandler,
     EventChannel.StreamHandler {
     // Phase 1 legacy channel — untouched, not merged or renamed.
@@ -44,6 +63,13 @@ class FlutterShieldPlugin :
     // (FLAG_DEBUGGABLE) — captured here, the same lifecycle-bound pattern
     // already used for the three channel fields above.
     private lateinit var applicationContext: Context
+
+    // Screenshot & Screen Recording Protection: null whenever no Activity
+    // is currently attached (before onAttachedToActivity, during a
+    // configuration-change gap, or after onDetachedFromActivity) — every
+    // Activity-dependent call site below checks for null rather than
+    // assuming attachment.
+    private var activity: Activity? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         applicationContext = flutterPluginBinding.applicationContext
@@ -72,6 +98,33 @@ class FlutterShieldPlugin :
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
             "checkEmulator" -> result.success(EmulatorDetector.check())
             "checkDebugger" -> result.success(DebuggerDetector.check(applicationContext))
+            "checkRoot" -> result.success(RootDetector.check(applicationContext))
+            // "Jailbreak" is not an Android concept — an honest
+            // not-applicable answer, never a false "not jailbroken"
+            // (design doc: docs/features/ROOT_JAILBREAK_DETECTION.md).
+            "checkJailbreak" -> result.success(
+                mapOf(
+                    "detected" to false,
+                    "confidence" to 0.0,
+                    "signals" to emptyList<String>(),
+                    "applicable" to false,
+                )
+            )
+            // FR-06: real signal evaluation on both platforms — mock
+            // location is a real concept on Android and iOS alike, unlike
+            // checkRoot/checkJailbreak's platform-exclusive concepts.
+            "checkMockLocation" -> result.success(MockLocationDetector.check(applicationContext))
+            "setScreenshotProtection" -> applyFlagSecure(call, result)
+            "isScreenCaptureActive" -> result.success(ScreenRecordingDetector.check())
+            // On Android this is intentionally the exact same FLAG_SECURE
+            // mechanism as setScreenshotProtection above — not a second,
+            // independent control. Recents-thumbnail redaction is already
+            // a side effect of that one flag (design doc §7.1/§17), so
+            // this handler is a documented alias, sharing the same native
+            // state, kept as its own method name only for cross-platform
+            // API symmetry with iOS (AppSwitcherProtection.swift), where
+            // it genuinely is a separate, new mechanism.
+            "setAppSwitcherProtection" -> applyFlagSecure(call, result)
             else -> {
                 // Bridge transport is registered; most detector/security
                 // method handlers don't exist yet — that is out of scope
@@ -79,6 +132,63 @@ class FlutterShieldPlugin :
                 result.notImplemented()
             }
         }
+    }
+
+    /// Shared by `setScreenshotProtection` and `setAppSwitcherProtection`
+    /// — both are, on Android, literally the same `FLAG_SECURE` toggle
+    /// (see the call-site comment on `setAppSwitcherProtection` above for
+    /// why that's intentional, not a bug).
+    private fun applyFlagSecure(call: MethodCall, result: Result) {
+        val enabled = call.argument<Boolean>("enabled") ?: false
+        val currentActivity = activity
+        if (currentActivity == null) {
+            // No Activity attached yet — nothing to apply the flag to. An
+            // honest "not applied" answer, never a silent false success.
+            result.success(mapOf("applied" to false))
+        } else {
+            if (enabled) {
+                ScreenCaptureProtection.enable(currentActivity)
+            } else {
+                ScreenCaptureProtection.disable(currentActivity)
+            }
+            result.success(mapOf("applied" to true))
+        }
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+        startObservingScreenshots(binding.activity)
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        detachActivity()
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+        startObservingScreenshots(binding.activity)
+    }
+
+    override fun onDetachedFromActivity() {
+        detachActivity()
+    }
+
+    private fun startObservingScreenshots(currentActivity: Activity) {
+        ScreenshotDetector.start(currentActivity) {
+            sendEvent(
+                "onScreenshotTaken",
+                mapOf(
+                    "detected" to true,
+                    "confidence" to 1.0,
+                    "signals" to listOf("screen_capture_callback"),
+                ),
+            )
+        }
+    }
+
+    private fun detachActivity() {
+        activity?.let { ScreenshotDetector.stop(it) }
+        activity = null
     }
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -110,5 +220,9 @@ class FlutterShieldPlugin :
         bridgeChannel.setMethodCallHandler(null)
         eventChannel.setStreamHandler(null)
         eventSink = null
+        // Defensive: normal teardown already calls onDetachedFromActivity
+        // before this, but this ensures ScreenshotDetector is never left
+        // observing a stale Activity if teardown ever happens out of order.
+        detachActivity()
     }
 }

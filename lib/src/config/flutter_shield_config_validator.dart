@@ -12,7 +12,11 @@ import '../models/flutter_shield_exception.dart';
 /// → `ConfigurationManager` (store).
 ///
 /// Bounds match SRS §7.4 exactly — generic SDK-wide settings only, no
-/// detector-specific validation of any kind.
+/// detector-specific validation of any kind. The one exception is
+/// [FlutterShieldConfig.screenshotRecordingRiskScoreWeight]'s 0.0–1.0 bound,
+/// added per `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §4 —
+/// not an SRS §7.4 rule, but the same confidence/risk-score convention
+/// already used everywhere else in this codebase.
 ///
 /// Public/Internal: internal.
 class FlutterShieldConfigValidator {
@@ -41,6 +45,14 @@ class FlutterShieldConfigValidator {
       throw const ConfigurationException(
         code: 'INVALID_TIMEOUT',
         message: 'checkTimeout must be between 1000ms and 30000ms',
+      );
+    }
+    if (config.screenshotRecordingRiskScoreWeight < 0.0 ||
+        config.screenshotRecordingRiskScoreWeight > 1.0) {
+      throw const ConfigurationException(
+        code: 'INVALID_RISK_WEIGHT',
+        message: 'screenshotRecordingRiskScoreWeight must be between '
+            '0.0 and 1.0',
       );
     }
     return config;

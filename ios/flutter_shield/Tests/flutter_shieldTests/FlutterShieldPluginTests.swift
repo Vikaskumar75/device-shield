@@ -60,6 +60,141 @@ final class FlutterShieldPluginTests: XCTestCase {
     wait(for: [expectation], timeout: 1)
   }
 
+  func testCheckJailbreakReturnsAJailbreakDetectionMap() {
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "checkJailbreak", arguments: nil)
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      let response = result as? [String: Any]
+      XCTAssertNotNil(response?["detected"])
+      XCTAssertNotNil(response?["confidence"])
+      XCTAssertNotNil(response?["signals"])
+      XCTAssertEqual(response?["applicable"] as? Bool, true)
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testCheckRootReturnsTheHonestNotApplicableMap() {
+    // "Root" is not an iOS concept — never a false "not rooted".
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "checkRoot", arguments: nil)
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      let response = result as? [String: Any]
+      XCTAssertEqual(response?["detected"] as? Bool, false)
+      XCTAssertEqual(response?["confidence"] as? Double, 0.0)
+      XCTAssertEqual(response?["applicable"] as? Bool, false)
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testCheckMockLocationReturnsAMockLocationDetectionMap() {
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "checkMockLocation", arguments: nil)
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      let response = result as? [String: Any]
+      XCTAssertNotNil(response?["detected"])
+      XCTAssertNotNil(response?["confidence"])
+      XCTAssertNotNil(response?["signals"])
+      XCTAssertNotNil(response?["permissionGranted"])
+      XCTAssertNotNil(response?["locationAvailable"])
+      // Unlike checkRoot on iOS, mock location is a real concept on both
+      // platforms — never a false "not applicable".
+      XCTAssertEqual(response?["applicable"] as? Bool, true)
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testSetScreenshotProtectionEnabled_reportsAppliedWhenARootViewExists() {
+    // "applied: true" here only proves the re-parenting call executed —
+    // NOT that a black-screenshot effect occurs. Live Simulator testing
+    // (design doc §18.5) found it does not, on Simulator at least; see
+    // ScreenCaptureProtection.swift's own warning. A real XCTest host
+    // process has at least one window, so currentRootView() finds one
+    // and this call succeeds structurally.
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "setScreenshotProtection", arguments: ["enabled": true])
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      XCTAssertEqual((result as? [String: Any])?["applied"] as? Bool, true)
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+    ScreenCaptureProtection.disable()
+  }
+
+  func testSetScreenshotProtectionDisabled_alwaysReportsApplied() {
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "setScreenshotProtection", arguments: ["enabled": false])
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      XCTAssertEqual((result as? [String: Any])?["applied"] as? Bool, true)
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testSetAppSwitcherProtectionReportsApplied() {
+    // Unlike setScreenshotProtection, this is a real, working mechanism on
+    // iOS (AppSwitcherProtection) — the first protection call in this SDK
+    // that can honestly report applied:true here.
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "setAppSwitcherProtection", arguments: ["enabled": true])
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      XCTAssertEqual((result as? [String: Any])?["applied"] as? Bool, true)
+      XCTAssertTrue(AppSwitcherProtection.isEnabled)
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+    AppSwitcherProtection.disable()
+  }
+
+  func testSetAppSwitcherProtectionDisableReportsApplied() {
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "setAppSwitcherProtection", arguments: ["enabled": false])
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      XCTAssertEqual((result as? [String: Any])?["applied"] as? Bool, true)
+      XCTAssertFalse(AppSwitcherProtection.isEnabled)
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testIsScreenCaptureActiveReturnsTheSupportedCaptureStateMap() {
+    let plugin = FlutterShieldPlugin()
+    let call = FlutterMethodCall(methodName: "isScreenCaptureActive", arguments: nil)
+    let expectation = expectation(description: "result")
+
+    plugin.handle(call) { result in
+      let response = result as? [String: Any]
+      XCTAssertEqual(response?["supported"] as? Bool, true)
+      XCTAssertNotNil(response?["isCaptured"])
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1)
+  }
+
   func testUnknownBridgeMethodReturnsNotImplemented() {
     let plugin = FlutterShieldPlugin()
     let call = FlutterMethodCall(methodName: "someFutureSecurityCheck", arguments: nil)
