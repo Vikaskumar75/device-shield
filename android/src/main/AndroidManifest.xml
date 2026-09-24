@@ -2,6 +2,19 @@
   package="com.example.flutter_shield">
 
   <!--
+    Screenshot detection (ScreenshotDetector.kt) — Android 14+ (API 34)
+    gates Activity#registerScreenCaptureCallback() behind this permission.
+    Without it that call throws SecurityException the moment the plugin
+    attaches to an Activity, taking down the host app before any Dart runs.
+
+    A normal (non-dangerous) permission: granted at install time, no runtime
+    prompt, no host-app change required — it merges into the host manifest
+    automatically via Gradle. Ignored by devices below API 34, where
+    ScreenshotDetector.isSupported is false and start() no-ops anyway.
+  -->
+  <uses-permission android:name="android.permission.DETECT_SCREEN_CAPTURE" />
+
+  <!--
     FR-01 root detection (RootDetector.kt) — Android 11+ (API 30) restricts
     PackageManager#getPackageInfo() for a specific package name to
     NameNotFoundException unless declared here or covered by the

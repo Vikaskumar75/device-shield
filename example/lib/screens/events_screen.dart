@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_shield/src/models/security_event.dart';
+import 'package:flutter_shield/flutter_shield.dart';
 
 import '../core/shield_scope.dart';
 import '../widgets/severity_chip.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_shield/src/models/security_event.dart';
+import 'package:flutter_shield/flutter_shield.dart';
 
 /// Maps [EventSeverity] to a color and icon — the Events screen's own
 /// color-coding/icon requirement, centralized here so every place that

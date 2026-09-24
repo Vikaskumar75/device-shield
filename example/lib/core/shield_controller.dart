@@ -2,22 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_shield/flutter_shield.dart';
-import 'package:flutter_shield/src/bridge/default_native_bridge.dart';
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/detectors/debugger_detector.dart';
-import 'package:flutter_shield/src/detectors/emulator_detector.dart';
-import 'package:flutter_shield/src/detectors/jailbreak_detector.dart';
-import 'package:flutter_shield/src/detectors/mock_location_detector.dart';
-import 'package:flutter_shield/src/detectors/root_detector.dart';
-import 'package:flutter_shield/src/detectors/screen_recording_detector.dart';
-import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
-import 'package:flutter_shield/src/models/flutter_shield_config.dart';
-import 'package:flutter_shield/src/models/sdk_state.dart';
-import 'package:flutter_shield/src/models/security_event.dart';
-import 'package:flutter_shield/src/registry/detector.dart';
-import 'package:flutter_shield/src/registry/rule.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/models/security_action.dart';
 
 import 'app_error.dart';
 import 'callback_record.dart';

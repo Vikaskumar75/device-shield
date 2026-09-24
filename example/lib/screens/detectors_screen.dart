@@ -1,14 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_shield/src/detectors/debugger_detector.dart';
-import 'package:flutter_shield/src/detectors/emulator_detector.dart';
-import 'package:flutter_shield/src/detectors/jailbreak_detector.dart';
-import 'package:flutter_shield/src/detectors/mock_location_detector.dart';
-import 'package:flutter_shield/src/detectors/root_detector.dart';
-import 'package:flutter_shield/src/detectors/screen_recording_detector.dart';
-import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
+import 'package:flutter_shield/flutter_shield.dart';
 
 import '../core/shield_scope.dart';
 import '../widgets/status_card.dart';

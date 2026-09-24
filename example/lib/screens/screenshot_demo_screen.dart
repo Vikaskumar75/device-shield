@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
+import 'package:flutter_shield/flutter_shield.dart';
 
 import '../core/shield_scope.dart';
 import '../widgets/alert_demo.dart';
