@@ -118,11 +118,13 @@ void main() {
     const SecurityEventHandler handler = _noopHandler;
     const SecurityEventFilter filter = _alwaysTrue;
 
-    // Field-wise, not `==`: SecurityEvent's operator== compares `data` by
-    // reference (Dart Maps have no value equality), so a JSON round-trip
-    // never equals its source. That is a real defect in the model, tracked
-    // separately — asserted field-wise here so this export guard stays
-    // honest about what it verifies rather than encoding the bug.
+    // Field-wise, not `==`. SecurityEvent compares `data` by reference, a
+    // trade-off documented deliberately on DetectionResult (avoids taking
+    // on the `collection` package for deep map equality) and inherited
+    // here. One consequence: fromJson(toJson(e)) is never `==` to `e`,
+    // because fromJson's `.cast()` builds a new map — true even when
+    // `data` is the default empty map. Asserted field-wise so this export
+    // guard tests reachability, not that equality semantics.
     final restored = SecurityEvent.fromJson(event.toJson());
     expect(restored.type, event.type);
     expect(restored.timestamp, event.timestamp);
