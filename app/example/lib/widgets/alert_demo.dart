@@ -8,13 +8,13 @@ enum AlertStyle { snackBar, dialog, bottomSheet, banner, overlay, fullscreen }
 
 extension AlertStyleLabel on AlertStyle {
   String get label => switch (this) {
-        AlertStyle.snackBar => 'SnackBar',
-        AlertStyle.dialog => 'Dialog',
-        AlertStyle.bottomSheet => 'Bottom Sheet',
-        AlertStyle.banner => 'Banner',
-        AlertStyle.overlay => 'Overlay',
-        AlertStyle.fullscreen => 'Fullscreen Warning',
-      };
+    AlertStyle.snackBar => 'SnackBar',
+    AlertStyle.dialog => 'Dialog',
+    AlertStyle.bottomSheet => 'Bottom Sheet',
+    AlertStyle.banner => 'Banner',
+    AlertStyle.overlay => 'Overlay',
+    AlertStyle.fullscreen => 'Fullscreen Warning',
+  };
 }
 
 /// Fires a security-style alert in whichever [style] is currently
@@ -29,11 +29,13 @@ void showSecurityAlert(
 }) {
   switch (style) {
     case AlertStyle.snackBar:
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('$title — $message'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.red.shade700,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$title — $message'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
       break;
     case AlertStyle.dialog:
       showDialog<void>(
@@ -60,11 +62,13 @@ void showSecurityAlert(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                const Icon(Icons.security, color: Colors.red),
-                const SizedBox(width: 12),
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-              ]),
+              Row(
+                children: [
+                  const Icon(Icons.security, color: Colors.red),
+                  const SizedBox(width: 12),
+                  Text(title, style: Theme.of(context).textTheme.titleMedium),
+                ],
+              ),
               const SizedBox(height: 12),
               Text(message),
               const SizedBox(height: 16),
@@ -78,17 +82,19 @@ void showSecurityAlert(
       );
       break;
     case AlertStyle.banner:
-      ScaffoldMessenger.of(context).showMaterialBanner(MaterialBanner(
-        leading: const Icon(Icons.security, color: Colors.red),
-        content: Text('$title — $message'),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
-            child: const Text('Dismiss'),
-          ),
-        ],
-      ));
+      ScaffoldMessenger.of(context).showMaterialBanner(
+        MaterialBanner(
+          leading: const Icon(Icons.security, color: Colors.red),
+          content: Text('$title — $message'),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
+              child: const Text('Dismiss'),
+            ),
+          ],
+        ),
+      );
       break;
     case AlertStyle.overlay:
       final overlay = Overlay.of(context);
@@ -109,8 +115,10 @@ void showSecurityAlert(
                   const Icon(Icons.security, color: Colors.white),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text('$title — $message',
-                        style: const TextStyle(color: Colors.white)),
+                    child: Text(
+                      '$title — $message',
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -139,23 +147,31 @@ void showSecurityAlert(
                   children: [
                     const Icon(Icons.security, color: Colors.white, size: 72),
                     const SizedBox(height: 24),
-                    Text(title,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 12),
-                    Text(message,
-                        style: const TextStyle(color: Colors.white70),
-                        textAlign: TextAlign.center),
+                    Text(
+                      message,
+                      style: const TextStyle(color: Colors.white70),
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 32),
                     FilledButton(
-                      style:
-                          FilledButton.styleFrom(backgroundColor: Colors.white),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Dismiss',
-                          style: TextStyle(color: Colors.black)),
+                      child: const Text(
+                        'Dismiss',
+                        style: TextStyle(color: Colors.black),
+                      ),
                     ),
                   ],
                 ),

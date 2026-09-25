@@ -1,12 +1,12 @@
-import 'package:flutter_shield/src/bridge/method_codes.dart';
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/core/console_logger.dart';
-import 'package:flutter_shield/src/detectors/debugger_detector.dart';
-import 'package:flutter_shield/src/detectors/emulator_detector.dart';
-import 'package:flutter_shield/src/managers/default_detection_manager.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/registry/default_detector_registry.dart';
-import 'package:flutter_shield/src/registry/detector_factory.dart';
+import 'package:device_shield/src/bridge/method_codes.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/core/console_logger.dart';
+import 'package:device_shield/src/detectors/debugger_detector.dart';
+import 'package:device_shield/src/detectors/emulator_detector.dart';
+import 'package:device_shield/src/managers/default_detection_manager.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/registry/default_detector_registry.dart';
+import 'package:device_shield/src/registry/detector_factory.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeNativeBridge implements NativeBridge {
@@ -100,13 +100,15 @@ void main() {
 
     final results = await manager.runAllChecks();
 
-    expect(results.map((r) => r.type).toSet(),
-        {EmulatorDetector.typeId, DebuggerDetector.typeId});
+    expect(results.map((r) => r.type).toSet(), {
+      EmulatorDetector.typeId,
+      DebuggerDetector.typeId,
+    });
     expect(results.every((r) => r.detected == false), isTrue);
-    expect(
-      bridge.invokedMethods.toSet(),
-      {MethodCodes.checkEmulator, MethodCodes.checkDebugger},
-    );
+    expect(bridge.invokedMethods.toSet(), {
+      MethodCodes.checkEmulator,
+      MethodCodes.checkDebugger,
+    });
   });
 
   test('a native-side failure for checkDebugger is reported as a failed '
@@ -138,14 +140,18 @@ void main() {
 
     final results = await manager.runAllChecks();
 
-    expect(results.map((r) => r.type).toSet(),
-        {EmulatorDetector.typeId, DebuggerDetector.typeId});
-    final debuggerResult =
-        results.firstWhere((r) => r.type == DebuggerDetector.typeId);
+    expect(results.map((r) => r.type).toSet(), {
+      EmulatorDetector.typeId,
+      DebuggerDetector.typeId,
+    });
+    final debuggerResult = results.firstWhere(
+      (r) => r.type == DebuggerDetector.typeId,
+    );
     expect(debuggerResult.status, DetectionStatus.failed);
     expect(debuggerResult.detected, isFalse);
-    final emulatorResult =
-        results.firstWhere((r) => r.type == EmulatorDetector.typeId);
+    final emulatorResult = results.firstWhere(
+      (r) => r.type == EmulatorDetector.typeId,
+    );
     expect(emulatorResult.status, DetectionStatus.completed);
   });
 }

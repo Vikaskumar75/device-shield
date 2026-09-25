@@ -7,7 +7,7 @@ import 'permission_manager.dart';
 /// already uses (see [PermissionManager]'s own doc comment for why).
 ///
 /// Today's only reachable input through the public API is an empty set:
-/// no `SecurityProfile` is yet threaded through `FlutterShield.initialize()`,
+/// no `SecurityProfile` is yet threaded through `DeviceShield.initialize()`,
 /// and no built-in detector/protection exists yet to require a real OS
 /// permission. [initialize] therefore trivially succeeds for the empty
 /// case.

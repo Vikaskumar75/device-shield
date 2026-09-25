@@ -1,4 +1,4 @@
-package com.example.flutter_shield.protection
+package com.geekyants.device_shield.protection
 
 import android.app.Activity
 import android.view.Window

@@ -1,4 +1,4 @@
-package com.example.flutter_shield_example
+package com.geekyants.device_shield_example
 
 import io.flutter.embedding.android.FlutterActivity
 

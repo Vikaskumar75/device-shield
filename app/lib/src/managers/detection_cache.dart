@@ -36,7 +36,7 @@ import 'multi_level_cache.dart';
 /// capacity.
 class DetectionCache {
   DetectionCache({this.ttl = const Duration(seconds: 30)})
-      : _cache = MultiLevelCache<String, DetectionResult>(ttl: ttl);
+    : _cache = MultiLevelCache<String, DetectionResult>(ttl: ttl);
 
   /// How long a stored result remains valid after [put].
   final Duration ttl;

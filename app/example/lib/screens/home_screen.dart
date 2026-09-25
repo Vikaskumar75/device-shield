@@ -1,5 +1,5 @@
+import 'package:device_shield/device_shield.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_shield/flutter_shield.dart';
 
 import '../core/shield_scope.dart';
 import '../widgets/action_button.dart';
@@ -8,7 +8,7 @@ import '../widgets/status_card.dart';
 /// Demonstrates: a single, live, at-a-glance view of everything the SDK
 /// currently reports — status, platform, protection, recording, last
 /// screenshot/event/callback, and feature availability. Every value here
-/// is read live from [ShieldController]/`FlutterShield` itself, never
+/// is read live from [ShieldController]/`DeviceShield` itself, never
 /// cached separately, so this screen can never drift from reality.
 ///
 /// Expected behavior: values update immediately after any action taken on
@@ -35,7 +35,8 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             const InfoBanner(
-              message: 'This screen shows every live SDK value at a glance. '
+              message:
+                  'This screen shows every live SDK value at a glance. '
                   'Use Runtime Controls to change SDK state.',
             ),
             SectionCard(
@@ -63,8 +64,11 @@ class HomeScreen extends StatelessWidget {
                         controller.resetDemo();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text('Local example-app state reset '
-                                  '(SDK state untouched)')),
+                            content: Text(
+                              'Local example-app state reset '
+                              '(SDK state untouched)',
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -99,8 +103,9 @@ class HomeScreen extends StatelessWidget {
                 StatusRow(
                   label: 'Screenshot protection enabled',
                   value: controller.protectionEnabled ? 'Yes' : 'No',
-                  valueColor:
-                      controller.protectionEnabled ? Colors.green : null,
+                  valueColor: controller.protectionEnabled
+                      ? Colors.green
+                      : null,
                   icon: Icons.shield_outlined,
                 ),
                 StatusRow(
@@ -149,35 +154,46 @@ class HomeScreen extends StatelessWidget {
               title: 'Current Configuration',
               children: [
                 StatusRow(
-                    label: 'Periodic check interval',
-                    value: '${controller.config.periodicCheckInterval} ms'),
+                  label: 'Periodic check interval',
+                  value: '${controller.config.periodicCheckInterval} ms',
+                ),
                 StatusRow(
-                    label: 'Check timeout',
-                    value: '${controller.config.checkTimeout} ms'),
+                  label: 'Check timeout',
+                  value: '${controller.config.checkTimeout} ms',
+                ),
                 StatusRow(
-                    label: 'Debug logging',
-                    value: controller.config.debugLogging ? 'On' : 'Off'),
+                  label: 'Debug logging',
+                  value: controller.config.debugLogging ? 'On' : 'Off',
+                ),
                 StatusRow(
-                    label: 'Screenshot detection (config flag)',
-                    value: controller.config.enableScreenshotDetection
-                        ? 'On'
-                        : 'Off'),
+                  label: 'Screenshot detection (config flag)',
+                  value: controller.config.enableScreenshotDetection
+                      ? 'On'
+                      : 'Off',
+                ),
                 StatusRow(
-                    label: 'Recording detection (config flag)',
-                    value: controller.config.enableScreenRecordingDetection
-                        ? 'On'
-                        : 'Off'),
+                  label: 'Recording detection (config flag)',
+                  value: controller.config.enableScreenRecordingDetection
+                      ? 'On'
+                      : 'Off',
+                ),
               ],
             ),
-            SectionCard(
+            const SectionCard(
               title: 'Feature Availability (this platform)',
-              children: const [
+              children: [
                 StatusRow(
-                    label: 'Screenshot detection', value: 'See About screen'),
+                  label: 'Screenshot detection',
+                  value: 'See About screen',
+                ),
                 StatusRow(
-                    label: 'Recording detection', value: 'See About screen'),
+                  label: 'Recording detection',
+                  value: 'See About screen',
+                ),
                 StatusRow(
-                    label: 'Screenshot protection', value: 'See About screen'),
+                  label: 'Screenshot protection',
+                  value: 'See About screen',
+                ),
               ],
             ),
           ],

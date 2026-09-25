@@ -9,15 +9,14 @@ import 'widgets/app_shell.dart';
 /// light/dark support (the platform's own brightness, matching the
 /// "adaptive" / "dark mode" / "light mode" requirements without a manual
 /// theme-switcher widget the SDK itself has no bearing on).
-class FlutterShieldExampleApp extends StatefulWidget {
-  const FlutterShieldExampleApp({super.key});
+class DeviceShieldExampleApp extends StatefulWidget {
+  const DeviceShieldExampleApp({super.key});
 
   @override
-  State<FlutterShieldExampleApp> createState() =>
-      _FlutterShieldExampleAppState();
+  State<DeviceShieldExampleApp> createState() => _DeviceShieldExampleAppState();
 }
 
-class _FlutterShieldExampleAppState extends State<FlutterShieldExampleApp> {
+class _DeviceShieldExampleAppState extends State<DeviceShieldExampleApp> {
   late final ShieldController _controller;
 
   @override
@@ -38,7 +37,7 @@ class _FlutterShieldExampleAppState extends State<FlutterShieldExampleApp> {
     return ShieldScope(
       controller: _controller,
       child: MaterialApp(
-        title: 'FlutterShield Example',
+        title: 'DeviceShield Example',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
@@ -51,7 +50,6 @@ class _FlutterShieldExampleAppState extends State<FlutterShieldExampleApp> {
           ),
           useMaterial3: true,
         ),
-        themeMode: ThemeMode.system,
         home: const AppShell(),
       ),
     );

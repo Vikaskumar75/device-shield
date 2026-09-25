@@ -1,13 +1,13 @@
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/detectors/debugger_detector.dart';
-import 'package:flutter_shield/src/detectors/emulator_detector.dart';
-import 'package:flutter_shield/src/detectors/jailbreak_detector.dart';
-import 'package:flutter_shield/src/detectors/mock_location_detector.dart';
-import 'package:flutter_shield/src/detectors/root_detector.dart';
-import 'package:flutter_shield/src/detectors/screen_recording_detector.dart';
-import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
-import 'package:flutter_shield/src/registry/detector_factory.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/detectors/debugger_detector.dart';
+import 'package:device_shield/src/detectors/emulator_detector.dart';
+import 'package:device_shield/src/detectors/jailbreak_detector.dart';
+import 'package:device_shield/src/detectors/mock_location_detector.dart';
+import 'package:device_shield/src/detectors/root_detector.dart';
+import 'package:device_shield/src/detectors/screen_recording_detector.dart';
+import 'package:device_shield/src/detectors/screenshot_detector.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
+import 'package:device_shield/src/registry/detector_factory.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeNativeBridge implements NativeBridge {
@@ -16,8 +16,7 @@ class _FakeNativeBridge implements NativeBridge {
     required String method,
     Map<String, dynamic>? arguments,
     Duration timeout = const Duration(seconds: 5),
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   @override
   void invokeAsync({required String method, Map<String, dynamic>? arguments}) {}
@@ -126,8 +125,7 @@ void main() {
       expect((detector as MockLocationDetector).nativeBridge, same(bridge));
     });
 
-    test('each call returns a distinct instance, not a cached singleton',
-        () {
+    test('each call returns a distinct instance, not a cached singleton', () {
       final factory = DetectorFactory(nativeBridge: _FakeNativeBridge());
 
       final first = factory.create(EmulatorDetector.typeId);
@@ -136,17 +134,21 @@ void main() {
       expect(identical(first, second), isFalse);
     });
 
-    test('an unknown type throws DetectionException(DETECTOR_TYPE_UNKNOWN)',
-        () {
-      final factory = DetectorFactory(nativeBridge: _FakeNativeBridge());
+    test(
+      'an unknown type throws DetectionException(DETECTOR_TYPE_UNKNOWN)',
+      () {
+        final factory = DetectorFactory(nativeBridge: _FakeNativeBridge());
 
-      expect(
-        () => factory.create('nonexistent_type'),
-        throwsA(isA<DetectionException>()
-            .having((e) => e.code, 'code', 'DETECTOR_TYPE_UNKNOWN')
-            .having((e) => e.type, 'type', 'nonexistent_type')),
-      );
-    });
+        expect(
+          () => factory.create('nonexistent_type'),
+          throwsA(
+            isA<DetectionException>()
+                .having((e) => e.code, 'code', 'DETECTOR_TYPE_UNKNOWN')
+                .having((e) => e.type, 'type', 'nonexistent_type'),
+          ),
+        );
+      },
+    );
 
     test('a custom (host-app) type is never constructible through this '
         'factory', () {

@@ -29,7 +29,7 @@ class ConsoleLogger implements Logger {
   void _write(LogLevel level, String message, {Map<String, dynamic>? data}) {
     if (!_shouldLog(level)) return;
     final line =
-        '[FlutterShield] [${level.name.toUpperCase()}] $message'
+        '[DeviceShield] [${level.name.toUpperCase()}] $message'
         '${data != null && data.isNotEmpty ? ' $data' : ''}';
     // ignore: avoid_print
     print(line);
@@ -48,10 +48,11 @@ class ConsoleLogger implements Logger {
 
   @override
   void warning(String message, {Map<String, dynamic>? data, Object? error}) {
-    _write(LogLevel.warning, message, data: {
-      ...?data,
-      if (error != null) 'error': error.toString(),
-    });
+    _write(
+      LogLevel.warning,
+      message,
+      data: {...?data, if (error != null) 'error': error.toString()},
+    );
   }
 
   @override
@@ -61,19 +62,23 @@ class ConsoleLogger implements Logger {
     Object? error,
     StackTrace? stackTrace,
   }) {
-    _write(LogLevel.error, message, data: {
-      ...?data,
-      if (error != null) 'error': error.toString(),
-    });
+    _write(
+      LogLevel.error,
+      message,
+      data: {...?data, if (error != null) 'error': error.toString()},
+    );
   }
 
   @override
   void exception(String message, {Object? error, StackTrace? stackTrace}) {
-    _write(LogLevel.exception, message,
-        data: error != null ? {'error': error.toString()} : null);
+    _write(
+      LogLevel.exception,
+      message,
+      data: error != null ? {'error': error.toString()} : null,
+    );
     if (stackTrace != null) {
       // ignore: avoid_print
-      print('[FlutterShield] [STACK] $stackTrace');
+      print('[DeviceShield] [STACK] $stackTrace');
     }
   }
 

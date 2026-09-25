@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import 'package:device_shield/device_shield.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_shield/flutter_shield.dart';
 
 import 'app_error.dart';
 import 'callback_record.dart';
@@ -9,7 +9,7 @@ import 'log_entry.dart';
 import 'statistics.dart';
 
 /// A trivial custom [Rule] — demonstrates the FR-17 extension point
-/// (`FlutterShield.addRule`/`removeRule`). Matches nothing on its own;
+/// (`DeviceShield.addRule`/`removeRule`). Matches nothing on its own;
 /// its only job is to prove the registration mechanics work.
 class DemoRule implements Rule {
   @override
@@ -43,12 +43,12 @@ class DemoCustomDetector implements Detector {
 
   @override
   Future<DetectionResult> check() async => DetectionResult(
-        type: type,
-        detected: true,
-        confidence: 0.42,
-        timestamp: DateTime.now(),
-        evidence: const {'note': 'example custom detector — always fires'},
-      );
+    type: type,
+    detected: true,
+    confidence: 0.42,
+    timestamp: DateTime.now(),
+    evidence: const {'note': 'example custom detector — always fires'},
+  );
 }
 
 /// The application's single source of truth. Every SDK call the example
@@ -68,8 +68,9 @@ class ShieldController extends ChangeNotifier {
     _emulatorDetector = EmulatorDetector(nativeBridge: _nativeBridge);
     _debuggerDetector = DebuggerDetector(nativeBridge: _nativeBridge);
     _screenshotDetector = ScreenshotDetector(nativeBridge: _nativeBridge);
-    _screenRecordingDetector =
-        ScreenRecordingDetector(nativeBridge: _nativeBridge);
+    _screenRecordingDetector = ScreenRecordingDetector(
+      nativeBridge: _nativeBridge,
+    );
     _rootDetector = RootDetector(nativeBridge: _nativeBridge);
     _jailbreakDetector = JailbreakDetector(nativeBridge: _nativeBridge);
     _mockLocationDetector = MockLocationDetector(nativeBridge: _nativeBridge);
@@ -93,7 +94,7 @@ class ShieldController extends ChangeNotifier {
   // ---------------------------------------------------------------------
 
   String platformVersion = 'Unknown';
-  FlutterShieldConfig config = const FlutterShieldConfig();
+  DeviceShieldConfig config = const DeviceShieldConfig();
   bool demoRuleActive = false;
   bool advancedRawCallbackInterceptionEnabled = false;
 
@@ -121,11 +122,11 @@ class ShieldController extends ChangeNotifier {
   final Map<String, DetectionResult> lastDetectorResults = {};
 
   SDKState get status =>
-      FlutterShield.status; // always the SDK's own live truth, never cached
+      DeviceShield.status; // always the SDK's own live truth, never cached
 
   bool get protectionEnabled {
     try {
-      return FlutterShield.isScreenshotProtectionEnabled;
+      return DeviceShield.isScreenshotProtectionEnabled;
     } catch (_) {
       return false;
     }
@@ -133,7 +134,7 @@ class ShieldController extends ChangeNotifier {
 
   bool get appSwitcherProtectionEnabled {
     try {
-      return FlutterShield.isAppSwitcherProtectionEnabled;
+      return DeviceShield.isAppSwitcherProtectionEnabled;
     } catch (_) {
       return false;
     }
@@ -178,7 +179,9 @@ class ShieldController extends ChangeNotifier {
 
   void _recordError(String operation, Object error, StackTrace stackTrace) {
     errors.insert(
-        0, AppError(operation: operation, error: error, stackTrace: stackTrace));
+      0,
+      AppError(operation: operation, error: error, stackTrace: stackTrace),
+    );
     if (errors.length > 200) errors.removeLast();
     stats.errors++;
     _log(AppLogLevel.error, operation, 'Failed: $error');
@@ -208,47 +211,46 @@ class ShieldController extends ChangeNotifier {
   // ---------------------------------------------------------------------
 
   Future<bool> loadPlatformVersion() => _run('Get platform version', () async {
-        platformVersion =
-            await FlutterShield().getPlatformVersion() ?? 'Unknown';
-      });
+    platformVersion = await DeviceShield().getPlatformVersion() ?? 'Unknown';
+  });
 
   Future<bool> initialize() => _run('Initialize SDK', () async {
-        await FlutterShield.initialize(config: config);
-        stats.sdkInitializedCount++;
-        sessionStartedAt = DateTime.now();
-        _subscribeToEvents();
-        await _reapplyDetectorRegistrations();
-      });
+    await DeviceShield.initialize(config: config);
+    stats.sdkInitializedCount++;
+    sessionStartedAt = DateTime.now();
+    _subscribeToEvents();
+    await _reapplyDetectorRegistrations();
+  });
 
   Future<bool> shutdown() => _run('Shutdown SDK', () async {
-        await FlutterShield.shutdown();
-        sessionStartedAt = null;
-      });
+    await DeviceShield.shutdown();
+    sessionStartedAt = null;
+  });
 
   Future<bool> reinitialize() => _run('Reinitialize SDK', () async {
-        await FlutterShield.reinitialize(config: config);
-        sessionStartedAt = DateTime.now();
-        _detectorsPendingRemovalOnReinit.clear();
-        _subscribeToEvents();
-        await _reapplyDetectorRegistrations();
-      });
+    await DeviceShield.reinitialize(config: config);
+    sessionStartedAt = DateTime.now();
+    _detectorsPendingRemovalOnReinit.clear();
+    _subscribeToEvents();
+    await _reapplyDetectorRegistrations();
+  });
 
   Future<bool> dispose_() => _run('Dispose SDK', () async {
-        await _subscription?.cancel();
-        _subscription = null;
-        await FlutterShield.dispose();
-        detectorEnabled.updateAll((key, value) => false);
-        _detectorsPendingRemovalOnReinit.clear();
-        recordingActive = null;
-        sessionStartedAt = null;
-      });
+    await _subscription?.cancel();
+    _subscription = null;
+    await DeviceShield.dispose();
+    detectorEnabled.updateAll((key, value) => false);
+    _detectorsPendingRemovalOnReinit.clear();
+    recordingActive = null;
+    sessionStartedAt = null;
+  });
 
-  Future<bool> pause() => _run('Pause SDK', () => FlutterShield.pause());
+  Future<bool> pause() => _run('Pause SDK', DeviceShield.pause);
 
-  Future<bool> resume() => _run('Resume SDK', () => FlutterShield.resume());
+  Future<bool> resume() => _run('Resume SDK', DeviceShield.resume);
 
   Future<bool> checkNow() async {
-    final ok = await _run('Check Now', () => FlutterShield.checkNow());
+    final ok = await _run('Check Now', DeviceShield.checkNow);
     if (ok) {
       checkNowSuccessCount++;
     } else {
@@ -265,32 +267,33 @@ class ShieldController extends ChangeNotifier {
   /// touches `PolicyManager`/`EventManager` and produces no
   /// `SecurityEvent` of its own; it is a read-only inspection tool, not
   /// part of the SDK's real detection pipeline.
-  Future<bool> runDetectorCheck(String type) => _run(
-        'Run detector check: $type',
-        () async {
-          final result = await _detectorFor(type).check();
-          lastDetectorResults[type] = result;
-        },
-      );
+  Future<bool> runDetectorCheck(String type) =>
+      _run('Run detector check: $type', () async {
+        final result = await _detectorFor(type).check();
+        lastDetectorResults[type] = result;
+      });
 
   // ---------------------------------------------------------------------
   // Protection
   // ---------------------------------------------------------------------
 
-  Future<bool> enableProtection() => _run('Enable screenshot protection',
-      () async {
-    final applied = await FlutterShield.enableScreenshotProtection();
-    stats.protectionEnabledCount++;
-    if (!applied) {
-      _log(AppLogLevel.warning, 'Protection',
-          'Native reported applied:false — see Screenshot Protection screen '
-              'for the honest platform explanation.');
-    }
-  });
+  Future<bool> enableProtection() =>
+      _run('Enable screenshot protection', () async {
+        final applied = await DeviceShield.enableScreenshotProtection();
+        stats.protectionEnabledCount++;
+        if (!applied) {
+          _log(
+            AppLogLevel.warning,
+            'Protection',
+            'Native reported applied:false — see Screenshot Protection screen '
+                'for the honest platform explanation.',
+          );
+        }
+      });
 
   Future<bool> disableProtection() =>
       _run('Disable screenshot protection', () async {
-        await FlutterShield.disableScreenshotProtection();
+        await DeviceShield.disableScreenshotProtection();
         stats.protectionDisabledCount++;
       });
 
@@ -302,16 +305,20 @@ class ShieldController extends ChangeNotifier {
   /// .enableAppSwitcherProtection`'s own doc comment.
   Future<bool> enableAppSwitcherProtection() =>
       _run('Enable app-switcher protection', () async {
-        final applied = await FlutterShield.enableAppSwitcherProtection();
+        final applied = await DeviceShield.enableAppSwitcherProtection();
         if (!applied) {
-          _log(AppLogLevel.warning, 'Protection',
-              'Native reported applied:false for app-switcher protection.');
+          _log(
+            AppLogLevel.warning,
+            'Protection',
+            'Native reported applied:false for app-switcher protection.',
+          );
         }
       });
 
-  Future<bool> disableAppSwitcherProtection() =>
-      _run('Disable app-switcher protection',
-          () => FlutterShield.disableAppSwitcherProtection());
+  Future<bool> disableAppSwitcherProtection() => _run(
+    'Disable app-switcher protection',
+    DeviceShield.disableAppSwitcherProtection,
+  );
 
   // ---------------------------------------------------------------------
   // Detectors — registration only; see the doc comment below for the
@@ -321,7 +328,7 @@ class ShieldController extends ChangeNotifier {
 
   /// Toggles whether [type] should be registered.
   ///
-  /// **Documented SDK gap**: `FlutterShield`/`DetectionManager` expose
+  /// **Documented SDK gap**: `DeviceShield`/`DetectionManager` expose
   /// `registerDetector()` but no `unregisterDetector()`/`removeDetector()`
   /// counterpart anywhere in the public API. Turning a detector **on**
   /// here calls the real API immediately. Turning one **off** cannot
@@ -336,15 +343,18 @@ class ShieldController extends ChangeNotifier {
       _detectorsPendingRemovalOnReinit.remove(type);
       if (!isInitialized) return true;
       return _run('Register detector: $type', () async {
-        await FlutterShield.registerDetector(_detectorFor(type));
+        await DeviceShield.registerDetector(_detectorFor(type));
       });
     } else {
       detectorEnabled[type] = false;
       if (isInitialized) {
         _detectorsPendingRemovalOnReinit.add(type);
-        _log(AppLogLevel.warning, 'Detectors',
-            '$type cannot be unregistered from a running SDK (no public API '
-                'exists) — it will be excluded on the next Reinitialize.');
+        _log(
+          AppLogLevel.warning,
+          'Detectors',
+          '$type cannot be unregistered from a running SDK (no public API '
+              'exists) — it will be excluded on the next Reinitialize.',
+        );
       }
       return true;
     }
@@ -378,7 +388,7 @@ class ShieldController extends ChangeNotifier {
     for (final entry in detectorEnabled.entries) {
       if (entry.value) {
         try {
-          await FlutterShield.registerDetector(_detectorFor(entry.key));
+          await DeviceShield.registerDetector(_detectorFor(entry.key));
         } catch (error, stackTrace) {
           _recordError('Re-register detector: ${entry.key}', error, stackTrace);
         }
@@ -386,7 +396,7 @@ class ShieldController extends ChangeNotifier {
     }
     if (demoRuleActive) {
       try {
-        await FlutterShield.addRule(_demoRule);
+        await DeviceShield.addRule(_demoRule);
       } catch (_) {
         // Already added — ignore, matches PolicyManager's own additive model.
       }
@@ -397,7 +407,7 @@ class ShieldController extends ChangeNotifier {
   /// used by the Manual Test screen's "unknown event" case.
   Future<bool> registerCustomDetector() =>
       _run('Register custom detector', () async {
-        await FlutterShield.registerDetector(_demoCustomDetector);
+        await DeviceShield.registerDetector(_demoCustomDetector);
       });
 
   // ---------------------------------------------------------------------
@@ -407,12 +417,16 @@ class ShieldController extends ChangeNotifier {
   Future<bool> toggleDemoRule(bool enabled) async {
     if (enabled) {
       final ok = await _run(
-          'Add demo rule', () => FlutterShield.addRule(_demoRule));
+        'Add demo rule',
+        () => DeviceShield.addRule(_demoRule),
+      );
       if (ok) demoRuleActive = true;
       return ok;
     } else {
-      final ok = await _run('Remove demo rule',
-          () => FlutterShield.removeRule(_demoRule.id));
+      final ok = await _run(
+        'Remove demo rule',
+        () => DeviceShield.removeRule(_demoRule.id),
+      );
       if (ok) demoRuleActive = false;
       return ok;
     }
@@ -424,7 +438,7 @@ class ShieldController extends ChangeNotifier {
 
   void _subscribeToEvents() {
     _subscription?.cancel();
-    _subscription = FlutterShield.subscribe(_handleEvent);
+    _subscription = DeviceShield.subscribe(_handleEvent);
   }
 
   /// **Documented SDK limitation**: `SecurityEvent.data` — as actually
@@ -503,15 +517,21 @@ class ShieldController extends ChangeNotifier {
   /// this risk rather than hide it.
   bool registerCallback(String name) {
     if (_isReservedCallbackName(name)) {
-      _log(AppLogLevel.warning, 'Callbacks',
-          '"$name" is reserved internally by ScreenCaptureController — '
-              'use the Advanced toggle to intercept it deliberately, with '
-              'the documented risk shown.');
+      _log(
+        AppLogLevel.warning,
+        'Callbacks',
+        '"$name" is reserved internally by ScreenCaptureController — '
+            'use the Advanced toggle to intercept it deliberately, with '
+            'the documented risk shown.',
+      );
       return false;
     }
-    final record = callbacks.putIfAbsent(name, () => CallbackRecord(name: name));
+    final record = callbacks.putIfAbsent(
+      name,
+      () => CallbackRecord(name: name),
+    );
     record.registered = true;
-    FlutterShield.registerCallback(name, (data) {
+    DeviceShield.registerCallback(name, (data) {
       record.recordInvocation(data);
       stats.callbacksFired++;
       _log(AppLogLevel.info, 'Callbacks', '"$name" invoked');
@@ -523,7 +543,7 @@ class ShieldController extends ChangeNotifier {
   }
 
   void unregisterCallback(String name) {
-    FlutterShield.unregisterCallback(name);
+    DeviceShield.unregisterCallback(name);
     callbacks[name]?.registered = false;
     _log(AppLogLevel.info, 'Callbacks', 'Unregistered "$name"');
     notifyListeners();
@@ -537,7 +557,10 @@ class ShieldController extends ChangeNotifier {
   void simulateCallbackInvocation(String name) {
     final record = callbacks[name];
     if (record == null || !record.registered) return;
-    record.recordInvocation({'simulated': true, 'at': DateTime.now().toIso8601String()});
+    record.recordInvocation({
+      'simulated': true,
+      'at': DateTime.now().toIso8601String(),
+    });
     stats.callbacksFired++;
     _log(AppLogLevel.info, 'Callbacks', 'Simulated invocation of "$name"');
     notifyListeners();
@@ -559,21 +582,29 @@ class ShieldController extends ChangeNotifier {
         'onScreenshotTaken',
         'onScreenCaptureStateChanged',
       ]) {
-        final record =
-            callbacks.putIfAbsent(name, () => CallbackRecord(name: name));
+        final record = callbacks.putIfAbsent(
+          name,
+          () => CallbackRecord(name: name),
+        );
         record.registered = true;
-        FlutterShield.registerCallback(name, (data) {
+        DeviceShield.registerCallback(name, (data) {
           record.recordInvocation(data);
           stats.callbacksFired++;
-          _log(AppLogLevel.warning, 'Callbacks',
-              'RAW native payload intercepted for "$name" — the SDK\'s own '
-                  'internal handler for this name is NOT running right now.');
+          _log(
+            AppLogLevel.warning,
+            'Callbacks',
+            'RAW native payload intercepted for "$name" — the SDK\'s own '
+                'internal handler for this name is NOT running right now.',
+          );
           notifyListeners();
         });
       }
-      _log(AppLogLevel.warning, 'Callbacks',
-          'Advanced raw interception ON — SDK\'s internal screenshot/'
-              'recording routing is overridden until this is turned off.');
+      _log(
+        AppLogLevel.warning,
+        'Callbacks',
+        'Advanced raw interception ON — SDK\'s internal screenshot/'
+            'recording routing is overridden until this is turned off.',
+      );
       notifyListeners();
       return true;
     } else {
@@ -601,7 +632,7 @@ class ShieldController extends ChangeNotifier {
   }
 
   Future<void> refreshStatus() async {
-    // status/protectionEnabled are always read live from FlutterShield
+    // status/protectionEnabled are always read live from DeviceShield
     // itself (see the getters above) — this exists purely so UI code has
     // an explicit, discoverable "refresh" action per the spec, and to
     // re-read platform version if it hasn't loaded yet.
@@ -611,7 +642,7 @@ class ShieldController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateConfig(FlutterShieldConfig newConfig) {
+  void updateConfig(DeviceShieldConfig newConfig) {
     config = newConfig;
     notifyListeners();
   }
@@ -635,8 +666,11 @@ class ShieldController extends ChangeNotifier {
     recordingActive = null;
     checkNowSuccessCount = 0;
     checkNowFailureCount = 0;
-    _log(AppLogLevel.info, 'DevTools',
-        'Reset Demo — local example-app state cleared (SDK state untouched)');
+    _log(
+      AppLogLevel.info,
+      'DevTools',
+      'Reset Demo — local example-app state cleared (SDK state untouched)',
+    );
     notifyListeners();
   }
 

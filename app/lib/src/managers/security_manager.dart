@@ -11,7 +11,7 @@ import 'manager.dart';
 /// confidence-gate → Policy → Event pipeline. None of that pipeline logic
 /// is implemented here — Phase 5 owns it. This file defines only the shape.
 ///
-/// Public/Internal: internal — fully wrapped by the `FlutterShield` public
+/// Public/Internal: internal — fully wrapped by the `DeviceShield` public
 /// facade.
 ///
 /// Extension point: no — this marks `SecurityManager` as not swappable by
@@ -20,7 +20,7 @@ import 'manager.dart';
 /// the SDK's own built-in features do — `NativeBridge` itself already
 /// gained `dispose()` this same way, per an earlier approved architecture
 /// correction. [processResult] (added for Screenshot & Screen Recording
-/// Protection — see docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md
+/// Protection — see doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md
 /// §8.3) is the same kind of additive, non-breaking change, verified
 /// explicitly against this exact question during that feature's Step 8
 /// Architecture Verification Report.

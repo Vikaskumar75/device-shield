@@ -1,10 +1,10 @@
-import 'package:flutter_shield/src/models/flutter_shield_config.dart';
+import 'package:device_shield/src/models/device_shield_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('FlutterShieldConfig — screenshot/screen-recording fields', () {
+  group('DeviceShieldConfig — screenshot/screen-recording fields', () {
     test('default to the least-invasive option', () {
-      const config = FlutterShieldConfig();
+      const config = DeviceShieldConfig();
       expect(config.enableScreenshotDetection, isFalse);
       expect(config.enableScreenRecordingDetection, isFalse);
       expect(config.enableScreenshotProtection, isFalse);
@@ -14,10 +14,12 @@ void main() {
     });
 
     test('copyWith overrides only the requested field, per field', () {
-      const base = FlutterShieldConfig();
+      const base = DeviceShieldConfig();
 
       expect(
-        base.copyWith(enableScreenshotDetection: true).enableScreenshotDetection,
+        base
+            .copyWith(enableScreenshotDetection: true)
+            .enableScreenshotDetection,
         isTrue,
       );
       expect(
@@ -27,7 +29,9 @@ void main() {
         isTrue,
       );
       expect(
-        base.copyWith(enableScreenshotProtection: true).enableScreenshotProtection,
+        base
+            .copyWith(enableScreenshotProtection: true)
+            .enableScreenshotProtection,
         isTrue,
       );
       expect(
@@ -51,7 +55,7 @@ void main() {
     });
 
     test('copyWith leaves every other field untouched', () {
-      const base = FlutterShieldConfig(periodicCheckInterval: 10000);
+      const base = DeviceShieldConfig(periodicCheckInterval: 10000);
 
       final updated = base.copyWith(enableScreenshotProtection: true);
 
@@ -73,7 +77,7 @@ void main() {
     });
 
     test('toJson/fromJson round-trips every new field', () {
-      const config = FlutterShieldConfig(
+      const config = DeviceShieldConfig(
         enableScreenshotDetection: true,
         enableScreenRecordingDetection: true,
         enableScreenshotProtection: true,
@@ -82,7 +86,7 @@ void main() {
         allowRecordingDetectionInDebug: false,
       );
 
-      final restored = FlutterShieldConfig.fromJson(config.toJson());
+      final restored = DeviceShieldConfig.fromJson(config.toJson());
 
       expect(restored, config);
       expect(restored.enableScreenshotDetection, isTrue);
@@ -105,7 +109,7 @@ void main() {
         'checkTimeout': 5000,
       };
 
-      final restored = FlutterShieldConfig.fromJson(legacyJson);
+      final restored = DeviceShieldConfig.fromJson(legacyJson);
 
       expect(restored.enableScreenshotDetection, isFalse);
       expect(restored.enableScreenRecordingDetection, isFalse);
@@ -116,18 +120,17 @@ void main() {
     });
 
     test('fromJson accepts an int for screenshotRecordingRiskScoreWeight '
-        '(JSON numbers without a decimal point decode as int, not double)',
-        () {
-      final restored = FlutterShieldConfig.fromJson(
-        const {'screenshotRecordingRiskScoreWeight': 1},
-      );
+        '(JSON numbers without a decimal point decode as int, not double)', () {
+      final restored = DeviceShieldConfig.fromJson(const {
+        'screenshotRecordingRiskScoreWeight': 1,
+      });
       expect(restored.screenshotRecordingRiskScoreWeight, 1.0);
     });
 
     test('equality and hashCode account for every new field', () {
-      const a = FlutterShieldConfig(enableScreenshotDetection: true);
-      const b = FlutterShieldConfig(enableScreenshotDetection: true);
-      const c = FlutterShieldConfig(enableScreenshotDetection: false);
+      const a = DeviceShieldConfig(enableScreenshotDetection: true);
+      const b = DeviceShieldConfig(enableScreenshotDetection: true);
+      const c = DeviceShieldConfig();
 
       expect(a, b);
       expect(a.hashCode, b.hashCode);
@@ -136,8 +139,8 @@ void main() {
 
     test('two configs differing only in screenshotRecordingRiskScoreWeight '
         'are not equal', () {
-      const a = FlutterShieldConfig(screenshotRecordingRiskScoreWeight: 0.5);
-      const b = FlutterShieldConfig(screenshotRecordingRiskScoreWeight: 0.6);
+      const a = DeviceShieldConfig(screenshotRecordingRiskScoreWeight: 0.5);
+      const b = DeviceShieldConfig(screenshotRecordingRiskScoreWeight: 0.6);
 
       expect(a, isNot(b));
     });

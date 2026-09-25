@@ -6,7 +6,7 @@ import '../detectors/mock_location_detector.dart';
 import '../detectors/root_detector.dart';
 import '../detectors/screen_recording_detector.dart';
 import '../detectors/screenshot_detector.dart';
-import '../models/flutter_shield_exception.dart';
+import '../models/device_shield_exception.dart';
 import 'detector.dart';
 
 /// Constructs the SDK's built-in detectors by their `Detector.type`

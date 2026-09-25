@@ -1,4 +1,4 @@
-# FlutterShield SDK — Milestone Implementation Plan
+# DeviceShield SDK — Milestone Implementation Plan
 
 **Source documents:** `ARCHITECTURE.md`, `ARCHITECTURE_CONTRACTS.md`, `ROADMAP.md`, `CURRENT_STATE.md`
 **Scope of this plan:** every milestone (M0–M22) defined in `ROADMAP.md`, in the exact dependency order that document specifies, cross-referenced against the frozen component contracts in `ARCHITECTURE_CONTRACTS.md` and the design in `ARCHITECTURE.md`.
@@ -57,7 +57,7 @@ Lock every structural, naming, and scoping decision that every later milestone d
 - Confirming real platform floors (iOS / Android minimum versions).
 - Native package skeletons for both platforms.
 - Test directory layout (`test/unit`, `test/integration`, `test/native`).
-- Replacing placeholder identifiers (`com.example.flutter_shield`, podspec author/homepage).
+- Replacing placeholder identifiers (`com.example.device_shield`, podspec author/homepage).
 - Scoping a v0.1 MVP subset (recommended: P0 functional requirements only).
 
 **Not included:** any actual detection/protection/policy logic, any native implementation code beyond empty package skeletons, any public API surface.
@@ -67,19 +67,19 @@ No runtime components are introduced in this milestone — it is entirely struct
 
 | Decision | Value | Consumed By |
 |---|---|---|
-| MethodChannel name | `flutter_shield/native_bridge` | M3 `NativeBridge`, every M7/M8 detector, M11 protections |
-| EventChannel name | `flutter_shield/events` | M3 `NativeBridge`, M4 `EventManager` integration |
-| Legacy channel | `flutter_shield` (Phase 1 `getPlatformVersion`, kept unchanged) | Backward-compatibility path only |
+| MethodChannel name | `device_shield/native_bridge` | M3 `NativeBridge`, every M7/M8 detector, M11 protections |
+| EventChannel name | `device_shield/events` | M3 `NativeBridge`, M4 `EventManager` integration |
+| Legacy channel | `device_shield` (Phase 1 `getPlatformVersion`, kept unchanged) | Backward-compatibility path only |
 
 ### Implementation Tasks
 - [ ] Create `lib/src/{core,manager,bridge,detectors,protections,events,models,config,permission,utils}` directories.
 - [ ] Migrate/delete the 17 empty `lib/features/*` scaffolds created by `setup.sh`.
 - [ ] Decide and document the MethodChannel/EventChannel names (done: see table above).
-- [ ] Confirm iOS deployment target (SRS specifies 18.0; current build config targets 13.0 — resolve the mismatch explicitly, one direction or the other, and update `ios/flutter_shield.podspec` + `ios/flutter_shield/Package.swift`).
+- [ ] Confirm iOS deployment target (SRS specifies 18.0; current build config targets 13.0 — resolve the mismatch explicitly, one direction or the other, and update `ios/device_shield.podspec` + `ios/device_shield/Package.swift`).
 - [ ] Confirm Android `minSdk` (SRS specifies API 21; current build config targets 24 — resolve explicitly and update `android/build.gradle.kts`).
 - [ ] Create native package skeletons: `android/.../detection/`, `protection/`, `bridge/`, `utils/` and `ios/Classes/detection/`, `protection/`, `bridge/`, `utils/`.
 - [ ] Create `test/unit/`, `test/integration/`, `test/native/` directories.
-- [ ] Replace `com.example.flutter_shield` with the real Android package identifier throughout `android/`.
+- [ ] Replace `com.example.device_shield` with the real Android package identifier throughout `android/`.
 - [ ] Replace podspec placeholder `homepage`/`author` fields with real values.
 - [ ] Write and circulate a short MVP-scope decision document naming exactly which P0 FRs ship in v0.1 (recommended: root, jailbreak, emulator, debugger, hook, integrity — deferring P1 to a later release).
 
@@ -141,7 +141,7 @@ Establish the SDK's zero-dependency foundation: the shared enums, immutable mode
 |---|---|---|---|---|---|
 | Enum layer (`DetectionType`, `PolicyAction`, `SecurityStatus`, `SecurityEventType`, `SecuritySeverity`, `PinningMode`, `HookFramework`, `DetectionStatus`, `DataSubjectRequestType`) | Closed vocabularies shared across the SDK | Pure data, no behavior | None | N/A (static) | Every later milestone |
 | `DetectionResult`, `SecurityEvent`, `NativeResult` | Immutable value types carrying data between layers | Value equality, serialization (`toJson`/`fromJson`) | Enum layer only | N/A | `Detector`, `EventManager`, `PolicyManager`, `NativeBridge` |
-| `FlutterShieldException` + subtypes (`ConfigurationException`, `PermissionException`, `InitializationException`, `DetectionException`, `PolicyException`, `NativeBridgeException`) | Typed failure signaling | Carry `code`/`message`/`details`/`stackTrace`; identity equality (not value equality) by design | None | N/A | Every manager's failure-behavior column in `ARCHITECTURE_CONTRACTS.md` Part 1 |
+| `DeviceShieldException` + subtypes (`ConfigurationException`, `PermissionException`, `InitializationException`, `DetectionException`, `PolicyException`, `NativeBridgeException`) | Typed failure signaling | Carry `code`/`message`/`details`/`stackTrace`; identity equality (not value equality) by design | None | N/A | Every manager's failure-behavior column in `ARCHITECTURE_CONTRACTS.md` Part 1 |
 | `Logger` | The SDK's only sanctioned output path (ARCHITECTURE_CONTRACTS.md Group C) | Level-gated debug/info/warning/error/exception logging; sensitive-field redaction; crash-report forwarding; must never throw | None hard; soft one-time read of `ConfigurationManager` once available | `PluginInitializer`, step 1 | Every other component |
 | `DataFilter` | Redacts sensitive fields (password, token, key, secret, authorization, credit_card, ssn, pin) | Shared utility, no state | None | N/A | `Logger` (§17.3) now; Compliance packs (§23) later (M15) |
 
@@ -150,7 +150,7 @@ Establish the SDK's zero-dependency foundation: the shared enums, immutable mode
 - [ ] Implement `DetectionResult` as an immutable class: constructor, `toJson`/`fromJson`, value-equality `==`/`hashCode`, `toString`.
 - [ ] Implement `SecurityEvent` the same way, including a `data` free-form payload field (the mechanism that keeps the event-type enum closed while still supporting arbitrary payloads — see `ARCHITECTURE.md` §8 Extension Points).
 - [ ] Implement `NativeResult` as an immutable value type for native-bridge round-trips.
-- [ ] Implement `FlutterShieldException` base class (`code`, `message`, `details`, `stackTrace`; deliberately identity-equality, not value-equality; no `toJson`/`fromJson` — exceptions are surfaced, never persisted).
+- [ ] Implement `DeviceShieldException` base class (`code`, `message`, `details`, `stackTrace`; deliberately identity-equality, not value-equality; no `toJson`/`fromJson` — exceptions are surfaced, never persisted).
 - [ ] Implement each named exception subtype, each carrying only the fields its own failure mode needs (e.g. `PermissionException.missingPermissions`, `NativeBridgeException.method`/`nativeError`).
 - [ ] Implement `Logger` as an abstract contract plus a first concrete implementation (a console/default sink) that boots at a safe default level before any configuration exists.
 - [ ] Implement the `LogSink` extension-point interface (`ARCHITECTURE_CONTRACTS.md`'s named extension point for Logger) and wire `addSink`/`removeSink`.
@@ -170,7 +170,7 @@ Establish the SDK's zero-dependency foundation: the shared enums, immutable mode
 | `lib/src/models/native_result.dart` | Native round-trip value type used by `NativeBridge` (M3) |
 | `lib/src/models/sdk_state.dart` | The `SecurityStatus` enum backing the state machine (M5) |
 | `lib/src/models/security_action.dart` | The `PolicyAction` enum backing the Policy Engine (M6/M9) |
-| `lib/src/models/flutter_shield_exception.dart` | The exception hierarchy every manager's failure-behavior depends on |
+| `lib/src/models/device_shield_exception.dart` | The exception hierarchy every manager's failure-behavior depends on |
 | `lib/src/core/logger.dart` | The `Logger` contract |
 | `lib/src/core/console_logger.dart` (or equivalent default sink) | The concrete boot-safe default implementation |
 | `lib/src/utilities/data_filter.dart` | Sensitive-field redaction, shared by Logging and later Compliance |
@@ -231,13 +231,13 @@ All of M2–M22 depend on this milestone; most directly, M2 (Configuration model
 ## Milestone 2 – Configuration & Dependency Injection
 
 ### Objective
-Build the SDK's single source of configuration truth (`FlutterShieldConfig` + `ConfigurationManager`) and the type-keyed dependency-injection container (`ServiceContainer`) that every later milestone's construction order is enforced through.
+Build the SDK's single source of configuration truth (`DeviceShieldConfig` + `ConfigurationManager`) and the type-keyed dependency-injection container (`ServiceContainer`) that every later milestone's construction order is enforced through.
 
 ### Why this milestone exists
-`ARCHITECTURE_CONTRACTS.md`'s Architecture Correction (Phase 4) explicitly separates validation from storage: `FlutterShieldConfigValidator` validates *before* `ConfigurationManager` stores. This milestone must exist before M3 (native bridge construction reads config), before M5 (state machine's boot sequence numbers `ConfigurationManager` as step 3), and before M6 (`PluginInitializer` requires a `ServiceContainer` to be passed in). Without a working DI container, no later milestone has a documented place to register the services it constructs.
+`ARCHITECTURE_CONTRACTS.md`'s Architecture Correction (Phase 4) explicitly separates validation from storage: `DeviceShieldConfigValidator` validates *before* `ConfigurationManager` stores. This milestone must exist before M3 (native bridge construction reads config), before M5 (state machine's boot sequence numbers `ConfigurationManager` as step 3), and before M6 (`PluginInitializer` requires a `ServiceContainer` to be passed in). Without a working DI container, no later milestone has a documented place to register the services it constructs.
 
 ### Scope
-**Included:** `FlutterShieldConfig` + sub-config shape (generic fields only — no detector/protection sub-configs yet, per the model's own documented deferral), `FlutterShieldConfigValidator`, `FlutterShieldConfigBuilder`, `ConfigurationPersistence`, `ConfigurationManager`, `ServiceContainer`.
+**Included:** `DeviceShieldConfig` + sub-config shape (generic fields only — no detector/protection sub-configs yet, per the model's own documented deferral), `DeviceShieldConfigValidator`, `DeviceShieldConfigBuilder`, `ConfigurationPersistence`, `ConfigurationManager`, `ServiceContainer`.
 
 **Not included:** any detection/protection-specific configuration (added additively once M7/M8/M11 exist); any actual native reads (M3); any manager logic (M5/M6).
 
@@ -245,19 +245,19 @@ Build the SDK's single source of configuration truth (`FlutterShieldConfig` + `C
 
 | Component | Purpose | Responsibility | Dependencies | Owner | Consumers |
 |---|---|---|---|---|---|
-| `FlutterShieldConfig` | SDK-wide configuration value object | Holds `debugLogging`, `runOnUIThread`, `periodicCheckInterval`, `maxRetryAttempts`, `retryDelay`, `checkTimeout`; `copyWith`/`toJson`/`fromJson` | Foundation Layer only | N/A (immutable value) | `ConfigurationManager`, every manager that reads `.current` |
-| `FlutterShieldConfigValidator` | Validates a config *before* it reaches storage | Enforces §7.4's interval/retry/timeout bounds | `FlutterShieldConfig` | Called by `PluginInitializer` (M6), not `ConfigurationManager` itself | `PluginInitializer` |
-| `FlutterShieldConfigBuilder` | Fluent construction API (§7.2) | Builder pattern over `FlutterShieldConfig` | `FlutterShieldConfig` | N/A | Host app callers, tests |
-| `ConfigurationPersistence` | SharedPreferences-backed save/load (§7.6) | Serialize/deserialize the active config across app restarts | `FlutterShieldConfig`, `shared_preferences` package | `ConfigurationManager` | `ConfigurationManager` only |
-| `ConfigurationManager` | Sole owner of the validated, immutable active configuration | Holds current value; applies runtime updates (`updateConfig`/`updateDetectionConfig`/`updateProtectionConfig`); notifies dependents of changes; performs **no validation of its own** | `FlutterShieldConfig` model, Validator (upstream only), optional Persistence | `PluginInitializer`, step 3 | Every manager (read `.current` at point of use) |
+| `DeviceShieldConfig` | SDK-wide configuration value object | Holds `debugLogging`, `runOnUIThread`, `periodicCheckInterval`, `maxRetryAttempts`, `retryDelay`, `checkTimeout`; `copyWith`/`toJson`/`fromJson` | Foundation Layer only | N/A (immutable value) | `ConfigurationManager`, every manager that reads `.current` |
+| `DeviceShieldConfigValidator` | Validates a config *before* it reaches storage | Enforces §7.4's interval/retry/timeout bounds | `DeviceShieldConfig` | Called by `PluginInitializer` (M6), not `ConfigurationManager` itself | `PluginInitializer` |
+| `DeviceShieldConfigBuilder` | Fluent construction API (§7.2) | Builder pattern over `DeviceShieldConfig` | `DeviceShieldConfig` | N/A | Host app callers, tests |
+| `ConfigurationPersistence` | SharedPreferences-backed save/load (§7.6) | Serialize/deserialize the active config across app restarts | `DeviceShieldConfig`, `shared_preferences` package | `ConfigurationManager` | `ConfigurationManager` only |
+| `ConfigurationManager` | Sole owner of the validated, immutable active configuration | Holds current value; applies runtime updates (`updateConfig`/`updateDetectionConfig`/`updateProtectionConfig`); notifies dependents of changes; performs **no validation of its own** | `DeviceShieldConfig` model, Validator (upstream only), optional Persistence | `PluginInitializer`, step 3 | Every manager (read `.current` at point of use) |
 | `ServiceContainer` | Type-keyed DI lookup | `register<T>()`, `get<T>()`/`resolve<T>()`, `isRegistered<T>()`, `clear()`/`reset()` | None (foundation) | Application infrastructure — independent lifecycle, **not owned by `PluginInitializer`** | Every service from M3 onward |
 
 ### Implementation Tasks
-- [ ] Implement `FlutterShieldConfig` as an immutable value class with the six generic fields, `copyWith`, `toJson`/`fromJson`, value equality.
-- [ ] Implement `FlutterShieldConfigValidator.validate(config)` enforcing every bound in §7.4 (interval bounds, retry bounds, timeout bounds), throwing `ConfigurationException` on violation.
-- [ ] Implement `FlutterShieldConfigBuilder` with fluent setter methods mirroring every `FlutterShieldConfig` field, terminating in a `.build()` call that itself does *not* validate (validation stays the validator's job, not the builder's).
+- [ ] Implement `DeviceShieldConfig` as an immutable value class with the six generic fields, `copyWith`, `toJson`/`fromJson`, value equality.
+- [ ] Implement `DeviceShieldConfigValidator.validate(config)` enforcing every bound in §7.4 (interval bounds, retry bounds, timeout bounds), throwing `ConfigurationException` on violation.
+- [ ] Implement `DeviceShieldConfigBuilder` with fluent setter methods mirroring every `DeviceShieldConfig` field, terminating in a `.build()` call that itself does *not* validate (validation stays the validator's job, not the builder's).
 - [ ] Implement `ConfigurationPersistence` wrapping `shared_preferences`: `save(config)`/`load()`, namespaced keys.
-- [ ] Implement `ConfigurationManager` as an abstract contract + default implementation: constructor takes an already-validated `FlutterShieldConfig`; `current` getter; `updateConfig`/`updateDetectionConfig`/`updateProtectionConfig`; on an invalid runtime update, retain the previous config and throw rather than corrupting state.
+- [ ] Implement `ConfigurationManager` as an abstract contract + default implementation: constructor takes an already-validated `DeviceShieldConfig`; `current` getter; `updateConfig`/`updateDetectionConfig`/`updateProtectionConfig`; on an invalid runtime update, retain the previous config and throw rather than corrupting state.
 - [ ] Implement `ServiceContainer`: `register<T>(T instance)`, `registerSingleton<T>()`, `registerLazySingleton<T>(T Function() factory)`, `resolve<T>()`/`get<T>()` (throws if unregistered), `isRegistered<T>()`, `unregister<T>()`, `clear()`/`reset()`.
 - [ ] Implement `DependencyResolver` guarding `ServiceContainer.resolve` against circular factory resolution (throws `InitializationException` with code `CIRCULAR_DEPENDENCY`).
 - [ ] Write unit tests for every validation bound (interval/retry/timeout — both boundary-valid and boundary-invalid values).
@@ -268,9 +268,9 @@ Build the SDK's single source of configuration truth (`FlutterShieldConfig` + `C
 ### Files Expected
 | File | Why it exists |
 |---|---|
-| `lib/src/models/flutter_shield_config.dart` | The config value object every manager reads |
-| `lib/src/config/flutter_shield_config_validator.dart` | Enforces §7.4 before storage — kept separate from `ConfigurationManager` per the frozen architecture correction |
-| `lib/src/config/flutter_shield_config_builder.dart` | Fluent construction API for host apps |
+| `lib/src/models/device_shield_config.dart` | The config value object every manager reads |
+| `lib/src/config/device_shield_config_validator.dart` | Enforces §7.4 before storage — kept separate from `ConfigurationManager` per the frozen architecture correction |
+| `lib/src/config/device_shield_config_builder.dart` | Fluent construction API for host apps |
 | `lib/src/config/configuration_persistence.dart` | SharedPreferences-backed durability across restarts |
 | `lib/src/config/configuration_manager.dart` | The contract |
 | `lib/src/config/default_configuration_manager.dart` | The concrete, store-only implementation |
@@ -292,8 +292,8 @@ Configuration & DI (M2)
 
 ### Design Patterns
 - **Dependency Injection** (`ServiceContainer`) — decouples construction from use; every later milestone's services are registered here rather than constructed inline by their consumers.
-- **Builder** (`FlutterShieldConfigBuilder`) — fluent, readable config construction without a telescoping constructor.
-- **Validator/Chain-of-Responsibility-adjacent** (`FlutterShieldConfigValidator`) — a single-purpose validation stage inserted between construction and storage.
+- **Builder** (`DeviceShieldConfigBuilder`) — fluent, readable config construction without a telescoping constructor.
+- **Validator/Chain-of-Responsibility-adjacent** (`DeviceShieldConfigValidator`) — a single-purpose validation stage inserted between construction and storage.
 - **Repository-adjacent** (`ConfigurationPersistence`) — abstracts the underlying storage mechanism (SharedPreferences) from `ConfigurationManager`'s own logic.
 
 ### SOLID Principles Applied
@@ -338,7 +338,7 @@ Build the sole path any Dart code takes to reach native (Kotlin/Swift) code: the
 `ARCHITECTURE_CONTRACTS.md` Group F freezes `NativeBridge` as "the sole path any Dart code takes to reach native code" and explicitly forbids any detector from holding its own channel reference. Every detector built in M7/M8 and every protection built in M11 depends on this milestone existing first — there is no other sanctioned way for Dart to reach the platform layer.
 
 ### Scope
-**Included:** Dart-side `PlatformChannel`/`NativeBridge` abstraction (typed `invoke<T>()`, timeout, `PlatformException` → `NativeBridgeException` translation, `EventChannel`→`Stream<SecurityEvent>` wrapping); Android `FlutterShieldPlugin` (`MethodCallHandler` + `EventChannel.StreamHandler`); iOS `FlutterShieldPlugin` (`FlutterStreamHandler`); a `method_codes.dart` single source of truth for method-name constants; required Android permissions and iOS `Info.plist` entries.
+**Included:** Dart-side `PlatformChannel`/`NativeBridge` abstraction (typed `invoke<T>()`, timeout, `PlatformException` → `NativeBridgeException` translation, `EventChannel`→`Stream<SecurityEvent>` wrapping); Android `DeviceShieldPlugin` (`MethodCallHandler` + `EventChannel.StreamHandler`); iOS `DeviceShieldPlugin` (`FlutterStreamHandler`); a `method_codes.dart` single source of truth for method-name constants; required Android permissions and iOS `Info.plist` entries.
 
 **Not included:** any detector- or protection-specific method handlers (those register against this bridge starting M7); the callback-routing *content* interpretation (native pushes are forwarded generically — see `ARCHITECTURE_CONTRACTS.md`'s Phase 7 Resolution 2 — a later integration point, not this milestone, is what wires a registered callback to `EventManager.emit()`).
 
@@ -349,17 +349,17 @@ Build the sole path any Dart code takes to reach native (Kotlin/Swift) code: the
 | `NativeBridge` | The sole Dart→native path | `invoke()` (timeout-bound request/response), `invokeAsync()`, `registerCallback()`/`unregisterCallback()`, `dispose()` | `MethodChannelService`, `EventChannelService` | `PluginInitializer`, step 4 | `DetectionManager`, future `Protection` implementations |
 | `MethodChannelService` | Request/response native calls | Wraps `MethodChannel.invokeMethod` with timeout + typed error translation | Flutter `MethodChannel`, channel name | `NativeBridge` exclusively | `NativeBridge` exclusively |
 | `EventChannelService` | Native-originated pushes | Wraps `EventChannel.receiveBroadcastStream`; forwards raw events generically, zero interpretation | Flutter `EventChannel` | `NativeBridge` exclusively | `NativeBridge` exclusively |
-| Android `FlutterShieldPlugin` | Registers both bridge channels + legacy channel | `MethodCallHandler`, `EventChannel.StreamHandler`; `notImplemented()` for anything not yet handled | Flutter embedding APIs only | Android plugin registry | Dart-side `MethodChannelService`/`EventChannelService` |
-| iOS `FlutterShieldPlugin` | Same, for iOS | `FlutterStreamHandler`; `FlutterMethodNotImplemented` for anything not yet handled | Flutter embedding APIs only | iOS plugin registry | Dart-side `MethodChannelService`/`EventChannelService` |
+| Android `DeviceShieldPlugin` | Registers both bridge channels + legacy channel | `MethodCallHandler`, `EventChannel.StreamHandler`; `notImplemented()` for anything not yet handled | Flutter embedding APIs only | Android plugin registry | Dart-side `MethodChannelService`/`EventChannelService` |
+| iOS `DeviceShieldPlugin` | Same, for iOS | `FlutterStreamHandler`; `FlutterMethodNotImplemented` for anything not yet handled | Flutter embedding APIs only | iOS plugin registry | Dart-side `MethodChannelService`/`EventChannelService` |
 
 ### Implementation Tasks
 - [ ] Implement `MethodChannelService`: constructor takes a channel name or a pre-built `MethodChannel`; `invoke<T>({method, arguments, timeout})` translating `TimeoutException`→`BRIDGE_TIMEOUT`, `MissingPluginException`→`BRIDGE_UNAVAILABLE`, `PlatformException`→forwarded code/message/details, wrong response type→`BRIDGE_MALFORMED_RESPONSE`; `invokeAsync` fire-and-forget, swallowing failures.
 - [ ] Implement `EventChannelService`: constructor takes a channel name or pre-built `EventChannel`; `listen(onEvent, {onError})` replacing any previous subscription; `dispose()` cancels cleanly, safe to call without ever having listened.
 - [ ] Implement `NativeBridge` (contract + `DefaultNativeBridge`): composes both services; `registerCallback`/`unregisterCallback` keyed by name; routes native events shaped `{'callback': name, 'data': ...}` to the matching registered callback, silently dropping anything malformed or unregistered; `dispose()` closes both channel services and clears every callback.
-- [ ] Define `kNativeBridgeMethodChannel`/`kNativeBridgeEventChannel` constants (`flutter_shield/native_bridge`, `flutter_shield/events`) per M0's decision.
+- [ ] Define `kNativeBridgeMethodChannel`/`kNativeBridgeEventChannel` constants (`device_shield/native_bridge`, `device_shield/events`) per M0's decision.
 - [ ] Implement `bridge/method_codes.dart` (Dart) and a matching native constants file — single source of truth for method-name strings, avoiding raw string literals once 15+ detectors share the channel.
-- [ ] Implement Android `FlutterShieldPlugin.kt`: register the legacy `flutter_shield` channel (unchanged, `getPlatformVersion`) plus the two new bridge channels in `onAttachedToEngine`; `onMethodCall` dispatches `getPlatformVersion` and returns `notImplemented()` for everything else; `onListen`/`onCancel` manage the event sink; `onDetachedFromEngine` tears down all three handlers.
-- [ ] Implement iOS `FlutterShieldPlugin.swift`: mirror the Android shape exactly — `register(with:)` wires all three channels; `handle(_:result:)` dispatches `getPlatformVersion` and returns `FlutterMethodNotImplemented` otherwise; `onListen`/`onCancel` manage the event sink; `detachFromEngine(for:)` tears down.
+- [ ] Implement Android `DeviceShieldPlugin.kt`: register the legacy `device_shield` channel (unchanged, `getPlatformVersion`) plus the two new bridge channels in `onAttachedToEngine`; `onMethodCall` dispatches `getPlatformVersion` and returns `notImplemented()` for everything else; `onListen`/`onCancel` manage the event sink; `onDetachedFromEngine` tears down all three handlers.
+- [ ] Implement iOS `DeviceShieldPlugin.swift`: mirror the Android shape exactly — `register(with:)` wires all three channels; `handle(_:result:)` dispatches `getPlatformVersion` and returns `FlutterMethodNotImplemented` otherwise; `onListen`/`onCancel` manage the event sink; `detachFromEngine(for:)` tears down.
 - [ ] Add native helper methods on both platforms to emit an event through the sink shaped `{"callback": name, "data": payload}` — the outbound half of the callback-routing contract (transport only, no content interpretation).
 - [ ] Declare required Android permissions (`INTERNET`, `ACCESS_NETWORK_STATE`, `READ_PHONE_STATE`, `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`) in `AndroidManifest.xml`.
 - [ ] Declare required iOS `Info.plist` entries per §15.2.
@@ -375,10 +375,10 @@ Build the sole path any Dart code takes to reach native (Kotlin/Swift) code: the
 | `lib/src/bridge/native_bridge.dart` | The contract |
 | `lib/src/bridge/default_native_bridge.dart` | The concrete composition of both services + callback routing |
 | `lib/src/bridge/method_codes.dart` | Single source of truth for method-name constants |
-| `android/src/main/kotlin/.../FlutterShieldPlugin.kt` | Android channel registration + dispatch |
-| `ios/flutter_shield/Sources/flutter_shield/FlutterShieldPlugin.swift` | iOS channel registration + dispatch |
+| `android/src/main/kotlin/.../DeviceShieldPlugin.kt` | Android channel registration + dispatch |
+| `ios/device_shield/Sources/device_shield/DeviceShieldPlugin.swift` | iOS channel registration + dispatch |
 | `android/src/main/AndroidManifest.xml` (edited) | Required permissions |
-| `ios/flutter_shield/Sources/flutter_shield/Info.plist` entries | Required iOS declarations |
+| `ios/device_shield/Sources/device_shield/Info.plist` entries | Required iOS declarations |
 
 ### Dependency Flow
 ```
@@ -397,7 +397,7 @@ Foundation Layer (M1) ──▶ Configuration & DI (M2)
 - **Facade** (`NativeBridge`) — presents one simple `invoke`/`invokeAsync`/`registerCallback` surface over two lower-level channel services.
 - **Adapter** (`MethodChannelService`/`EventChannelService`) — adapts Flutter's raw channel APIs and their exception types into the SDK's own typed exception hierarchy.
 - **Observer** (`EventChannelService.listen` / native `EventSink`) — the native-push half of the bridge is inherently an observer relationship.
-- **Extension point via Dependency Injection:** `NativeBridge` itself is swappable via `ServiceContainer` — a hypothetical future platform (e.g. web) registers a different `NativeBridge` implementation rather than requiring a parallel "platform adapter" abstraction (this supersedes the older, now-legacy `PlatformAdapter`/`FlutterShieldPlatform` pattern — see `ARCHITECTURE.md`'s Phase 7 correction note).
+- **Extension point via Dependency Injection:** `NativeBridge` itself is swappable via `ServiceContainer` — a hypothetical future platform (e.g. web) registers a different `NativeBridge` implementation rather than requiring a parallel "platform adapter" abstraction (this supersedes the older, now-legacy `PlatformAdapter`/`DeviceShieldPlatform` pattern — see `ARCHITECTURE.md`'s Phase 7 correction note).
 
 ### SOLID Principles Applied
 - **Single Responsibility:** `MethodChannelService` only does request/response; `EventChannelService` only does native pushes; `NativeBridge` only composes and routes.
@@ -514,7 +514,7 @@ Foundation Layer (M1) ──▶ Configuration & DI (M2) ──▶ Native Bridge 
 - **Memory risk:** an unbounded history would leak indefinitely — `maxHistorySize` must be enforced from day one, not retrofitted.
 
 ### Future Milestones Depending On This
-M5 (state transitions may emit events once wired through `SecurityManager`), M6 (`SecurityManager`'s pipeline ends in `EventManager.emit()`; `PolicyManager` depends on it directly), M12 (`FlutterShield.events` is the public read-only view over this component).
+M5 (state transitions may emit events once wired through `SecurityManager`), M6 (`SecurityManager`'s pipeline ends in `EventManager.emit()`; `PolicyManager` depends on it directly), M12 (`DeviceShield.events` is the public read-only view over this component).
 
 ---
 
@@ -619,8 +619,8 @@ Build the fixed 8-step boot sequence, the runtime orchestrator (`SecurityManager
 
 | Component | Purpose | Responsibility | Dependencies | Owner | Consumers |
 |---|---|---|---|---|---|
-| `PluginInitializer` | The only code path that constructs and wires every service, in fixed order | Validate config; construct + register each service in order; start monitoring; emit `initialized`; unwind to `failure` on any step's exception | `ServiceContainer` + every service it constructs | `FlutterShield.initialize()` (transient — exists only for one call) | None — nothing holds a reference after boot |
-| `SecurityManager` | Runtime orchestrator — the one object every public call actually reaches | Own references to `DetectionManager`, `PolicyManager`, `EventManager` + Configuration/Permission/Logger; drive the periodic check timer; run the confidence-gate → Policy → Event pipeline | `DetectionManager`, `PolicyManager`, `EventManager`, `NativeBridge`, `ConfigurationManager`, `PermissionManager`, `Logger`, `SecurityStateManager` | `PluginInitializer`, final boot step | `FlutterShield`, `LifecycleManager` (via the inverted callback contract) |
+| `PluginInitializer` | The only code path that constructs and wires every service, in fixed order | Validate config; construct + register each service in order; start monitoring; emit `initialized`; unwind to `failure` on any step's exception | `ServiceContainer` + every service it constructs | `DeviceShield.initialize()` (transient — exists only for one call) | None — nothing holds a reference after boot |
+| `SecurityManager` | Runtime orchestrator — the one object every public call actually reaches | Own references to `DetectionManager`, `PolicyManager`, `EventManager` + Configuration/Permission/Logger; drive the periodic check timer; run the confidence-gate → Policy → Event pipeline | `DetectionManager`, `PolicyManager`, `EventManager`, `NativeBridge`, `ConfigurationManager`, `PermissionManager`, `Logger`, `SecurityStateManager` | `PluginInitializer`, final boot step | `DeviceShield`, `LifecycleManager` (via the inverted callback contract) |
 | `Detector` (contract) | Interface every detection module implements | `initialize()`, `check()` → `DetectionResult`, `dispose()`, exposes `type` + `priority` | `DetectionResult` model, `NativeBridge` | N/A — concrete instances Factory-created (built-in) or host-app-provided (custom) | `DetectorRegistry`, `DetectorFactory`, `DetectionManager` |
 | `DetectorRegistry` | Decouples "what detectors exist" from "how `DetectionManager` runs them" | `register()`, priority-ordered `getOrderedDetectors()`/`getAll()`, `isEnabled()`/`contains()` | `Detector` contract only | `DetectionManager`, during its own construction | `DetectionManager` exclusively |
 | `Rule` (contract) | Interface every policy rule implements | `matches(result)` → bool; exposes `action` + `priority` | `DetectionResult`, `PolicyAction` enum | N/A — profile-provided defaults (M10) or host-app `CustomRule`s (M9) | `PolicyManager` |
@@ -746,7 +746,7 @@ Each of the six detectors follows the identical shape, so it is described once, 
 | Component (× 6) | Purpose | Responsibility | Dependencies | Owner | Consumers |
 |---|---|---|---|---|---|
 | `<X>Detector` (Dart) | One `Detector` implementation per FR | `type`/`priority`, `initialize()`, `check()` → `DetectionResult`, `dispose()` | `NativeBridge` (via `invoke`), its own `<X>Config` | `DetectorRegistry` (registered via `DetectorFactory`) | `DetectionManager` |
-| `<X>Config` | Per-detector configuration | Enable/disable, technique-specific thresholds | `FlutterShieldConfig`'s detection sub-config (added additively) | Host app / `SecurityProfile` (M10) | `<X>Detector` |
+| `<X>Config` | Per-detector configuration | Enable/disable, technique-specific thresholds | `DeviceShieldConfig`'s detection sub-config (added additively) | Host app / `SecurityProfile` (M10) | `<X>Detector` |
 | Native `<X>` implementation (Kotlin and/or Swift, platform-appropriate) | Performs the actual technique-specific check | Returns confidence/evidence to the Dart side via `NativeBridge` | Platform APIs only | Native detection package (M0's skeleton) | `<X>Detector` via `NativeBridge.invoke` |
 
 ### Implementation Tasks
@@ -898,7 +898,7 @@ Fill in the `PolicyManager` framework M6 built with real content: a default rule
 M6 deliberately left `PolicyManager` as "framework only — no default rules yet, no detectors to evaluate yet." This milestone exists because M7/M8 now provide real `DetectionResult`s to evaluate, and because FR-16/FR-17 (rule/custom-rule requirements) are meaningless without real detection content behind them.
 
 ### Scope
-**Included:** default priority-ordered `SecurityPolicy` entries per detection type (thresholds, blocking flags, cooldowns), action handlers (`ignore`, `warn`, `block`, `logout`, `terminate`, `report`, and the `custom` slot), risk-score calculation (`calculateRiskScore`, weighted across results), `CustomRule` public class + `FlutterShield.addRule()`/`removeRule()`, validation (max 100 rules, no circular rule dependencies).
+**Included:** default priority-ordered `SecurityPolicy` entries per detection type (thresholds, blocking flags, cooldowns), action handlers (`ignore`, `warn`, `block`, `logout`, `terminate`, `report`, and the `custom` slot), risk-score calculation (`calculateRiskScore`, weighted across results), `CustomRule` public class + `DeviceShield.addRule()`/`removeRule()`, validation (max 100 rules, no circular rule dependencies).
 
 **Not included:** `SecurityProfile`'s five named presets (M10 — this milestone builds the *content* profiles will later select from).
 
@@ -917,7 +917,7 @@ M6 deliberately left `PolicyManager` as "framework only — no default rules yet
 - [ ] Implement the reserved `PolicyAction.custom` slot and its registration mechanism (`registerActionHandler`).
 - [ ] Implement `calculateRiskScore(results)` as a weighted aggregate across a batch of `DetectionResult`s.
 - [ ] Implement `CustomRule` as a public class implementing `Rule`, constructible by host apps.
-- [ ] Wire `FlutterShield.addRule(rule)`/`removeRule(ruleId)` through to `PolicyManager` (already stubbed as pass-through in M6/M12's public surface).
+- [ ] Wire `DeviceShield.addRule(rule)`/`removeRule(ruleId)` through to `PolicyManager` (already stubbed as pass-through in M6/M12's public surface).
 - [ ] Implement validation: reject registration past 100 total rules; detect and reject circular rule dependencies (FR-16), throwing `PolicyException`.
 - [ ] Write unit tests: a `DetectionResult` from any M7/M8 detector produces the correct `PolicyAction`; a runtime-added `CustomRule` is evaluated without restarting the SDK; the 100-rule cap and circular-dependency rejection both throw correctly; a throwing `Rule.matches()` is treated as "no match" (already a M6 contract, re-verified here with real rule content).
 
@@ -1001,7 +1001,7 @@ FR-14 requires pre-built configuration bundles so host apps in regulated industr
 - [ ] Implement `SecurityProfile.government()` per §6.2.
 - [ ] Implement `SecurityProfile.enterprise()` per §6.2.
 - [ ] Implement `SecurityProfile.consumer()` per §6.2 (the minimal/default profile — also the fallback profile named in `ARCHITECTURE_CONTRACTS.md` Part 3's Failure Recovery table for "any unrecognized error code").
-- [ ] Wire `PluginInitializer`/`FlutterShield.initialize()` to accept an optional `SecurityProfile`, applying its configs during boot.
+- [ ] Wire `PluginInitializer`/`DeviceShield.initialize()` to accept an optional `SecurityProfile`, applying its configs during boot.
 - [ ] Write unit tests: each profile initializes the SDK correctly with only its documented detectors enabled and its documented policy actions wired.
 
 ### Files Expected
@@ -1012,13 +1012,13 @@ FR-14 requires pre-built configuration bundles so host apps in regulated industr
 ### Dependency Flow
 ```
 M7/M8 Detectors ──┐
-                   ├──▶ M10 Security Profiles ──▶ FlutterShield.initialize(profile: ...)
+                   ├──▶ M10 Security Profiles ──▶ DeviceShield.initialize(profile: ...)
 M9 Policy Content ─┘
 ```
 
 ### Design Patterns
 - **Factory** — each of the five named presets is a factory method producing a fully configured `SecurityProfile`.
-- **Builder-adjacent** — `SecurityProfile` itself is closer to a configuration bundle than a builder, but composes cleanly with M2's `FlutterShieldConfigBuilder` for any additional overrides a host app wants layered on top.
+- **Builder-adjacent** — `SecurityProfile` itself is closer to a configuration bundle than a builder, but composes cleanly with M2's `DeviceShieldConfigBuilder` for any additional overrides a host app wants layered on top.
 
 ### SOLID Principles Applied
 - **Single Responsibility:** a profile only bundles configuration; it contains no detection/policy logic of its own.
@@ -1026,7 +1026,7 @@ M9 Policy Content ─┘
 
 ### Testing Plan
 - **Unit Tests:** each of the five profiles produces exactly its documented detector/threshold/action set.
-- **Integration Tests:** `FlutterShield.initialize(profile: SecurityProfile.fintech())` boots correctly end-to-end.
+- **Integration Tests:** `DeviceShield.initialize(profile: SecurityProfile.fintech())` boots correctly end-to-end.
 - **Edge Cases:** a profile that references a protection not yet enabled at the platform level (should degrade gracefully, per M21).
 - **Mocking Strategy:** none needed beyond what M6–M9 already established.
 - **Coverage Expectation:** contributes to the Core 90% target.
@@ -1134,13 +1134,13 @@ M12 (the `ScreenshotProtection` *widget* wraps this milestone's underlying mecha
 ## Milestone 12 – Public API & UI Components
 
 ### Objective
-Finalize the `FlutterShield` static public surface, `FlutterShieldWidget`, `SecurityAlertDialog`, and `ScreenshotProtection` widget — the layer through which a host app touches the SDK without ever reaching an internal manager directly.
+Finalize the `DeviceShield` static public surface, `DeviceShieldWidget`, `SecurityAlertDialog`, and `ScreenshotProtection` widget — the layer through which a host app touches the SDK without ever reaching an internal manager directly.
 
 ### Why this milestone exists
-`ARCHITECTURE_CONTRACTS.md` Group A freezes `FlutterShield` as "the only symbol a host app ever imports." This milestone depends on M6 (the manager composition it wraps), M9 (rules it exposes via `addRule`/`removeRule`), and M11 (the protection its widget wraps) all existing first — it is a facade over work already done, not new business logic.
+`ARCHITECTURE_CONTRACTS.md` Group A freezes `DeviceShield` as "the only symbol a host app ever imports." This milestone depends on M6 (the manager composition it wraps), M9 (rules it exposes via `addRule`/`removeRule`), and M11 (the protection its widget wraps) all existing first — it is a facade over work already done, not new business logic.
 
 ### Scope
-**Included:** `FlutterShield` static class (`initialize()`, `status`, `pause()`, `resume()`, `shutdown()`, `events`, `registerDetector()`, `profile`), finalized `SecurityEvent`/`CustomRule` public surfaces, `FlutterShieldWidget` (loading/error/child states), `SecurityAlertDialog` (severity-keyed alert UI), `ScreenshotProtection` widget (background blur overlay).
+**Included:** `DeviceShield` static class (`initialize()`, `status`, `pause()`, `resume()`, `shutdown()`, `events`, `registerDetector()`, `profile`), finalized `SecurityEvent`/`CustomRule` public surfaces, `DeviceShieldWidget` (loading/error/child states), `SecurityAlertDialog` (severity-keyed alert UI), `ScreenshotProtection` widget (background blur overlay).
 
 **Not included:** any new manager-level logic — this milestone is integration and exposure, not invention.
 
@@ -1148,28 +1148,28 @@ Finalize the `FlutterShield` static public surface, `FlutterShieldWidget`, `Secu
 
 | Component | Purpose | Responsibility | Dependencies | Owner | Consumers |
 |---|---|---|---|---|---|
-| `FlutterShield` | Single public entry point | Delegate every call 1:1 to `SecurityManager`/`PluginInitializer`; owns no logic of its own | `PluginInitializer` (calls once), `SecurityManager` (delegates every subsequent call) | N/A (static) | Host application code |
-| `FlutterShieldWidget` | Declarative init/dispose wrapper | Calls `initialize()` on mount, renders loading/error/child by status, calls `shutdown()` on unmount | `FlutterShield` | Host app's widget tree | Host application code |
+| `DeviceShield` | Single public entry point | Delegate every call 1:1 to `SecurityManager`/`PluginInitializer`; owns no logic of its own | `PluginInitializer` (calls once), `SecurityManager` (delegates every subsequent call) | N/A (static) | Host application code |
+| `DeviceShieldWidget` | Declarative init/dispose wrapper | Calls `initialize()` on mount, renders loading/error/child by status, calls `shutdown()` on unmount | `DeviceShield` | Host app's widget tree | Host application code |
 | `SecurityAlertDialog` | Severity-keyed alert UI | Renders an alert dialog matching a `SecurityEvent`'s severity | `SecurityEvent` model | Host app (invoked from a subscriber) | Host application code |
-| `ScreenshotProtection` (widget) | Background blur overlay | Wraps M11's `ScreenshotProtection` mechanism in a widget | `FlutterShield`, M11's protection | Host app's widget tree | Host application code |
+| `ScreenshotProtection` (widget) | Background blur overlay | Wraps M11's `ScreenshotProtection` mechanism in a widget | `DeviceShield`, M11's protection | Host app's widget tree | Host application code |
 
 ### Implementation Tasks
-- [ ] Finalize `FlutterShield.initialize({config, profile})`, `status`, `pause()`, `resume()`, `shutdown()`, `reinitialize()`, `dispose()` — all already stubbed/partially built in M6; this milestone is where every method's contract is locked and fully tested as the public surface.
-- [ ] Finalize `FlutterShield.events` (the public read-only view over `EventManager.subscribe`).
-- [ ] Finalize `FlutterShield.registerDetector()`/`addRule()`/`removeRule()` as pure delegation, per their already-frozen contracts.
-- [ ] Implement `FlutterShieldWidget`: calls `initialize()` in `initState`, renders a loading widget while `status == initializing`, an error widget (forwarding to `widget.onError`) on failure, and `child` once `running`; calls `shutdown()` in `dispose()`.
+- [ ] Finalize `DeviceShield.initialize({config, profile})`, `status`, `pause()`, `resume()`, `shutdown()`, `reinitialize()`, `dispose()` — all already stubbed/partially built in M6; this milestone is where every method's contract is locked and fully tested as the public surface.
+- [ ] Finalize `DeviceShield.events` (the public read-only view over `EventManager.subscribe`).
+- [ ] Finalize `DeviceShield.registerDetector()`/`addRule()`/`removeRule()` as pure delegation, per their already-frozen contracts.
+- [ ] Implement `DeviceShieldWidget`: calls `initialize()` in `initState`, renders a loading widget while `status == initializing`, an error widget (forwarding to `widget.onError`) on failure, and `child` once `running`; calls `shutdown()` in `dispose()`.
 - [ ] Implement `SecurityAlertDialog`: maps `SecuritySeverity` to visual treatment (icon/color/urgency), renders event `type`/`data`.
 - [ ] Implement the `ScreenshotProtection` widget: wraps M11's mechanism, renders a blur overlay when the app backgrounds (if configured).
-- [ ] Write widget tests for `FlutterShieldWidget`'s three render states.
+- [ ] Write widget tests for `DeviceShieldWidget`'s three render states.
 - [ ] Write widget tests for `SecurityAlertDialog` across every `SecuritySeverity` value.
 - [ ] Write the example app's core usage (a lightweight preview of M19's fuller example) to prove the public API is complete enough to build a real screen against.
 
 ### Files Expected
 | File | Why it exists |
 |---|---|
-| `lib/src/api/flutter_shield.dart` | The finalized public facade |
-| `lib/flutter_shield.dart` | The package's public export barrel |
-| `lib/src/widgets/flutter_shield_widget.dart` | Declarative init/dispose wrapper |
+| `lib/src/api/device_shield.dart` | The finalized public facade |
+| `lib/device_shield.dart` | The package's public export barrel |
+| `lib/src/widgets/device_shield_widget.dart` | Declarative init/dispose wrapper |
 | `lib/src/widgets/security_alert_dialog.dart` | Severity-keyed alert UI |
 | `lib/src/widgets/screenshot_protection_widget.dart` | Background blur overlay UI |
 
@@ -1187,19 +1187,19 @@ Host application code
 ```
 
 ### Design Patterns
-- **Facade** — `FlutterShield` is the textbook facade: one simple static surface over a much larger internal composition.
-- **Observer** (reused) — `FlutterShieldWidget` observes SDK status to decide what to render.
+- **Facade** — `DeviceShield` is the textbook facade: one simple static surface over a much larger internal composition.
+- **Observer** (reused) — `DeviceShieldWidget` observes SDK status to decide what to render.
 
 ### SOLID Principles Applied
-- **Single Responsibility:** `FlutterShield` delegates; it does not decide, validate, or compute anything itself.
-- **Dependency Inversion:** host apps depend only on the `FlutterShield` facade, never on any manager's concrete type.
+- **Single Responsibility:** `DeviceShield` delegates; it does not decide, validate, or compute anything itself.
+- **Dependency Inversion:** host apps depend only on the `DeviceShield` facade, never on any manager's concrete type.
 
 ### Testing Plan
-- **Unit Tests:** every `FlutterShield` static method delegates correctly to the underlying manager (already substantially covered by M6's integration tests; this milestone locks the public-surface contract explicitly).
-- **Integration Tests:** the example app reaches `running` end-to-end through `FlutterShieldWidget` alone.
-- **Widget Tests:** `FlutterShieldWidget`'s loading/error/child states; `SecurityAlertDialog` rendering per severity.
-- **Edge Cases:** `FlutterShieldWidget` unmounted mid-initialization; `SecurityAlertDialog` given an event with an empty `data` map.
-- **Failure Cases:** `initialize()` failing inside `FlutterShieldWidget` must render the error state and invoke `onError`, never throw past the widget boundary uncaught.
+- **Unit Tests:** every `DeviceShield` static method delegates correctly to the underlying manager (already substantially covered by M6's integration tests; this milestone locks the public-surface contract explicitly).
+- **Integration Tests:** the example app reaches `running` end-to-end through `DeviceShieldWidget` alone.
+- **Widget Tests:** `DeviceShieldWidget`'s loading/error/child states; `SecurityAlertDialog` rendering per severity.
+- **Edge Cases:** `DeviceShieldWidget` unmounted mid-initialization; `SecurityAlertDialog` given an event with an empty `data` map.
+- **Failure Cases:** `initialize()` failing inside `DeviceShieldWidget` must render the error state and invoke `onError`, never throw past the widget boundary uncaught.
 - **Mocking Strategy:** widget tests use Flutter's `WidgetTester`; underlying manager mocked or faked as needed.
 - **Coverage Expectation:** this is the milestone `ROADMAP.md` itself names as "the real test of whether the public API is complete" — its exit criterion is functional (the example app runs through it), not merely a coverage percentage.
 
@@ -1212,7 +1212,7 @@ Host application code
 
 ### Risks
 - **API-surface risk:** this is the layer host apps actually depend on — any breaking change after this milestone ships is a public, versioned break (see M18's Deprecation Policy). Get this contract right before wide adoption.
-- **Widget-lifecycle risk:** `FlutterShieldWidget` racing its own `initState`/`dispose` (e.g. rapid mount/unmount) is a realistic Flutter-specific edge case worth explicit testing.
+- **Widget-lifecycle risk:** `DeviceShieldWidget` racing its own `initState`/`dispose` (e.g. rapid mount/unmount) is a realistic Flutter-specific edge case worth explicit testing.
 
 ### Future Milestones Depending On This
 M16 (localizes `SecurityAlertDialog`'s copy), M19 (the example app is built on top of this exact layer), M22 (the public API is what gets versioned/released).
@@ -1474,13 +1474,13 @@ M19 (documentation must not overclaim compliance beyond what's actually reviewed
 ## Milestone 16 – Internationalization
 
 ### Objective
-Build `FlutterShieldLocalization` (en/es/fr/de strings for security-alert UI copy, English fallback) and `getLocalizedMessage()` (maps `SecurityEventType` → message key with placeholder interpolation).
+Build `DeviceShieldLocalization` (en/es/fr/de strings for security-alert UI copy, English fallback) and `getLocalizedMessage()` (maps `SecurityEventType` → message key with placeholder interpolation).
 
 ### Why this milestone exists
 §24 requires the SDK's user-facing alert copy (M12's `SecurityAlertDialog`) to render correctly in multiple locales — this milestone depends on M12 existing first, since it localizes that widget's copy specifically.
 
 ### Scope
-**Included:** `FlutterShieldLocalization` (en/es/fr/de string tables, English fallback), `getLocalizedMessage(eventType, {placeholders})`.
+**Included:** `DeviceShieldLocalization` (en/es/fr/de string tables, English fallback), `getLocalizedMessage(eventType, {placeholders})`.
 
 **Not included:** localizing anything outside `SecurityAlertDialog`'s copy (no other UI surface is named in §24).
 
@@ -1488,8 +1488,8 @@ Build `FlutterShieldLocalization` (en/es/fr/de strings for security-alert UI cop
 
 | Component | Purpose | Responsibility | Dependencies | Owner | Consumers |
 |---|---|---|---|---|---|
-| `FlutterShieldLocalization` | Locale string tables | en/es/fr/de strings, English fallback | None (static data) | N/A | `SecurityAlertDialog` (M12) |
-| `getLocalizedMessage()` | Message-key resolution | Maps `SecurityEventType` → message key, `{{placeholder}}` interpolation | `FlutterShieldLocalization`, `SecurityEventType` enum (M1) | N/A | `SecurityAlertDialog` |
+| `DeviceShieldLocalization` | Locale string tables | en/es/fr/de strings, English fallback | None (static data) | N/A | `SecurityAlertDialog` (M12) |
+| `getLocalizedMessage()` | Message-key resolution | Maps `SecurityEventType` → message key, `{{placeholder}}` interpolation | `DeviceShieldLocalization`, `SecurityEventType` enum (M1) | N/A | `SecurityAlertDialog` |
 
 ### Implementation Tasks
 - [ ] Author the en/es/fr/de string tables covering every `SecurityEventType` value.
@@ -1500,7 +1500,7 @@ Build `FlutterShieldLocalization` (en/es/fr/de strings for security-alert UI cop
 ### Files Expected
 | File | Why it exists |
 |---|---|
-| `lib/src/i18n/flutter_shield_localization.dart` | The string tables |
+| `lib/src/i18n/device_shield_localization.dart` | The string tables |
 | `lib/src/i18n/localized_message_resolver.dart` | `getLocalizedMessage()` |
 
 ### Dependency Flow
@@ -1554,7 +1554,7 @@ M1 built `Logger`'s basic contract and a safe-default implementation; M6 documen
 | Component | Purpose | Responsibility | Dependencies | Owner | Consumers |
 |---|---|---|---|---|---|
 | `ProductionLogger` | Production-grade `Logger` implementation | Warning-minimum default; file writes; monitoring/crash-reporting forwarding | `Logger` contract, `LogSink` | Host app (opt-in production configuration) | Every component already using `Logger` |
-| `RecoveryStrategy` | Per-error-code recovery dispatch | Implements the §8.3 table for real, wired into every manager | `FlutterShieldException` hierarchy (M1) | Each manager's own catch blocks | `ConfigurationManager`, `PermissionManager`, `NativeBridge`, `PluginInitializer` |
+| `RecoveryStrategy` | Per-error-code recovery dispatch | Implements the §8.3 table for real, wired into every manager | `DeviceShieldException` hierarchy (M1) | Each manager's own catch blocks | `ConfigurationManager`, `PermissionManager`, `NativeBridge`, `PluginInitializer` |
 | `RetryLogic` | Exponential backoff + predicate-driven retry | Wraps a retryable operation | `RecoveryStrategy` | `NativeBridge`, detectors | Any retryable call site |
 
 ### Implementation Tasks
@@ -1624,7 +1624,7 @@ Reach the documented per-module coverage targets, add integration/native/perform
 Every prior milestone tested its own module in isolation as it was built. This milestone is where cross-module coverage gaps are closed and where the SDK is validated as a whole, against real devices, not just CI simulators or mocked native responses.
 
 ### Scope
-**Included:** unit tests reaching §16.5's targets (Core 90%, Detection Manager 85%, Policy Engine 85%, Event System 85%, Native Bridge 80%, Detectors 80%, Protections 75%), integration tests (`FlutterShieldWidget` reaching `running` end-to-end; native-bridge round-trip tests), native tests (Kotlin/Swift, confidence-range assertions), performance tests (startup <500ms, per-detector-check <100ms, tying back to M14), and real-device validation on genuinely rooted Android and jailbroken iOS hardware.
+**Included:** unit tests reaching §16.5's targets (Core 90%, Detection Manager 85%, Policy Engine 85%, Event System 85%, Native Bridge 80%, Detectors 80%, Protections 75%), integration tests (`DeviceShieldWidget` reaching `running` end-to-end; native-bridge round-trip tests), native tests (Kotlin/Swift, confidence-range assertions), performance tests (startup <500ms, per-detector-check <100ms, tying back to M14), and real-device validation on genuinely rooted Android and jailbroken iOS hardware.
 
 **Not included:** any new feature work — this milestone closes coverage/validation gaps in what M0–M17 already built.
 
@@ -1633,7 +1633,7 @@ No new components — this milestone is test infrastructure and test-suite compl
 
 ### Implementation Tasks
 - [ ] Audit current coverage per module against §16.5's targets; write additional unit tests to close every gap.
-- [ ] Write/confirm integration tests: `FlutterShieldWidget` reaches `running` end-to-end; a native-bridge round trip succeeds on both platforms.
+- [ ] Write/confirm integration tests: `DeviceShieldWidget` reaches `running` end-to-end; a native-bridge round trip succeeds on both platforms.
 - [ ] Write/confirm native tests: Kotlin (`RootDetector`, etc.) and Swift equivalents, with confidence-range assertions (not just boolean detected/not-detected).
 - [ ] Write/confirm performance tests: startup <500ms, per-detector-check <100ms, via `Stopwatch`-based timing, tying back to M14's benchmark suite.
 - [ ] Obtain at least one genuinely rooted Android device and one genuinely jailbroken iOS device; run the full detector suite (M7/M8) against both.
@@ -1655,7 +1655,7 @@ Not applicable — this is a testing milestone, not an implementation one.
 
 ### Testing Plan
 - **Unit Tests:** gap-closing against §16.5's per-module targets.
-- **Integration Tests:** `FlutterShieldWidget` → `running`; native-bridge round trip.
+- **Integration Tests:** `DeviceShieldWidget` → `running`; native-bridge round trip.
 - **Platform/Native Tests:** Kotlin/Swift confidence-range assertions.
 - **Performance Tests:** startup/per-check timing against M14's benchmarks.
 - **Real-Device Tests:** the full M7/M8 detector suite on genuinely compromised hardware — explicitly flagged as not satisfiable by unit tests alone.
@@ -1695,18 +1695,18 @@ Build the example app's full feature set, `DevelopmentTools` (debug-only diagnos
 
 | Component | Purpose | Responsibility | Dependencies | Owner | Consumers |
 |---|---|---|---|---|---|
-| Example app | Full-feature reference implementation | Demonstrates every public-facing capability | `FlutterShield` public API (M12) | Repository `example/` directory | New developers, this SDK's own CI (via `flutter test`/`flutter drive` against it) |
-| `DevelopmentTools` | Debug-only diagnostics | `runSecurityScan()`, `simulateEvent()`, `dumpState()`, `resetSdk()` | `FlutterShield` public API | Host app (debug builds only) | Developers integrating the SDK |
+| Example app | Full-feature reference implementation | Demonstrates every public-facing capability | `DeviceShield` public API (M12) | Repository `example/` directory | New developers, this SDK's own CI (via `flutter test`/`flutter drive` against it) |
+| `DevelopmentTools` | Debug-only diagnostics | `runSecurityScan()`, `simulateEvent()`, `dumpState()`, `resetSdk()` | `DeviceShield` public API | Host app (debug builds only) | Developers integrating the SDK |
 | Integration guide | Developer-facing documentation | Quick start, config table, profile descriptions, best practices, troubleshooting | Every prior milestone's actual behavior | Documentation repository | New developers |
 | `DocGenerator` | API-reference skeleton generation | Markdown generation from dartdoc source | Dartdoc-annotated source (every prior milestone) | CI/tooling | Documentation site |
 
 ### Implementation Tasks
-- [ ] Build the example app per §22.1's exact spec: fintech profile selected, debug logging enabled, a live status card bound to `FlutterShield.status`, a scrolling list bound to `FlutterShield.events`, a `SecurityAlertDialog` triggered on critical events, and a pause/resume floating action button.
+- [ ] Build the example app per §22.1's exact spec: fintech profile selected, debug logging enabled, a live status card bound to `DeviceShield.status`, a scrolling list bound to `DeviceShield.events`, a `SecurityAlertDialog` triggered on critical events, and a pause/resume floating action button.
 - [ ] Implement `DevelopmentTools.runSecurityScan()`: triggers `checkNow()` and prints a formatted result summary (debug builds only, gated out of release builds).
 - [ ] Implement `DevelopmentTools.simulateEvent(type)`: emits a synthetic `SecurityEvent` for UI testing without needing a real compromised device.
 - [ ] Implement `DevelopmentTools.dumpState()`: prints the current `SDKState`, active profile, and registered detector/rule counts.
 - [ ] Implement `DevelopmentTools.resetSdk()`: a debug-only full dispose+reinitialize convenience wrapper.
-- [ ] Write the integration guide: quick start (install → initialize → subscribe), a complete configuration options table (every `FlutterShieldConfig` field), a description of each M10 profile, a best-practices section, and a troubleshooting table mapping common errors to fixes.
+- [ ] Write the integration guide: quick start (install → initialize → subscribe), a complete configuration options table (every `DeviceShieldConfig` field), a description of each M10 profile, a best-practices section, and a troubleshooting table mapping common errors to fixes.
 - [ ] Implement `DocGenerator`: walks dartdoc comments and emits a Markdown API-reference skeleton.
 - [ ] Author the three canonical code snippets (basic usage, event handling, custom rules) once, then reuse identically across the README, pub.dev listing, and any in-app help surface — not three independently-drifting copies.
 - [ ] Validate the "a developer unfamiliar with the SDK can integrate it using only the integration guide" exit criterion with an actual unfamiliar reviewer, not just the authoring team.
@@ -1766,7 +1766,7 @@ No new runtime SDK components — this milestone is release infrastructure.
 | Component | Purpose | Responsibility | Owner |
 |---|---|---|---|
 | CI/CD pipeline | Automated release gate | checkout → Flutter setup → `pub get` → `flutter test --coverage` → build → `pub publish` | Repository maintainers |
-| Deprecation-warning mechanism | Console warning on deprecated-API use | 180-day deprecation window enforcement | `FlutterShield` public API surface |
+| Deprecation-warning mechanism | Console warning on deprecated-API use | 180-day deprecation window enforcement | `DeviceShield` public API surface |
 
 ### Implementation Tasks
 - [ ] Document the semantic-versioning policy (what constitutes a major/minor/patch change for this SDK specifically, given its plugin/native-code nature).
@@ -1956,7 +1956,7 @@ The SDK is organized in the layered structure `ARCHITECTURE.md` defines, with on
 Flutter App (host application code)
         │
         ▼
-Public API  — FlutterShield / FlutterShieldWidget          (M12)
+Public API  — DeviceShield / DeviceShieldWidget          (M12)
         │   Facade: every host-app call goes through this; owns no logic itself.
         ▼
 Bootstrap / DI  — PluginInitializer, ServiceContainer       (M2, M6)
@@ -1983,7 +1983,7 @@ Platform  — Android (Kotlin) / iOS (Swift) native implementations   (M0, M3, M
 
 - **Foundation** (M1): enums, models, exceptions, `Logger` — imported everywhere.
 - **Configuration** (M2): `ConfigurationManager` — read by every manager at point of use.
-- **State** (M5): `SecurityStateManager`/`LifecycleManager` — owned by `SecurityManager`, observed by `FlutterShield.status`.
+- **State** (M5): `SecurityStateManager`/`LifecycleManager` — owned by `SecurityManager`, observed by `DeviceShield.status`.
 - **Caching & Performance** (M14): `MultiLevelCache`/`PerformanceMonitor` — used internally by `DetectionManager`.
 - **Storage & Security Utilities** (M13): `SecureStorage`/`EncryptionUtils`/`KeyManager` — consumed by `CertificatePinner` (M11) and `App Integrity` (M7).
 - **Compliance & i18n** (M15, M16): opt-in packs consumed by host apps and by `SecurityAlertDialog` respectively.
@@ -2006,7 +2006,7 @@ Platform  — Android (Kotlin) / iOS (Swift) native implementations   (M0, M3, M
 
 ```mermaid
 flowchart TD
-    APP["Flutter App"] --> API["FlutterShield / FlutterShieldWidget (M12)"]
+    APP["Flutter App"] --> API["DeviceShield / DeviceShieldWidget (M12)"]
     API --> INIT["PluginInitializer (M6)"]
     API --> SM["SecurityManager (M6)"]
     INIT --> DI["ServiceContainer (M2)"]
@@ -2172,7 +2172,7 @@ Upon completion of every milestone (M0–M22), the SDK consists of:
 **Dart package (`lib/src/`):**
 - `core/` — `Logger`, `ProductionLogger`, `RecoveryStrategy`, `RetryLogic`, `DataFilter`
 - `models/` — every enum, value object, and exception from M1, extended additively by M7–M11
-- `config/` — `FlutterShieldConfig`, validator, builder, persistence, `ConfigurationManager`
+- `config/` — `DeviceShieldConfig`, validator, builder, persistence, `ConfigurationManager`
 - `bootstrap/` — `ServiceContainer`, `DependencyResolver`, `PluginInitializer`, `ShutdownSequence`
 - `bridge/` — `NativeBridge`, `MethodChannelService`, `EventChannelService`, `method_codes.dart`
 - `events/` — `EventManager`, `SecurityEventFilter`, `EventProcessor` implementations
@@ -2183,10 +2183,10 @@ Upon completion of every milestone (M0–M22), the SDK consists of:
 - `protections/` — all 5 built-in protections (M11)
 - `storage/`, `security/` — `SecureStorage`, `EncryptionUtils`, `KeyManager`, `IntegrityValidator`, `DataProtection`
 - `compliance/` — `GDPRCompliance`, `PCIDSSCompliance`, `HIPAACompliance`
-- `i18n/` — `FlutterShieldLocalization`, `getLocalizedMessage()`
-- `widgets/` — `FlutterShieldWidget`, `SecurityAlertDialog`, `ScreenshotProtection` widget
+- `i18n/` — `DeviceShieldLocalization`, `getLocalizedMessage()`
+- `widgets/` — `DeviceShieldWidget`, `SecurityAlertDialog`, `ScreenshotProtection` widget
 - `tools/` — `DevelopmentTools` (debug-only)
-- `api/` — `FlutterShield` (the single public facade)
+- `api/` — `DeviceShield` (the single public facade)
 
 **Native packages:**
 - `android/src/main/kotlin/.../{bridge,detection,protection,utils}/`
@@ -2203,7 +2203,7 @@ Upon completion of every milestone (M0–M22), the SDK consists of:
 
 ## Architecture Summary
 
-FlutterShield's finished v1.0 architecture is a strictly layered, dependency-injected Flutter plugin SDK where **every arrow points downward and only downward**: host apps depend on one public facade (`FlutterShield`); that facade delegates entirely to a `SecurityManager` orchestrator; the orchestrator coordinates three peer managers (`DetectionManager`, `PolicyManager`, `EventManager`) that never reach into each other's territory; detection and policy content are both extension points (`Detector`/`Rule` contracts plus their registries) rather than hardcoded logic, so host apps can add custom detectors and rules without touching framework code; all native communication funnels through exactly one `NativeBridge`, itself swappable via dependency injection for a hypothetical future platform; and cross-cutting concerns — configuration, logging, caching, compliance, i18n — are each isolated, single-responsibility modules consumed by whichever layer needs them, never woven directly into manager logic.
+DeviceShield's finished v1.0 architecture is a strictly layered, dependency-injected Flutter plugin SDK where **every arrow points downward and only downward**: host apps depend on one public facade (`DeviceShield`); that facade delegates entirely to a `SecurityManager` orchestrator; the orchestrator coordinates three peer managers (`DetectionManager`, `PolicyManager`, `EventManager`) that never reach into each other's territory; detection and policy content are both extension points (`Detector`/`Rule` contracts plus their registries) rather than hardcoded logic, so host apps can add custom detectors and rules without touching framework code; all native communication funnels through exactly one `NativeBridge`, itself swappable via dependency injection for a hypothetical future platform; and cross-cutting concerns — configuration, logging, caching, compliance, i18n — are each isolated, single-responsibility modules consumed by whichever layer needs them, never woven directly into manager logic.
 
 The build order enforces this discipline literally: M6 proves the entire orchestration framework holds with **zero concrete detectors registered** before a single detection technique is implemented, and M13's utilities are explicitly meant to be consumed by (not duplicated within) the detectors and protections that reference them. The plan's few genuine sequencing tensions — M13 following, but being consumed by, M7/M11; M0's platform-floor decisions gating everything else — are called out explicitly rather than smoothed over, because in a frozen-contract architecture like this one, an unresolved sequencing question left implicit is exactly the kind of gap that turns into expensive rework later.
 

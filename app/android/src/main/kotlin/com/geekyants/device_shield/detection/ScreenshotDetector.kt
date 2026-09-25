@@ -1,11 +1,11 @@
-package com.example.flutter_shield.detection
+package com.geekyants.device_shield.detection
 
 import android.app.Activity
 import android.os.Build
 
 /**
  * Screenshot & Screen Recording Protection —
- * docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
+ * doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
  *
  * Push-only: unlike [EmulatorDetector]/[DebuggerDetector], there is no
  * meaningful request/response "check" for this — a screenshot is a discrete

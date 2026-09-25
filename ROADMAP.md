@@ -1,6 +1,6 @@
-# FlutterShield — End-to-End Build Roadmap
+# DeviceShield — End-to-End Build Roadmap
 
-This is the complete, dependency-ordered plan to build FlutterShield from the current empty scaffold to a shippable v1.0, covering every section of the SRS. Each milestone lists what it builds, what it depends on, and how you know it's done. A full traceability table at the bottom maps every SRS section (1–27 + Appendices A–D) to the milestone that covers it, so nothing gets missed.
+This is the complete, dependency-ordered plan to build DeviceShield from the current empty scaffold to a shippable v1.0, covering every section of the SRS. Each milestone lists what it builds, what it depends on, and how you know it's done. A full traceability table at the bottom maps every SRS section (1–27 + Appendices A–D) to the milestone that covers it, so nothing gets missed.
 
 **How to use this:** work top to bottom — each milestone assumes every milestone above it is done. Where noted, tasks *within* a milestone can be split across people/parallelized; milestones themselves mostly can't (each depends on the previous one existing).
 
@@ -18,11 +18,11 @@ As implementation starts, come back to this file and check items off as they lan
 *Blocking. Nothing below builds correctly until these are settled.*
 
 - [ ] **Decide folder structure**: adopt the SRS's layer-first `lib/src/{core,manager,bridge,detectors,protections,events,models,config,permission,utils}` layout; retire the current per-feature `lib/features/*/{data,domain,infrastructure}` scaffold.
-- [x] **Resolve channel naming** — decided in Phase 7: `flutter_shield/native_bridge` (MethodChannel) + `flutter_shield/events` (EventChannel), implemented in `DefaultNativeBridge`. The pre-existing `flutter_shield` channel (Phase 1, `getPlatformVersion`) is kept unchanged, not merged or renamed.
+- [x] **Resolve channel naming** — decided in Phase 7: `device_shield/native_bridge` (MethodChannel) + `device_shield/events` (EventChannel), implemented in `DefaultNativeBridge`. The pre-existing `device_shield` channel (Phase 1, `getPlatformVersion`) is kept unchanged, not merged or renamed.
 - [ ] **Confirm platform floors**: verify iOS 18.0 / Android API 21 are the real intended minimums (current build config targets iOS 13.0 / API 24 — mismatch to resolve either direction).
 - [ ] Set up native package skeletons: `android/.../detection/ protection/ bridge/ utils/` and `ios/Classes/detection/ protection/ bridge/ utils/`.
 - [ ] Set up `test/unit/ test/integration/ test/native/` directories per the SRS's test layout.
-- [ ] Update placeholder identifiers (`com.example.flutter_shield`, podspec author/homepage) to real values.
+- [ ] Update placeholder identifiers (`com.example.device_shield`, podspec author/homepage) to real values.
 - [ ] Decide and scope a **v0.1 MVP** subset (recommended: P0 FRs only — root, jailbreak, emulator, debugger, hook, integrity — deferring P1 features to a later milestone) rather than committing the whole SRS to one release.
 
 **Exit criteria:** repo restructured, both native skeletons in place, team has signed off on folder structure + channel names + platform floors + MVP scope.
@@ -34,7 +34,7 @@ As implementation starts, come back to this file and check items off as they lan
 
 - [ ] Enum Layer: `DetectionType`, `PolicyAction`, `SecurityStatus`, `SecurityEventType`, `SecuritySeverity`, `PinningMode`, `HookFramework`, `DetectionStatus`, `DataSubjectRequestType` (§23).
 - [ ] Model Layer: `DetectionResult`, `SecurityEvent`, `NativeResult` — immutable value types.
-- [ ] Exception Hierarchy: `FlutterShieldException` base + `ConfigurationException`, `PermissionException`, `InitializationException`, `DetectionException`, `PolicyException`, `NativeBridgeException`.
+- [ ] Exception Hierarchy: `DeviceShieldException` base + `ConfigurationException`, `PermissionException`, `InitializationException`, `DetectionException`, `PolicyException`, `NativeBridgeException`.
 - [ ] `Logger`: level-gated debug/info/warning/error/exception logging, boots with a safe default (see ASD Part 4 note on the Logger/Config ordering).
 - [ ] `DataFilter`: sensitive-field redaction (password, token, key, secret, authorization, credit_card, ssn, pin) — shared by Logging (§17.3) and later by Compliance (§23).
 
@@ -45,9 +45,9 @@ As implementation starts, come back to this file and check items off as they lan
 ## M2 — Configuration & Dependency Injection ⬜ *Not started*
 *SRS: §7 (Configuration), §4.7 (DI)*
 
-- [ ] `FlutterShieldConfig` (+ `DetectionModulesConfig`, `ProtectionModulesConfig` sub-configs).
-- [ ] `FlutterShieldConfigValidator` — the exact validation rules from §7.4 (interval bounds, retry bounds, timeout bounds).
-- [ ] `FlutterShieldConfigBuilder` — fluent builder (§7.2).
+- [ ] `DeviceShieldConfig` (+ `DetectionModulesConfig`, `ProtectionModulesConfig` sub-configs).
+- [ ] `DeviceShieldConfigValidator` — the exact validation rules from §7.4 (interval bounds, retry bounds, timeout bounds).
+- [ ] `DeviceShieldConfigBuilder` — fluent builder (§7.2).
 - [ ] `ConfigurationPersistence` — SharedPreferences-backed save/load (§7.6).
 - [ ] `ConfigurationManager` — holds the single active config, exposes `updateConfig`/`updateDetectionConfig`/`updateProtectionConfig` (§7.5).
 - [ ] `ServiceContainer` — `register<T>()` / `get<T>()` / `isRegistered<T>()` / `clear()` (§4.7).
@@ -61,8 +61,8 @@ As implementation starts, come back to this file and check items off as they lan
 
 - [ ] Dart: `PlatformChannel` wrapping `MethodChannel` (typed `invoke<T>()`, timeout, `PlatformException` → `NativeBridgeException` translation) and `EventChannel` (typed `Stream<SecurityEvent>`).
 - [ ] Dart: `NativeBridge` — the single façade over both channels; `invoke()`, `invokeAsync()`, `registerCallback()`/`unregisterCallback()`.
-- [ ] Android (Kotlin): `FlutterShieldPlugin` implementing `MethodCallHandler` **and** `EventChannel.StreamHandler`; a `SecurityManager` shell mirroring the Dart-side architecture.
-- [ ] iOS (Swift): same shape — `FlutterShieldPlugin` implementing `FlutterStreamHandler`; a `SecurityManager` shell.
+- [ ] Android (Kotlin): `DeviceShieldPlugin` implementing `MethodCallHandler` **and** `EventChannel.StreamHandler`; a `SecurityManager` shell mirroring the Dart-side architecture.
+- [ ] iOS (Swift): same shape — `DeviceShieldPlugin` implementing `FlutterStreamHandler`; a `SecurityManager` shell.
 - [ ] `bridge/method_codes.dart` (and native equivalents) — a single source of truth for method-name constants, so nothing is a raw string literal (this matters more once 15+ detectors share the channel — see Roadmap note under M7).
 - [ ] Required Android permissions declared (`INTERNET`, `ACCESS_NETWORK_STATE`, `READ_PHONE_STATE`, `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`) and iOS `Info.plist` entries (§15.1, §15.2).
 
@@ -142,7 +142,7 @@ Each detector below is: one `Detector` implementation (Dart) + one native implem
 - [ ] Default rule set per detection type (priority-ordered `SecurityPolicy` entries — thresholds, blocking flags, cooldowns).
 - [ ] Action handlers: `ignore`, `warn`, `block`, `logout`, `terminate`, `report`, and the `custom` slot (§3.3, §Extension Points in the ASD).
 - [ ] Risk-score calculation (`calculateRiskScore`, weighted across results).
-- [ ] `CustomRule` public class + `FlutterShield.addRule()`/`removeRule()` (FR-17, §6.4).
+- [ ] `CustomRule` public class + `DeviceShield.addRule()`/`removeRule()` (FR-17, §6.4).
 - [ ] Validation: max 100 rules, no circular rule dependencies (FR-16).
 
 **Exit criteria:** a `DetectionResult` from any M7/M8 detector produces a correct `PolicyAction`; a runtime-added `CustomRule` is evaluated without restarting the SDK.
@@ -177,9 +177,9 @@ Each detector below is: one `Detector` implementation (Dart) + one native implem
 ## M12 — Public API & UI Components ⬜ *Not started*
 *SRS: §6 (Public API Documentation), §14 (UI Components)*
 
-- [ ] `FlutterShield` static class: `initialize()`, `status`, `pause()`, `resume()`, `shutdown()`, `events`, `registerDetector()`, `profile`.
-- [ ] `SecurityEvent`, `CustomRule` public surfaces finalized (already built in M4/M9 — this is where they're exposed through `FlutterShield` itself).
-- [ ] `FlutterShieldWidget` — loading/error/child states around `initialize()` (§14.1).
+- [ ] `DeviceShield` static class: `initialize()`, `status`, `pause()`, `resume()`, `shutdown()`, `events`, `registerDetector()`, `profile`.
+- [ ] `SecurityEvent`, `CustomRule` public surfaces finalized (already built in M4/M9 — this is where they're exposed through `DeviceShield` itself).
+- [ ] `DeviceShieldWidget` — loading/error/child states around `initialize()` (§14.1).
 - [ ] `SecurityAlertDialog` — severity-keyed alert UI (§14.2).
 - [ ] `ScreenshotProtection` widget — background blur overlay (§14.3).
 
@@ -229,7 +229,7 @@ Each detector below is: one `Detector` implementation (Dart) + one native implem
 ## M16 — Internationalization ⬜ *Not started*
 *SRS: §24 (Internationalization)*
 
-- [ ] `FlutterShieldLocalization` — en/es/fr/de strings for security-alert UI copy, fallback to English.
+- [ ] `DeviceShieldLocalization` — en/es/fr/de strings for security-alert UI copy, fallback to English.
 - [ ] `getLocalizedMessage()` — maps `SecurityEventType` → message key, with `{{placeholder}}` interpolation.
 
 **Exit criteria:** `SecurityAlertDialog` (M12) renders correctly in all 4 locales.
@@ -252,7 +252,7 @@ Each detector below is: one `Detector` implementation (Dart) + one native implem
 *SRS: §16 (Testing)*
 
 - [ ] Unit tests reaching the §16.5 coverage targets: Core 90%, Detection Manager 85%, Policy Engine 85%, Event System 85%, Native Bridge 80%, Detectors 80%, Protections 75%.
-- [ ] Integration tests: `FlutterShieldWidget` reaches `running` end-to-end; native-bridge round-trip tests.
+- [ ] Integration tests: `DeviceShieldWidget` reaches `running` end-to-end; native-bridge round-trip tests.
 - [ ] Native tests: Kotlin (`RootDetector`, etc.) and Swift equivalents, confidence-range assertions.
 - [ ] Performance tests: startup <500ms, per-detector-check <100ms, via `Stopwatch`-based timing (ties back to M14).
 - [ ] **Real-device validation**: root/jailbreak/hook detectors specifically need testing on genuinely rooted/jailbroken hardware, not just mocked file-system checks — this can't be satisfied by unit tests alone (flagged as a risk in the earlier architecture review).

@@ -1,19 +1,19 @@
 import 'dart:async';
 
-import 'package:flutter_shield/src/bootstrap/bootstrap_context.dart';
-import 'package:flutter_shield/src/bootstrap/service_container.dart';
-import 'package:flutter_shield/src/bootstrap/shutdown_sequence.dart';
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/config/configuration_manager.dart';
-import 'package:flutter_shield/src/core/logger.dart';
-import 'package:flutter_shield/src/events/event_manager.dart';
-import 'package:flutter_shield/src/managers/security_manager.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/models/flutter_shield_config.dart';
-import 'package:flutter_shield/src/models/sdk_state.dart';
-import 'package:flutter_shield/src/models/security_event.dart';
-import 'package:flutter_shield/src/permission/permission_manager.dart';
-import 'package:flutter_shield/src/state/lifecycle.dart';
+import 'package:device_shield/src/bootstrap/bootstrap_context.dart';
+import 'package:device_shield/src/bootstrap/service_container.dart';
+import 'package:device_shield/src/bootstrap/shutdown_sequence.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/config/configuration_manager.dart';
+import 'package:device_shield/src/core/logger.dart';
+import 'package:device_shield/src/events/event_manager.dart';
+import 'package:device_shield/src/managers/security_manager.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/models/device_shield_config.dart';
+import 'package:device_shield/src/models/sdk_state.dart';
+import 'package:device_shield/src/models/security_event.dart';
+import 'package:device_shield/src/permission/permission_manager.dart';
+import 'package:device_shield/src/state/lifecycle.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Test-only fakes — none carry real logic; each just records what was
@@ -34,8 +34,12 @@ class _FakeLogger implements Logger {
   @override
   void warning(String message, {Map<String, dynamic>? data, Object? error}) {}
   @override
-  void error(String message,
-      {Map<String, dynamic>? data, Object? error, StackTrace? stackTrace}) {}
+  void error(
+    String message, {
+    Map<String, dynamic>? data,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {}
   @override
   void exception(String message, {Object? error, StackTrace? stackTrace}) {}
   @override
@@ -111,8 +115,7 @@ class _FakeEventManager implements EventManager {
   StreamSubscription<SecurityEvent> subscribe(
     SecurityEventHandler handler, {
     SecurityEventFilter? filter,
-  }) =>
-      const Stream<SecurityEvent>.empty().listen(handler);
+  }) => const Stream<SecurityEvent>.empty().listen(handler);
   @override
   List<SecurityEvent> getRecentEvents({int limit = 20}) => const [];
   @override
@@ -134,8 +137,7 @@ class _FakeNativeBridge implements NativeBridge {
     required String method,
     Map<String, dynamic>? arguments,
     Duration timeout = const Duration(seconds: 5),
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
   @override
   void invokeAsync({required String method, Map<String, dynamic>? arguments}) {}
   @override
@@ -151,14 +153,13 @@ class _FakeConfigurationManager implements ConfigurationManager {
   final _CallLog log;
 
   @override
-  FlutterShieldConfig get current => const FlutterShieldConfig();
+  DeviceShieldConfig get current => const DeviceShieldConfig();
   @override
   Future<void> initialize() async {}
   @override
-  Future<void> dispose() async =>
-      log.calls.add('ConfigurationManager.dispose');
+  Future<void> dispose() async => log.calls.add('ConfigurationManager.dispose');
   @override
-  Future<void> updateConfig(FlutterShieldConfig config) async {}
+  Future<void> updateConfig(DeviceShieldConfig config) async {}
 }
 
 class _FakePermissionManager implements PermissionManager {
@@ -183,10 +184,8 @@ void main() {
         'EventManager/NativeBridge, in that order', () async {
       final log = _CallLog();
       final container = ServiceContainer();
-      container.registerSingleton<LifecycleManager>(
-          _FakeLifecycleManager(log));
-      container.registerSingleton<SecurityManager>(
-          _FakeSecurityManager(log));
+      container.registerSingleton<LifecycleManager>(_FakeLifecycleManager(log));
+      container.registerSingleton<SecurityManager>(_FakeSecurityManager(log));
       container.registerSingleton<EventManager>(_FakeEventManager(log));
       container.registerSingleton<NativeBridge>(_FakeNativeBridge(log));
       container.registerSingleton<Logger>(_FakeLogger(log));
@@ -218,9 +217,11 @@ void main() {
       final log = _CallLog();
       final container = ServiceContainer();
       container.registerSingleton<ConfigurationManager>(
-          _FakeConfigurationManager(log));
+        _FakeConfigurationManager(log),
+      );
       container.registerSingleton<PermissionManager>(
-          _FakePermissionManager(log));
+        _FakePermissionManager(log),
+      );
 
       await const ShutdownSequence().run(container);
 
@@ -237,10 +238,12 @@ void main() {
       final container = ServiceContainer();
       container.registerSingleton<EventManager>(_FakeEventManager(log));
       container.registerSingleton<ConfigurationManager>(
-          _FakeConfigurationManager(log));
+        _FakeConfigurationManager(log),
+      );
       container.registerSingleton<PermissionManager>(
-          _FakePermissionManager(log));
-      final context = BootstrapContext(const FlutterShieldConfig())
+        _FakePermissionManager(log),
+      );
+      final context = BootstrapContext(const DeviceShieldConfig())
         ..recordStep('Permission')
         ..recordStep('Configuration')
         ..recordStep('EventManager');
@@ -257,30 +260,36 @@ void main() {
     test('a step recorded but with nothing registered for it is skipped '
         'silently', () async {
       final container = ServiceContainer();
-      final context = BootstrapContext(const FlutterShieldConfig())
+      final context = BootstrapContext(const DeviceShieldConfig())
         ..recordStep('NativeBridge');
 
       await expectLater(
-          const ShutdownSequence().unwind(container, context), completes);
+        const ShutdownSequence().unwind(container, context),
+        completes,
+      );
     });
 
     test('an unrecognized step name is ignored, not thrown', () async {
       final container = ServiceContainer();
-      final context = BootstrapContext(const FlutterShieldConfig())
+      final context = BootstrapContext(const DeviceShieldConfig())
         ..recordStep('SomeFutureStep');
 
       await expectLater(
-          const ShutdownSequence().unwind(container, context), completes);
+        const ShutdownSequence().unwind(container, context),
+        completes,
+      );
     });
 
     test('Registries is a recognized no-op step — nothing is unregistered '
         'for it', () async {
       final container = ServiceContainer();
-      final context = BootstrapContext(const FlutterShieldConfig())
+      final context = BootstrapContext(const DeviceShieldConfig())
         ..recordStep('Registries');
 
       await expectLater(
-          const ShutdownSequence().unwind(container, context), completes);
+        const ShutdownSequence().unwind(container, context),
+        completes,
+      );
     });
 
     test('one step throwing during teardown does not stop the remaining '
@@ -289,7 +298,7 @@ void main() {
       final container = ServiceContainer();
       container.registerSingleton<NativeBridge>(_ThrowingNativeBridge());
       container.registerSingleton<EventManager>(_FakeEventManager(log));
-      final context = BootstrapContext(const FlutterShieldConfig())
+      final context = BootstrapContext(const DeviceShieldConfig())
         ..recordStep('EventManager')
         ..recordStep('NativeBridge');
 
@@ -311,8 +320,7 @@ class _ThrowingNativeBridge implements NativeBridge {
     required String method,
     Map<String, dynamic>? arguments,
     Duration timeout = const Duration(seconds: 5),
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
   @override
   void invokeAsync({required String method, Map<String, dynamic>? arguments}) {}
   @override

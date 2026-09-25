@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-import '../models/flutter_shield_exception.dart';
+import '../models/device_shield_exception.dart';
 
 /// Request/response native calls. See ARCHITECTURE_CONTRACTS.md Group F.
 ///
@@ -17,8 +17,7 @@ import '../models/flutter_shield_exception.dart';
 class MethodChannelService {
   MethodChannelService(this._channel);
 
-  MethodChannelService.withName(String name)
-      : _channel = MethodChannel(name);
+  MethodChannelService.withName(String name) : _channel = MethodChannel(name);
 
   final MethodChannel _channel;
 
@@ -37,8 +36,7 @@ class MethodChannelService {
   }) async {
     dynamic result;
     try {
-      result =
-          await _channel.invokeMethod(method, arguments).timeout(timeout);
+      result = await _channel.invokeMethod(method, arguments).timeout(timeout);
     } on TimeoutException {
       throw NativeBridgeException(
         method: method,
@@ -51,8 +49,7 @@ class MethodChannelService {
         method: method,
         nativeError: e,
         code: 'BRIDGE_UNAVAILABLE',
-        message:
-            'No native implementation registered for method "$method"',
+        message: 'No native implementation registered for method "$method"',
       );
     } on PlatformException catch (e) {
       throw NativeBridgeException(
@@ -71,8 +68,7 @@ class MethodChannelService {
         method: method,
         nativeError: e,
         code: 'BRIDGE_MALFORMED_RESPONSE',
-        message:
-            'Native response for "$method" was not the expected type $T',
+        message: 'Native response for "$method" was not the expected type $T',
       );
     }
   }
@@ -80,12 +76,7 @@ class MethodChannelService {
   /// Sends [method] to native code without awaiting a response.
   /// Fire-and-forget: any failure is swallowed, matching the frozen
   /// contract's `void` return — there is no way to report it back.
-  void invokeAsync({
-    required String method,
-    Map<String, dynamic>? arguments,
-  }) {
-    unawaited(
-      _channel.invokeMethod(method, arguments).catchError((_) => null),
-    );
+  void invokeAsync({required String method, Map<String, dynamic>? arguments}) {
+    unawaited(_channel.invokeMethod(method, arguments).catchError((_) => null));
   }
 }

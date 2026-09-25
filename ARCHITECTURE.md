@@ -1,4 +1,4 @@
-# FlutterShield — SDK Architecture
+# DeviceShield — SDK Architecture
 
 This is the design we've settled on for the internal architecture — the components, their connections, and the flows between them. It's the blueprint implementation should follow. No feature/detector-specific logic is included here on purpose; this only covers the framework every feature will sit on top of.
 
@@ -10,8 +10,8 @@ This is the design we've settled on for the internal architecture — the compon
 
 | Component | Role | Owned by | Visibility |
 |---|---|---|---|
-| `FlutterShield` | Public API facade — every host-app call goes through this | — (static) | Public |
-| `FlutterShieldWidget` | Declarative init/dispose wrapper | Flutter widget tree | Public |
+| `DeviceShield` | Public API facade — every host-app call goes through this | — (static) | Public |
+| `DeviceShieldWidget` | Declarative init/dispose wrapper | Flutter widget tree | Public |
 | `PluginInitializer` | Runs the fixed boot sequence once | — (transient) | Internal |
 | `ServiceContainer` | Type-keyed DI lookup | Application infrastructure — independent lifecycle, not owned by `PluginInitializer` | Internal |
 | `Logger` | The SDK's only output path | ServiceContainer | Internal |
@@ -37,7 +37,7 @@ This is the design we've settled on for the internal architecture — the compon
 
 > **Correction (Phase 4 architecture correction pass) — 3 changes:**
 > 1. **`ServiceContainer` ownership:** not created or owned by `PluginInitializer`. It's application infrastructure with its own independent lifecycle — `PluginInitializer` requires one to be passed in and only *uses* its operations (register/resolve/reset), never owns its construction or destruction.
-> 2. **`ConfigurationManager` validation:** removed entirely. A dedicated `FlutterShieldConfigValidator` now validates a config *before* it reaches `ConfigurationManager`. Flow: `FlutterShield.initialize(config)` → `FlutterShieldConfigValidator` → `ConfigurationManager` (store). `ConfigurationManager` now only stores/exposes/updates.
+> 2. **`ConfigurationManager` validation:** removed entirely. A dedicated `DeviceShieldConfigValidator` now validates a config *before* it reaches `ConfigurationManager`. Flow: `DeviceShield.initialize(config)` → `DeviceShieldConfigValidator` → `ConfigurationManager` (store). `ConfigurationManager` now only stores/exposes/updates.
 > 3. **`LifecycleManager` event emission:** explicitly forbidden in the contract's documentation (was already true in practice — nothing implemented it any other way). `LifecycleManager` must never construct or emit a `SecurityEvent`, or reference `EventManager` at all; only the attached `SecurityLifecycleHandler` implementer (`SecurityManager`) may do so, since it already owns `EventManager`.
 
 ---
@@ -48,7 +48,7 @@ Rule that keeps this acyclic: **a component may depend on anything below it, nev
 
 ```mermaid
 flowchart TD
-    APP["Flutter App"] --> API["FlutterShield / FlutterShieldWidget"]
+    APP["Flutter App"] --> API["DeviceShield / DeviceShieldWidget"]
     API --> INIT["PluginInitializer"]
     API --> SM["SecurityManager"]
     INIT --> DI["ServiceContainer"]
@@ -88,20 +88,20 @@ flowchart TD
 - `NativeBridge → {MethodChannelService, EventChannelService} → Native Layer` — the only path any Dart code takes to reach Kotlin/Swift. Both channel services construct their Flutter channels directly (no `PlatformAdapter` in between — see the Phase 7 correction note below).
 - `ConfigurationManager ⇢ Logger` (dotted) — the one edge that could look cyclic. It isn't: Logger has no hard dependency on Configuration; it boots with a safe default and does a one-time, one-directional read from Configuration once that's available.
 
-> **Correction (Phase 7 post-review) — `PlatformAdapter` removed from this graph.** `PlatformAdapter`'s job was to let `NativeBridge` be built against a swappable federated-plugin surface. But `NativeBridge` is itself already a contract, swappable via `ServiceContainer` (Phase 4) — a hypothetical future platform (e.g. web, using JS interop instead of channels) registers a *different `NativeBridge` implementation*, not a different `PlatformAdapter`. Dependency injection already subsumed the job the federated-plugin pattern was doing, and the SRS's own scope (Android + iOS only) never called for separate platform packages in the first place. `PlatformAdapter` (`FlutterShieldPlatform`/`MethodChannelFlutterShield`) still exists in the codebase, unchanged — it backs the original, unrelated `getPlatformVersion()` call from Phase 1 — but it is no longer part of this dependency graph, and "new platform" is now `NativeBridge`'s extension point, not `PlatformAdapter`'s. See `ARCHITECTURE_CONTRACTS.md`'s matching correction for the full component-level detail.
+> **Correction (Phase 7 post-review) — `PlatformAdapter` removed from this graph.** `PlatformAdapter`'s job was to let `NativeBridge` be built against a swappable federated-plugin surface. But `NativeBridge` is itself already a contract, swappable via `ServiceContainer` (Phase 4) — a hypothetical future platform (e.g. web, using JS interop instead of channels) registers a *different `NativeBridge` implementation*, not a different `PlatformAdapter`. Dependency injection already subsumed the job the federated-plugin pattern was doing, and the SRS's own scope (Android + iOS only) never called for separate platform packages in the first place. `PlatformAdapter` (`DeviceShieldPlatform`/`MethodChannelDeviceShield`) still exists in the codebase, unchanged — it backs the original, unrelated `getPlatformVersion()` call from Phase 1 — but it is no longer part of this dependency graph, and "new platform" is now `NativeBridge`'s extension point, not `PlatformAdapter`'s. See `ARCHITECTURE_CONTRACTS.md`'s matching correction for the full component-level detail.
 
 ---
 
 ## 3. Initialization Sequence
 
-From `FlutterShield.initialize()` to `Ready`.
+From `DeviceShield.initialize()` to `Ready`.
 
 ```mermaid
 flowchart TD
-    A["FlutterShield.initialize(profile, config)"] --> A2{"Already initializing/initialized?"}
+    A["DeviceShield.initialize(profile, config)"] --> A2{"Already initializing/initialized?"}
     A2 -->|yes| A3["Idempotency guard: return existing Future / throw"]
     A2 -->|no| B["State: uninitialized → initializing"]
-    B --> C{"Validate FlutterShieldConfig"}
+    B --> C{"Validate DeviceShieldConfig"}
     C -->|invalid| CX["ConfigurationException — State → failure"]
     C -->|valid| D["1 · Logger boots at safe default level"]
     D --> E["2 · PermissionManager requests required permissions"]
@@ -117,7 +117,7 @@ flowchart TD
     L --> M["SecurityManager starts periodic monitoring"]
     M --> N["State: initializing → initialized → running"]
     N --> O["EventManager emits SecurityEvent(initialized)"]
-    O --> P["Ready — FlutterShield.status == running"]
+    O --> P["Ready — DeviceShield.status == running"]
 ```
 
 Every registered service goes into `ServiceContainer` as its step completes. A failure at any step tears back down to `failure` state rather than leaving a half-populated container.
@@ -154,7 +154,7 @@ flowchart TD
     ACT --> EVTC["SecurityEvent constructed"]
     EXEC --> DONE["Action applied to app/session"]
     EVTC --> EM["EventManager.emit()"]
-    EM --> SUB["App subscribers — FlutterShield.events"]
+    EM --> SUB["App subscribers — DeviceShield.events"]
 ```
 
 Two things to build carefully: the **confidence gate runs before policy evaluation** (a low-confidence detection is cached but never reaches Policy/Event), and **action execution and event emission are parallel outputs** of the same decision, not one triggering the other — so a slow action handler never delays event delivery.
@@ -264,7 +264,7 @@ Every extension follows the same shape: **a small interface + a registry a manag
 
 | Extension | Mechanism |
 |---|---|
-| New detector | Implement `Detector`, register via `FlutterShield.registerDetector()` → `DetectorRegistry` |
+| New detector | Implement `Detector`, register via `DeviceShield.registerDetector()` → `DetectorRegistry` |
 | New policy | Implement `Rule`, register via `addRule()` |
 | New platform | Implement `NativeBridge`, register via `ServiceContainer` *(corrected post-Phase-7 — supersedes `PlatformAdapter`, see the dependency-graph correction note in §2)* |
 | New event type | Reuses existing type + `SecurityEvent.data` free-form payload (enum itself isn't open) |

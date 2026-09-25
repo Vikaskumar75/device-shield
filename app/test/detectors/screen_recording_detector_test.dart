@@ -1,8 +1,8 @@
-import 'package:flutter_shield/src/bridge/method_codes.dart';
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/detectors/screen_recording_detector.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
+import 'package:device_shield/src/bridge/method_codes.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/detectors/screen_recording_detector.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeNativeBridge implements NativeBridge {
@@ -53,10 +53,10 @@ void main() {
   });
 
   group('ScreenRecordingDetector — check() success path', () {
-    test('calls the bridge with MethodCodes.isScreenCaptureActive',
-        () async {
+    test('calls the bridge with MethodCodes.isScreenCaptureActive', () async {
       final bridge = _FakeNativeBridge(
-          (_) async => {'isCaptured': false, 'supported': true});
+        (_) async => {'isCaptured': false, 'supported': true},
+      );
       final detector = ScreenRecordingDetector(nativeBridge: bridge);
 
       await detector.check();
@@ -67,7 +67,8 @@ void main() {
     test('iOS-shaped captured response reports detected at full '
         'confidence', () async {
       final bridge = _FakeNativeBridge(
-          (_) async => {'isCaptured': true, 'supported': true});
+        (_) async => {'isCaptured': true, 'supported': true},
+      );
       final detector = ScreenRecordingDetector(nativeBridge: bridge);
 
       final result = await detector.check();
@@ -83,7 +84,8 @@ void main() {
     test('iOS-shaped not-captured response reports not detected at zero '
         'confidence', () async {
       final bridge = _FakeNativeBridge(
-          (_) async => {'isCaptured': false, 'supported': true});
+        (_) async => {'isCaptured': false, 'supported': true},
+      );
       final detector = ScreenRecordingDetector(nativeBridge: bridge);
 
       final result = await detector.check();
@@ -95,11 +97,13 @@ void main() {
 
     test('Android-shaped unsupported response never reports a false, '
         'confident detection', () async {
-      final bridge = _FakeNativeBridge((_) async => {
-            'isCaptured': false,
-            'supported': false,
-            'reason': 'No reliable screen-recording signal exists on Android.',
-          });
+      final bridge = _FakeNativeBridge(
+        (_) async => {
+          'isCaptured': false,
+          'supported': false,
+          'reason': 'No reliable screen-recording signal exists on Android.',
+        },
+      );
       final detector = ScreenRecordingDetector(nativeBridge: bridge);
 
       final result = await detector.check();
@@ -113,12 +117,14 @@ void main() {
     test('confidence is always exactly 0.0 or 1.0 — a single authoritative '
         'signal, never a weighted heuristic', () async {
       final captured = await ScreenRecordingDetector(
-        nativeBridge:
-            _FakeNativeBridge((_) async => {'isCaptured': true, 'supported': true}),
+        nativeBridge: _FakeNativeBridge(
+          (_) async => {'isCaptured': true, 'supported': true},
+        ),
       ).check();
       final notCaptured = await ScreenRecordingDetector(
         nativeBridge: _FakeNativeBridge(
-            (_) async => {'isCaptured': false, 'supported': true}),
+          (_) async => {'isCaptured': false, 'supported': true},
+        ),
       ).check();
 
       expect(captured.confidence, 1.0);
@@ -141,10 +147,9 @@ void main() {
 
   group('ScreenRecordingDetector — check() failure path (per the frozen '
       'Detector contract: reported as failed, never thrown)', () {
-    test('a NativeBridgeException results in DetectionStatus.failed',
-        () async {
+    test('a NativeBridgeException results in DetectionStatus.failed', () async {
       final bridge = _FakeNativeBridge(
-        (_) async => throw NativeBridgeException(
+        (_) async => throw const NativeBridgeException(
           method: MethodCodes.isScreenCaptureActive,
           nativeError: 'boom',
           code: 'BRIDGE_UNAVAILABLE',

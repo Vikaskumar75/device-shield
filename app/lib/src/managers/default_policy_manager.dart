@@ -59,11 +59,15 @@ class DefaultPolicyManager implements PolicyManager {
 
   @override
   Future<void> executeAction(
-      SecurityAction action, DetectionResult result) async {
+    SecurityAction action,
+    DetectionResult result,
+  ) async {
     // Placeholder — no ActionHandler registry exists yet. Coordination
     // reaching this point is logged; nothing else happens.
-    logger.info('PolicyManager: action resolved (placeholder execution)',
-        data: {'action': action.name, 'type': result.type});
+    logger.info(
+      'PolicyManager: action resolved (placeholder execution)',
+      data: {'action': action.name, 'type': result.type},
+    );
   }
 
   @override

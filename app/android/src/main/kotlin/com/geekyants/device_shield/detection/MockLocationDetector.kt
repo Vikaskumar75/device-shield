@@ -1,4 +1,4 @@
-package com.example.flutter_shield.detection
+package com.geekyants.device_shield.detection
 
 import android.app.AppOpsManager
 import android.content.Context
@@ -14,7 +14,7 @@ import android.provider.Settings
  * independent signal categories (Android) plus the shared
  * [impossibleVelocity] check — the same signal-count confidence model
  * [RootDetector]/[EmulatorDetector]/[DebuggerDetector] already use.
- * docs/features/MOCK_LOCATION_DETECTION.md.
+ * doc/features/MOCK_LOCATION_DETECTION.md.
  *
  * Unlike root/jailbreak, "mock location" is a real concept on both
  * platforms, so this never reports `applicable: false`. What it does

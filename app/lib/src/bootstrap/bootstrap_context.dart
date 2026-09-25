@@ -1,4 +1,4 @@
-import '../models/flutter_shield_config.dart';
+import '../models/device_shield_config.dart';
 
 /// Accumulates state across one [PluginInitializer.initialize] run — which
 /// steps completed, when boot started, and the config it's booting with.
@@ -12,7 +12,7 @@ import '../models/flutter_shield_config.dart';
 class BootstrapContext {
   BootstrapContext(this.config) : startedAt = DateTime.now();
 
-  final FlutterShieldConfig config;
+  final DeviceShieldConfig config;
   final DateTime startedAt;
   final List<String> completedSteps = [];
 

@@ -1,5 +1,6 @@
 import XCTest
-@testable import flutter_shield
+
+@testable import device_shield
 
 /// Exercises `JailbreakDetector.evaluate()` (the pure decision logic)
 /// with synthetic inputs, mirroring `DebuggerDetectorTests`'/

@@ -1,6 +1,7 @@
-import XCTest
 import UIKit
-@testable import flutter_shield
+import XCTest
+
+@testable import device_shield
 
 /// `ScreenCaptureProtection`'s layer re-parenting, tested against a
 /// manually-constructed view attached to a real `UIWindow` (so

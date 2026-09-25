@@ -1,6 +1,6 @@
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/detectors/screenshot_detector.dart';
+import 'package:device_shield/src/models/detection_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// A bridge that throws if [invoke] is ever called — used to assert
@@ -88,14 +88,16 @@ void main() {
       expect(result.evidence['signals'], isEmpty);
     });
 
-    test('never throws, since there is no native call that could fail',
-        () async {
-      final detector = ScreenshotDetector(
-        nativeBridge: _NeverInvokedNativeBridge(),
-      );
+    test(
+      'never throws, since there is no native call that could fail',
+      () async {
+        final detector = ScreenshotDetector(
+          nativeBridge: _NeverInvokedNativeBridge(),
+        );
 
-      await expectLater(detector.check(), completes);
-    });
+        await expectLater(detector.check(), completes);
+      },
+    );
   });
 
   group('ScreenshotDetector — initialize/dispose', () {

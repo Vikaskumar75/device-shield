@@ -1,4 +1,4 @@
-package com.example.flutter_shield.detection
+package com.geekyants.device_shield.detection
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -11,7 +11,7 @@ import java.io.InputStreamReader
  * FR-01 (SRS section 5.1): heuristic root detection via nine independent
  * signal categories. Every signal is individually weak evidence (a false
  * positive or false negative on any single category is expected, normal
- * heuristic behavior — see docs/features/ROOT_JAILBREAK_DETECTION.md);
+ * heuristic behavior — see doc/features/ROOT_JAILBREAK_DETECTION.md);
  * confidence is proportional to how many fire at once, the same
  * signal-count model [EmulatorDetector]/[DebuggerDetector] already use.
  *
@@ -167,7 +167,7 @@ object RootDetector {
      * class's own doc comment states.
      */
     private fun isPathWritable(path: String): Boolean {
-        val testFile = File(path, ".flutter_shield_root_check")
+        val testFile = File(path, ".device_shield_root_check")
         return try {
             val created = testFile.createNewFile()
             if (created) testFile.delete()

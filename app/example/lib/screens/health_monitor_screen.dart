@@ -1,11 +1,13 @@
+import 'package:device_shield/device_shield.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_shield/flutter_shield.dart';
 
 import '../core/shield_scope.dart';
 import '../widgets/status_card.dart';
 
 String _formatDuration(Duration d) {
-  if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes % 60}m ${d.inSeconds % 60}s';
+  if (d.inHours > 0) {
+    return '${d.inHours}h ${d.inMinutes % 60}m ${d.inSeconds % 60}s';
+  }
   if (d.inMinutes > 0) return '${d.inMinutes}m ${d.inSeconds % 60}s';
   return '${d.inSeconds}s';
 }
@@ -26,20 +28,23 @@ class HealthMonitorScreen extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final startedAt = controller.sessionStartedAt;
-        final uptime =
-            startedAt == null ? null : DateTime.now().difference(startedAt);
+        final uptime = startedAt == null
+            ? null
+            : DateTime.now().difference(startedAt);
         final lastEventAt = controller.lastEvent?.timestamp;
-        final sinceLastEvent =
-            lastEventAt == null ? null : DateTime.now().difference(lastEventAt);
+        final sinceLastEvent = lastEventAt == null
+            ? null
+            : DateTime.now().difference(lastEventAt);
         final totalChecks =
             controller.checkNowSuccessCount + controller.checkNowFailureCount;
         final errorRate = totalChecks == 0
             ? 0.0
             : controller.checkNowFailureCount / totalChecks * 100;
 
-        final healthy = controller.status == SDKState.running &&
-            controller.errors.isEmpty;
-        final degraded = controller.status == SDKState.running &&
+        final healthy =
+            controller.status == SDKState.running && controller.errors.isEmpty;
+        final degraded =
+            controller.status == SDKState.running &&
             controller.errors.isNotEmpty;
 
         return ListView(
@@ -51,77 +56,86 @@ class HealthMonitorScreen extends StatelessWidget {
                   : (degraded ? Icons.warning_amber_rounded : Icons.circle),
               color: healthy
                   ? Colors.green.withValues(alpha: 0.15)
-                  : (degraded
-                      ? Colors.orange.withValues(alpha: 0.15)
-                      : null),
+                  : (degraded ? Colors.orange.withValues(alpha: 0.15) : null),
               message: healthy
                   ? 'Healthy — running with no recorded errors.'
                   : degraded
-                      ? 'Degraded — running, but ${controller.errors.length} '
-                          'error(s) have been recorded.'
-                      : 'Not running — status is ${controller.status.name}.',
+                  ? 'Degraded — running, but ${controller.errors.length} '
+                        'error(s) have been recorded.'
+                  : 'Not running — status is ${controller.status.name}.',
             ),
             SectionCard(
               title: 'Session',
               children: [
                 StatusRow(
-                    label: 'Uptime (this session)',
-                    value: uptime == null ? '—' : _formatDuration(uptime)),
+                  label: 'Uptime (this session)',
+                  value: uptime == null ? '—' : _formatDuration(uptime),
+                ),
                 StatusRow(
-                    label: 'Session started at',
-                    value: startedAt?.toIso8601String() ?? 'Not running'),
+                  label: 'Session started at',
+                  value: startedAt?.toIso8601String() ?? 'Not running',
+                ),
                 StatusRow(
-                    label: 'Periodic check interval',
-                    value: '${controller.config.periodicCheckInterval} ms'),
+                  label: 'Periodic check interval',
+                  value: '${controller.config.periodicCheckInterval} ms',
+                ),
               ],
             ),
             SectionCard(
               title: 'Explicit Check Now calls',
-              subtitle: 'Only manually-triggered checks are counted — the '
+              subtitle:
+                  'Only manually-triggered checks are counted — the '
                   'SDK exposes no signal for its own internal periodic '
                   'timer ticks.',
               children: [
                 StatusRow(
-                    label: 'Succeeded',
-                    value: '${controller.checkNowSuccessCount}'),
+                  label: 'Succeeded',
+                  value: '${controller.checkNowSuccessCount}',
+                ),
                 StatusRow(
-                    label: 'Failed',
-                    value: '${controller.checkNowFailureCount}'),
+                  label: 'Failed',
+                  value: '${controller.checkNowFailureCount}',
+                ),
                 StatusRow(
-                    label: 'Failure rate',
-                    value: '${errorRate.toStringAsFixed(1)}%'),
+                  label: 'Failure rate',
+                  value: '${errorRate.toStringAsFixed(1)}%',
+                ),
               ],
             ),
             SectionCard(
               title: 'Event flow',
               children: [
                 StatusRow(
-                    label: 'Total events received',
-                    value: '${controller.events.length}'),
+                  label: 'Total events received',
+                  value: '${controller.events.length}',
+                ),
                 StatusRow(
-                    label: 'Last event received',
-                    value: lastEventAt?.toIso8601String() ?? 'None yet'),
+                  label: 'Last event received',
+                  value: lastEventAt?.toIso8601String() ?? 'None yet',
+                ),
                 StatusRow(
-                    label: 'Time since last event',
-                    value: sinceLastEvent == null
-                        ? '—'
-                        : _formatDuration(sinceLastEvent)),
+                  label: 'Time since last event',
+                  value: sinceLastEvent == null
+                      ? '—'
+                      : _formatDuration(sinceLastEvent),
+                ),
               ],
             ),
             SectionCard(
               title: 'Errors & warnings',
               children: [
                 StatusRow(
-                    label: 'Errors recorded',
-                    value: '${controller.stats.errors}',
-                    valueColor:
-                        controller.stats.errors > 0 ? Colors.red : null),
+                  label: 'Errors recorded',
+                  value: '${controller.stats.errors}',
+                  valueColor: controller.stats.errors > 0 ? Colors.red : null,
+                ),
                 StatusRow(
-                    label: 'Warnings recorded',
-                    value: '${controller.stats.warnings}',
-                    valueColor: controller.stats.warnings > 0
-                        ? Colors.orange
-                        : null),
+                  label: 'Warnings recorded',
+                  value: '${controller.stats.warnings}',
+                  valueColor: controller.stats.warnings > 0
+                      ? Colors.orange
+                      : null,
+                ),
               ],
             ),
           ],

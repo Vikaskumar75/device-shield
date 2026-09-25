@@ -26,37 +26,102 @@ class _Destination {
 }
 
 final List<_Destination> _destinations = [
-  _Destination('Home', Icons.home_outlined, Icons.home, (_) => const HomeScreen()),
-  _Destination('Runtime Controls', Icons.tune_outlined, Icons.tune,
-      (_) => const RuntimeControlsScreen()),
-  _Destination('Settings', Icons.settings_outlined, Icons.settings,
-      (_) => const SettingsScreen()),
-  _Destination('Events', Icons.event_note_outlined, Icons.event_note,
-      (_) => const EventsScreen()),
-  _Destination('Callbacks', Icons.link_outlined, Icons.link,
-      (_) => const CallbacksScreen()),
-  _Destination('Detectors', Icons.radar_outlined, Icons.radar,
-      (_) => const DetectorsScreen()),
-  _Destination('Screenshot Demo', Icons.screenshot_outlined,
-      Icons.screenshot, (_) => const ScreenshotDemoScreen()),
-  _Destination('Recording Demo', Icons.fiber_smart_record_outlined,
-      Icons.fiber_smart_record, (_) => const RecordingDemoScreen()),
-  _Destination('Protection', Icons.shield_outlined, Icons.shield,
-      (_) => const ProtectionScreen()),
-  _Destination('Statistics', Icons.bar_chart_outlined, Icons.bar_chart,
-      (_) => const StatisticsScreen()),
-  _Destination('Logs', Icons.article_outlined, Icons.article,
-      (_) => const LogsScreen()),
-  _Destination('Errors', Icons.error_outline, Icons.error,
-      (_) => const ErrorScreen()),
-  _Destination('Manual Test', Icons.checklist_outlined, Icons.checklist,
-      (_) => const ManualTestScreen()),
-  _Destination('Health Monitor', Icons.monitor_heart_outlined,
-      Icons.monitor_heart, (_) => const HealthMonitorScreen()),
-  _Destination('Debug Info', Icons.bug_report_outlined, Icons.bug_report,
-      (_) => const DebugInfoScreen()),
-  _Destination('About', Icons.info_outline, Icons.info,
-      (_) => const AboutScreen()),
+  _Destination(
+    'Home',
+    Icons.home_outlined,
+    Icons.home,
+    (_) => const HomeScreen(),
+  ),
+  _Destination(
+    'Runtime Controls',
+    Icons.tune_outlined,
+    Icons.tune,
+    (_) => const RuntimeControlsScreen(),
+  ),
+  _Destination(
+    'Settings',
+    Icons.settings_outlined,
+    Icons.settings,
+    (_) => const SettingsScreen(),
+  ),
+  _Destination(
+    'Events',
+    Icons.event_note_outlined,
+    Icons.event_note,
+    (_) => const EventsScreen(),
+  ),
+  _Destination(
+    'Callbacks',
+    Icons.link_outlined,
+    Icons.link,
+    (_) => const CallbacksScreen(),
+  ),
+  _Destination(
+    'Detectors',
+    Icons.radar_outlined,
+    Icons.radar,
+    (_) => const DetectorsScreen(),
+  ),
+  _Destination(
+    'Screenshot Demo',
+    Icons.screenshot_outlined,
+    Icons.screenshot,
+    (_) => const ScreenshotDemoScreen(),
+  ),
+  _Destination(
+    'Recording Demo',
+    Icons.fiber_smart_record_outlined,
+    Icons.fiber_smart_record,
+    (_) => const RecordingDemoScreen(),
+  ),
+  _Destination(
+    'Protection',
+    Icons.shield_outlined,
+    Icons.shield,
+    (_) => const ProtectionScreen(),
+  ),
+  _Destination(
+    'Statistics',
+    Icons.bar_chart_outlined,
+    Icons.bar_chart,
+    (_) => const StatisticsScreen(),
+  ),
+  _Destination(
+    'Logs',
+    Icons.article_outlined,
+    Icons.article,
+    (_) => const LogsScreen(),
+  ),
+  _Destination(
+    'Errors',
+    Icons.error_outline,
+    Icons.error,
+    (_) => const ErrorScreen(),
+  ),
+  _Destination(
+    'Manual Test',
+    Icons.checklist_outlined,
+    Icons.checklist,
+    (_) => const ManualTestScreen(),
+  ),
+  _Destination(
+    'Health Monitor',
+    Icons.monitor_heart_outlined,
+    Icons.monitor_heart,
+    (_) => const HealthMonitorScreen(),
+  ),
+  _Destination(
+    'Debug Info',
+    Icons.bug_report_outlined,
+    Icons.bug_report,
+    (_) => const DebugInfoScreen(),
+  ),
+  _Destination(
+    'About',
+    Icons.info_outline,
+    Icons.info,
+    (_) => const AboutScreen(),
+  ),
 ];
 
 /// The app's single navigation shell. Responsive: a permanent
@@ -79,7 +144,7 @@ class _AppShellState extends State<AppShell> {
     final destination = _destinations[_index];
     final isWide = MediaQuery.sizeOf(context).width >= 840;
 
-    final body = Builder(builder: (context) => destination.builder(context));
+    final body = Builder(builder: destination.builder);
 
     if (isWide) {
       return Scaffold(
@@ -119,9 +184,10 @@ class _AppShellState extends State<AppShell> {
                 children: [
                   Icon(Icons.shield, size: 40),
                   SizedBox(height: 8),
-                  Text('FlutterShield',
-                      style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(
+                    'DeviceShield',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   Text('Reference example app'),
                 ],
               ),
@@ -129,7 +195,10 @@ class _AppShellState extends State<AppShell> {
             for (var i = 0; i < _destinations.length; i++)
               ListTile(
                 leading: Icon(
-                    i == _index ? _destinations[i].selectedIcon : _destinations[i].icon),
+                  i == _index
+                      ? _destinations[i].selectedIcon
+                      : _destinations[i].icon,
+                ),
                 title: Text(_destinations[i].label),
                 selected: i == _index,
                 onTap: () {

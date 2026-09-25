@@ -1,14 +1,14 @@
-package com.example.flutter_shield
+package com.geekyants.device_shield
 
 import android.app.Activity
 import android.content.Context
-import com.example.flutter_shield.detection.DebuggerDetector
-import com.example.flutter_shield.detection.EmulatorDetector
-import com.example.flutter_shield.detection.MockLocationDetector
-import com.example.flutter_shield.detection.RootDetector
-import com.example.flutter_shield.detection.ScreenRecordingDetector
-import com.example.flutter_shield.detection.ScreenshotDetector
-import com.example.flutter_shield.protection.ScreenCaptureProtection
+import com.geekyants.device_shield.detection.DebuggerDetector
+import com.geekyants.device_shield.detection.EmulatorDetector
+import com.geekyants.device_shield.detection.MockLocationDetector
+import com.geekyants.device_shield.detection.RootDetector
+import com.geekyants.device_shield.detection.ScreenRecordingDetector
+import com.geekyants.device_shield.detection.ScreenshotDetector
+import com.geekyants.device_shield.protection.ScreenCaptureProtection
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -19,12 +19,12 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
 /**
- * FlutterShieldPlugin
+ * DeviceShieldPlugin
  *
  * Phase 7 (Platform Layer / Bridge): registers the two dedicated bridge
- * channels — flutter_shield/native_bridge (MethodChannel) and
- * flutter_shield/events (EventChannel) — alongside the pre-existing
- * flutter_shield channel from Phase 1, kept unchanged for backward
+ * channels — device_shield/native_bridge (MethodChannel) and
+ * device_shield/events (EventChannel) — alongside the pre-existing
+ * device_shield channel from Phase 1, kept unchanged for backward
  * compatibility with getPlatformVersion(). "checkEmulator" (M7, FR-03) and
  * "checkDebugger" (M7, FR-04) are the first two real bridge-channel method
  * handlers; every other bridge method still returns notImplemented() until
@@ -37,16 +37,16 @@ import io.flutter.plugin.common.MethodChannel.Result
  * it, with no interpretation of what either means.
  *
  * Screenshot & Screen Recording Protection (see
- * docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md) adds
+ * doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md) adds
  * `setScreenshotProtection`/`isScreenCaptureActive` and implements
  * [ActivityAware] — `FLAG_SECURE`
- * ([com.example.flutter_shield.protection.ScreenCaptureProtection]) and the
+ * ([com.geekyants.device_shield.protection.ScreenCaptureProtection]) and the
  * API-34 screenshot callback
- * ([com.example.flutter_shield.detection.ScreenshotDetector]) are both
+ * ([com.geekyants.device_shield.detection.ScreenshotDetector]) are both
  * `Activity`/`Window`-level APIs; this plugin previously only held a bare
  * `Context`, which has no `Window`.
  */
-class FlutterShieldPlugin :
+class DeviceShieldPlugin :
     FlutterPlugin,
     ActivityAware,
     MethodCallHandler,
@@ -74,18 +74,18 @@ class FlutterShieldPlugin :
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         applicationContext = flutterPluginBinding.applicationContext
 
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_shield")
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "device_shield")
         channel.setMethodCallHandler(this)
 
         bridgeChannel = MethodChannel(
             flutterPluginBinding.binaryMessenger,
-            "flutter_shield/native_bridge"
+            "device_shield/native_bridge"
         )
         bridgeChannel.setMethodCallHandler(this)
 
         eventChannel = EventChannel(
             flutterPluginBinding.binaryMessenger,
-            "flutter_shield/events"
+            "device_shield/events"
         )
         eventChannel.setStreamHandler(this)
     }
@@ -101,7 +101,7 @@ class FlutterShieldPlugin :
             "checkRoot" -> result.success(RootDetector.check(applicationContext))
             // "Jailbreak" is not an Android concept — an honest
             // not-applicable answer, never a false "not jailbroken"
-            // (design doc: docs/features/ROOT_JAILBREAK_DETECTION.md).
+            // (design doc: doc/features/ROOT_JAILBREAK_DETECTION.md).
             "checkJailbreak" -> result.success(
                 mapOf(
                     "detected" to false,

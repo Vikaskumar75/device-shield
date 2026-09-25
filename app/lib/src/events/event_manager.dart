@@ -23,7 +23,7 @@ typedef EventProcessor = Future<SecurityEvent> Function(SecurityEvent event);
 /// bounded history, and broadcasts it to filtered subscribers. None of that
 /// is implemented here — Phase 5/8 own it.
 ///
-/// Public/Internal: internal emit path; `FlutterShield.events` is the
+/// Public/Internal: internal emit path; `DeviceShield.events` is the
 /// public read-only view built on top of [subscribe].
 ///
 /// Extension point: yes — [EventProcessor] registration via [addProcessor].

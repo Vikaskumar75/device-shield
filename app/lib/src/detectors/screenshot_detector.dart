@@ -3,7 +3,7 @@ import '../models/detection_result.dart';
 import '../registry/detector.dart';
 
 /// Screenshot & Screen Recording Protection —
-/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §9.1.
+/// doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §9.1.
 ///
 /// Unlike `EmulatorDetector`/`DebuggerDetector`, [check] calls no native
 /// method at all — verified during Step 7's architecture review that no

@@ -1,6 +1,7 @@
-import XCTest
 import UIKit
-@testable import flutter_shield
+import XCTest
+
+@testable import device_shield
 
 /// Unlike `ScreenshotDetectorTest.kt` (Android), which cannot exercise the
 /// real registration path in a plain JVM unit test, XCTest here runs in a
@@ -22,7 +23,8 @@ final class ScreenshotDetectorTests: XCTestCase {
     var callCount = 0
     ScreenshotDetector.start { callCount += 1 }
 
-    NotificationCenter.default.post(name: UIApplication.userDidTakeScreenshotNotification, object: nil)
+    NotificationCenter.default.post(
+      name: UIApplication.userDidTakeScreenshotNotification, object: nil)
 
     XCTAssertEqual(callCount, 1)
   }
@@ -32,7 +34,8 @@ final class ScreenshotDetectorTests: XCTestCase {
     ScreenshotDetector.start { callCount += 1 }
     ScreenshotDetector.stop()
 
-    NotificationCenter.default.post(name: UIApplication.userDidTakeScreenshotNotification, object: nil)
+    NotificationCenter.default.post(
+      name: UIApplication.userDidTakeScreenshotNotification, object: nil)
 
     XCTAssertEqual(callCount, 0)
   }
@@ -43,7 +46,8 @@ final class ScreenshotDetectorTests: XCTestCase {
     ScreenshotDetector.start { firstCallCount += 1 }
     ScreenshotDetector.start { secondCallCount += 1 }
 
-    NotificationCenter.default.post(name: UIApplication.userDidTakeScreenshotNotification, object: nil)
+    NotificationCenter.default.post(
+      name: UIApplication.userDidTakeScreenshotNotification, object: nil)
 
     XCTAssertEqual(firstCallCount, 1)
     XCTAssertEqual(secondCallCount, 0)

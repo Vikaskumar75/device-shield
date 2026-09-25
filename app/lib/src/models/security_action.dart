@@ -5,12 +5,4 @@
 /// policy-response language, not tied to any specific detector or rule —
 /// `custom` is the reserved extension slot for actions registered against
 /// an `ActionHandler` rather than requiring a new enum value.
-enum SecurityAction {
-  ignore,
-  warn,
-  block,
-  logout,
-  terminate,
-  report,
-  custom,
-}
+enum SecurityAction { ignore, warn, block, logout, terminate, report, custom }

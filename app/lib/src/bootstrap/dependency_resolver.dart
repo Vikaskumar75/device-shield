@@ -1,4 +1,4 @@
-import '../models/flutter_shield_exception.dart';
+import '../models/device_shield_exception.dart';
 
 /// Detects circular dependencies during [ServiceContainer] resolution.
 ///
@@ -19,7 +19,8 @@ class DependencyResolver {
     if (_resolutionStack.contains(T)) {
       throw InitializationException(
         code: 'CIRCULAR_DEPENDENCY',
-        message: 'Circular dependency detected while resolving $T: '
+        message:
+            'Circular dependency detected while resolving $T: '
             '${_resolutionStack.join(' -> ')} -> $T',
       );
     }

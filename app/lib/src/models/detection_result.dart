@@ -37,13 +37,13 @@ class DetectionResult {
   bool get isCritical => detected && confidence > 0.8;
 
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'detected': detected,
-        'confidence': confidence,
-        'timestamp': timestamp.toIso8601String(),
-        'evidence': evidence,
-        'status': status.name,
-      };
+    'type': type,
+    'detected': detected,
+    'confidence': confidence,
+    'timestamp': timestamp.toIso8601String(),
+    'evidence': evidence,
+    'status': status.name,
+  };
 
   factory DetectionResult.fromJson(Map<String, dynamic> json) {
     return DetectionResult(
@@ -51,8 +51,7 @@ class DetectionResult {
       detected: json['detected'] as bool,
       confidence: (json['confidence'] as num).toDouble(),
       timestamp: DateTime.parse(json['timestamp'] as String),
-      evidence:
-          (json['evidence'] as Map?)?.cast<String, dynamic>() ?? const {},
+      evidence: (json['evidence'] as Map?)?.cast<String, dynamic>() ?? const {},
       status: DetectionStatus.values.byName(json['status'] as String),
     );
   }

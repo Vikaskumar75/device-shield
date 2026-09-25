@@ -1,4 +1,4 @@
-package com.example.flutter_shield.detection
+package com.geekyants.device_shield.detection
 
 import android.os.Build
 import java.io.File

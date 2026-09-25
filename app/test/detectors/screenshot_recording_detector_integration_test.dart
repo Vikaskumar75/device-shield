@@ -1,12 +1,12 @@
-import 'package:flutter_shield/src/bridge/method_codes.dart';
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/core/console_logger.dart';
-import 'package:flutter_shield/src/detectors/screen_recording_detector.dart';
-import 'package:flutter_shield/src/detectors/screenshot_detector.dart';
-import 'package:flutter_shield/src/managers/default_detection_manager.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/registry/default_detector_registry.dart';
-import 'package:flutter_shield/src/registry/detector_factory.dart';
+import 'package:device_shield/src/bridge/method_codes.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/core/console_logger.dart';
+import 'package:device_shield/src/detectors/screen_recording_detector.dart';
+import 'package:device_shield/src/detectors/screenshot_detector.dart';
+import 'package:device_shield/src/managers/default_detection_manager.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/registry/default_detector_registry.dart';
+import 'package:device_shield/src/registry/detector_factory.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Step 11 coverage-gap closure: mirrors
@@ -74,7 +74,10 @@ void main() {
       'runs through DefaultDetectionManager, correctly invoking '
       'MethodCodes.isScreenCaptureActive', () async {
     final bridge = _FakeNativeBridge({
-      MethodCodes.isScreenCaptureActive: {'isCaptured': true, 'supported': true},
+      MethodCodes.isScreenCaptureActive: {
+        'isCaptured': true,
+        'supported': true,
+      },
     });
     final factory = DetectorFactory(nativeBridge: bridge);
     final manager = DefaultDetectionManager(
@@ -82,8 +85,9 @@ void main() {
       registry: DefaultDetectorRegistry(),
     );
 
-    await manager
-        .registerDetector(factory.create(ScreenRecordingDetector.typeId));
+    await manager.registerDetector(
+      factory.create(ScreenRecordingDetector.typeId),
+    );
 
     final results = await manager.runAllChecks();
 
@@ -150,22 +154,20 @@ void main() {
     final results = await manager.runAllChecks();
 
     expect(results, hasLength(7));
-    expect(
-      results.map((r) => r.type).toSet(),
-      {
-        'emulator',
-        'debugger',
-        ScreenshotDetector.typeId,
-        ScreenRecordingDetector.typeId,
-        'root',
-        'jailbreak',
-        'mock_location',
-      },
-    );
+    expect(results.map((r) => r.type).toSet(), {
+      'emulator',
+      'debugger',
+      ScreenshotDetector.typeId,
+      ScreenRecordingDetector.typeId,
+      'root',
+      'jailbreak',
+      'mock_location',
+    });
     // The Android-unsupported shape must never fabricate a false positive,
     // even sitting in a mixed batch with other detectors.
-    final recording = results
-        .firstWhere((r) => r.type == ScreenRecordingDetector.typeId);
+    final recording = results.firstWhere(
+      (r) => r.type == ScreenRecordingDetector.typeId,
+    );
     expect(recording.detected, isFalse);
     expect(recording.evidence['supported'], isFalse);
     // Same honesty requirement for the new not-applicable-on-this-

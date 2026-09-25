@@ -12,7 +12,7 @@ A spoofed GPS fix lets an attacker (or a legitimate user gaming a feature) prese
 
 ### 1.2 What this reuses — nothing new architecturally
 
-Same `Detector` pattern as every other built-in: one `MockLocationDetector` (Dart) + one native implementation per platform + registration in `DetectorFactory`. No new manager, no new controller, no new `FlutterShieldConfig` field, no new `NativeBridge` transport — see §6 of `docs/features/ROOT_JAILBREAK_DETECTION.md` for why that's the deliberate default for a synchronous poll-style detector, which this is.
+Same `Detector` pattern as every other built-in: one `MockLocationDetector` (Dart) + one native implementation per platform + registration in `DetectorFactory`. No new manager, no new controller, no new `DeviceShieldConfig` field, no new `NativeBridge` transport — see §6 of `doc/features/ROOT_JAILBREAK_DETECTION.md` for why that's the deliberate default for a synchronous poll-style detector, which this is.
 
 The one genuinely new pattern: **per-instance statefulness**. The `impossible_velocity` signal (§5) compares this `check()` call's fix against the previous one, so both native implementations hold an in-memory "last fix" — every prior detector in this SDK is stateless per call.
 
@@ -82,7 +82,7 @@ Edge cases handled explicitly:
   locationAvailable: bool }  // whether any fix (fresh or cached) was found to inspect
 ```
 
-`applicable` is always `true` on both platforms — mock location is a real concept on both, unlike root/jailbreak. The capability gap that does exist (Android's/iOS's location permission not being granted) is surfaced through `permissionGranted`/`locationAvailable` instead, the same `'supported'`-style honest-gap pattern `ScreenRecordingDetector` already uses for its own Android capability gap (`docs/features/ROOT_JAILBREAK_DETECTION.md` §5 draws this same distinction between "doesn't exist" and "can't currently tell").
+`applicable` is always `true` on both platforms — mock location is a real concept on both, unlike root/jailbreak. The capability gap that does exist (Android's/iOS's location permission not being granted) is surfaced through `permissionGranted`/`locationAvailable` instead, the same `'supported'`-style honest-gap pattern `ScreenRecordingDetector` already uses for its own Android capability gap (`doc/features/ROOT_JAILBREAK_DETECTION.md` §5 draws this same distinction between "doesn't exist" and "can't currently tell").
 
 ---
 
@@ -112,8 +112,8 @@ This is the first detector in this SDK whose strongest signal depends on a dange
 |---|---|
 | Dart unit | `test/detectors/mock_location_detector_test.dart` — response-shaping logic against a fake `NativeBridge`, mirroring `root_detector_test.dart`'s pattern, including the permission-denied honest-gap shape |
 | Dart integration | `test/detectors/mock_location_detector_integration_test.dart` — real `DetectorFactory` + `DefaultDetectionManager` pipeline; the "all built-in detectors together" test in `screenshot_recording_detector_integration_test.dart` was updated (6 → 7 detectors), not duplicated |
-| Android unit | `MockLocationDetectorTest.kt` — one test per signal category against `evaluate()`'s pure logic, synthetic inputs, plus dedicated permission-gap tests; `FlutterShieldPluginTest.kt` — dispatch test for `checkMockLocation` |
-| iOS unit | `MockLocationDetectorTests.swift` — one test per signal category against `evaluate()`, plus a `testCheck_neverThrowsAndReturnsTheExpectedShape` smoke test; `FlutterShieldPluginTests.swift` — dispatch test for `checkMockLocation` |
+| Android unit | `MockLocationDetectorTest.kt` — one test per signal category against `evaluate()`'s pure logic, synthetic inputs, plus dedicated permission-gap tests; `DeviceShieldPluginTest.kt` — dispatch test for `checkMockLocation` |
+| iOS unit | `MockLocationDetectorTests.swift` — one test per signal category against `evaluate()`, plus a `testCheck_neverThrowsAndReturnsTheExpectedShape` smoke test; `DeviceShieldPluginTests.swift` — dispatch test for `checkMockLocation` |
 | Real device — non-negotiable, not satisfiable by mocks | An Android emulator (whose default location genuinely is a mock provider — expected `detected: true`, not a bug, see §9), a real Android device with a fake-GPS app installed and location permission granted, and a real iOS device/Simulator — **not performed as part of this implementation pass**; flagged here explicitly, not silently assumed to pass |
 
 ---

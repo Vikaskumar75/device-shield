@@ -1,8 +1,8 @@
 import 'dart:convert';
 
+import 'package:device_shield/device_shield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_shield/flutter_shield.dart';
 
 import '../core/shield_scope.dart';
 import '../widgets/severity_chip.dart';
@@ -91,8 +91,7 @@ class _EventsScreenState extends State<EventsScreen> {
                             border: OutlineInputBorder(),
                           ),
                           items: [
-                            const DropdownMenuItem(
-                                value: null, child: Text('All')),
+                            const DropdownMenuItem(child: Text('All')),
                             for (final s in EventSeverity.values)
                               DropdownMenuItem(value: s, child: Text(s.name)),
                           ],
@@ -157,8 +156,10 @@ class _EventTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (event.source != null)
-                Text('Source: ${event.source}',
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  'Source: ${event.source}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
@@ -167,8 +168,10 @@ class _EventTile extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: SelectableText(json,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+                child: SelectableText(
+                  json,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                ),
               ),
               const SizedBox(height: 8),
               Align(

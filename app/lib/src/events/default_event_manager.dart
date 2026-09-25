@@ -52,8 +52,9 @@ class DefaultEventManager implements EventManager {
     SecurityEventHandler handler, {
     SecurityEventFilter? filter,
   }) {
-    final stream =
-        filter == null ? _controller.stream : _controller.stream.where(filter);
+    final stream = filter == null
+        ? _controller.stream
+        : _controller.stream.where(filter);
     return stream.listen((event) {
       try {
         handler(event);

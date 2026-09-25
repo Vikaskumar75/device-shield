@@ -1,12 +1,13 @@
-import XCTest
 import Flutter
-@testable import flutter_shield
+import XCTest
 
-/// Unit tests for the native plugin foundation added to `FlutterShieldPlugin`:
+@testable import device_shield
+
+/// Unit tests for the native plugin foundation added to `DeviceShieldPlugin`:
 /// event emission (`sendEvent`), callback/event-channel lifecycle
 /// (`onListen`/`onCancel`), and the pre-existing `getPlatformVersion` /
 /// `notImplemented` method dispatch. Mirrors
-/// `android/src/test/kotlin/.../FlutterShieldPluginTest.kt` test-for-test
+/// `android/src/test/kotlin/.../DeviceShieldPluginTest.kt` test-for-test
 /// where the underlying behavior is the same on both platforms.
 ///
 /// Note: `detachFromEngine(for:)` cleanup is exercised only indirectly here
@@ -14,9 +15,9 @@ import Flutter
 /// constructing a real `FlutterPluginRegistrar` conforming test double is
 /// out of scope for this pass, since it requires satisfying a large
 /// Objective-C protocol surface unrelated to what changed in this file.
-final class FlutterShieldPluginTests: XCTestCase {
+final class DeviceShieldPluginTests: XCTestCase {
   func testGetPlatformVersionReturnsExpectedValue() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     let call = FlutterMethodCall(methodName: "getPlatformVersion", arguments: nil)
     let expectation = expectation(description: "result")
 
@@ -29,7 +30,7 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testCheckEmulatorReturnsAnEmulatorDetectionMap() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     let call = FlutterMethodCall(methodName: "checkEmulator", arguments: nil)
     let expectation = expectation(description: "result")
 
@@ -45,7 +46,7 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testCheckDebuggerReturnsADebuggerDetectionMap() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     let call = FlutterMethodCall(methodName: "checkDebugger", arguments: nil)
     let expectation = expectation(description: "result")
 
@@ -61,7 +62,7 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testCheckJailbreakReturnsAJailbreakDetectionMap() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     let call = FlutterMethodCall(methodName: "checkJailbreak", arguments: nil)
     let expectation = expectation(description: "result")
 
@@ -79,7 +80,7 @@ final class FlutterShieldPluginTests: XCTestCase {
 
   func testCheckRootReturnsTheHonestNotApplicableMap() {
     // "Root" is not an iOS concept — never a false "not rooted".
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     let call = FlutterMethodCall(methodName: "checkRoot", arguments: nil)
     let expectation = expectation(description: "result")
 
@@ -95,7 +96,7 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testCheckMockLocationReturnsAMockLocationDetectionMap() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     let call = FlutterMethodCall(methodName: "checkMockLocation", arguments: nil)
     let expectation = expectation(description: "result")
 
@@ -122,8 +123,9 @@ final class FlutterShieldPluginTests: XCTestCase {
     // ScreenCaptureProtection.swift's own warning. A real XCTest host
     // process has at least one window, so currentRootView() finds one
     // and this call succeeds structurally.
-    let plugin = FlutterShieldPlugin()
-    let call = FlutterMethodCall(methodName: "setScreenshotProtection", arguments: ["enabled": true])
+    let plugin = DeviceShieldPlugin()
+    let call = FlutterMethodCall(
+      methodName: "setScreenshotProtection", arguments: ["enabled": true])
     let expectation = expectation(description: "result")
 
     plugin.handle(call) { result in
@@ -136,8 +138,9 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testSetScreenshotProtectionDisabled_alwaysReportsApplied() {
-    let plugin = FlutterShieldPlugin()
-    let call = FlutterMethodCall(methodName: "setScreenshotProtection", arguments: ["enabled": false])
+    let plugin = DeviceShieldPlugin()
+    let call = FlutterMethodCall(
+      methodName: "setScreenshotProtection", arguments: ["enabled": false])
     let expectation = expectation(description: "result")
 
     plugin.handle(call) { result in
@@ -152,8 +155,9 @@ final class FlutterShieldPluginTests: XCTestCase {
     // Unlike setScreenshotProtection, this is a real, working mechanism on
     // iOS (AppSwitcherProtection) — the first protection call in this SDK
     // that can honestly report applied:true here.
-    let plugin = FlutterShieldPlugin()
-    let call = FlutterMethodCall(methodName: "setAppSwitcherProtection", arguments: ["enabled": true])
+    let plugin = DeviceShieldPlugin()
+    let call = FlutterMethodCall(
+      methodName: "setAppSwitcherProtection", arguments: ["enabled": true])
     let expectation = expectation(description: "result")
 
     plugin.handle(call) { result in
@@ -167,8 +171,9 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testSetAppSwitcherProtectionDisableReportsApplied() {
-    let plugin = FlutterShieldPlugin()
-    let call = FlutterMethodCall(methodName: "setAppSwitcherProtection", arguments: ["enabled": false])
+    let plugin = DeviceShieldPlugin()
+    let call = FlutterMethodCall(
+      methodName: "setAppSwitcherProtection", arguments: ["enabled": false])
     let expectation = expectation(description: "result")
 
     plugin.handle(call) { result in
@@ -181,7 +186,7 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testIsScreenCaptureActiveReturnsTheSupportedCaptureStateMap() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     let call = FlutterMethodCall(methodName: "isScreenCaptureActive", arguments: nil)
     let expectation = expectation(description: "result")
 
@@ -196,7 +201,7 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testUnknownBridgeMethodReturnsNotImplemented() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     let call = FlutterMethodCall(methodName: "someFutureSecurityCheck", arguments: nil)
     let expectation = expectation(description: "result")
 
@@ -209,7 +214,7 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testSendEventWithActiveListenerDeliversTheCallbackDataShape() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     var captured: [String: Any]?
     _ = plugin.onListen(withArguments: nil) { event in
       captured = event as? [String: Any]
@@ -222,7 +227,7 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testSendEventWithNilDataForwardsNSNull() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     var captured: [String: Any]?
     _ = plugin.onListen(withArguments: nil) { event in
       captured = event as? [String: Any]
@@ -235,14 +240,14 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testSendEventWithNoActiveListenerIsANoOpRatherThanCrashing() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
 
     // No listener has ever attached — this must simply not crash.
     plugin.sendEvent(callback: "onSecurityEvent", data: "root_detected")
   }
 
   func testOnCancelStopsRoutingToThePreviousSink() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     var callCount = 0
     _ = plugin.onListen(withArguments: nil) { _ in callCount += 1 }
 
@@ -253,7 +258,7 @@ final class FlutterShieldPluginTests: XCTestCase {
   }
 
   func testOnListenReplacesAnyPreviouslyRegisteredSink() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
     var firstCallCount = 0
     var secondCaptured: [String: Any]?
     _ = plugin.onListen(withArguments: nil) { _ in firstCallCount += 1 }

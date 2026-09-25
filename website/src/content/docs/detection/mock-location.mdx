@@ -1,0 +1,65 @@
+---
+title: Mock location detection
+description: Detect fake GPS and mocked locations with device_shield.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+```dart
+final result = await MockLocationDetector(nativeBridge: DefaultNativeBridge()).check();
+
+final canReadLocation = result.evidence['permissionGranted'] == true;
+```
+
+The SDK never requests location permission. The location-based signals only
+work if your app already has it. See
+[Android setup](../../platforms/android/#location-permission-for-mock-location)
+and [iOS setup](../../platforms/ios/#location-for-mock-location).
+
+## Android signals
+
+| Signal | Check | Needs location permission |
+|---|---|---|
+| `mock_provider_flag` | The most recent known location (GPS, network or passive provider) is marked as coming from a mock provider | Yes |
+| `impossible_velocity` | Moving faster than 300 m/s since the previous check (ignored if the fixes are under 3 s or 10 m apart) | Yes |
+| `mock_app_selected_for_this_app` | The user selected **this app** as the mock-location app in developer options | No |
+| `fake_gps_app_installed` | One of 10 known fake-GPS apps is installed | No |
+| `legacy_allow_mock_location_setting` | The *Allow mock locations* setting is on (Android 5.x only) | No |
+
+`confidence` is the fraction of the 5 signals that fired.
+
+<Aside type="caution" title="An installed app isn't a mocked location">
+  `fake_gps_app_installed` fires when the app is merely installed, not
+  running. On its own it sets `detected: true`. Treat it as weak evidence.
+  `mock_provider_flag` is the signal that shows a location actually is mocked.
+</Aside>
+
+## iOS signals
+
+| Signal | Check | Needs location permission |
+|---|---|---|
+| `known_spoofing_tweak_artifact` | A known location-spoofing tweak or app is present (5 paths, jailbroken devices only) | No |
+| `invalid_location_accuracy` | The last location reports a negative horizontal accuracy | Yes |
+| `impossible_velocity` | Same rule as Android | Yes |
+
+`confidence` is the fraction of the 3 signals that fired.
+
+<Aside type="note" title="Limited on iOS today">
+  The location signals rarely fire on iOS, because the SDK reads the last known
+  location without starting location updates, which usually yields nothing.
+  The SDK also doesn't yet use iOS 15's `isSimulatedBySoftware`, Apple's
+  supported way to detect a simulated location.
+</Aside>
+
+## Evidence
+
+On both platforms the result's `evidence` also includes:
+
+| Key | Meaning |
+|---|---|
+| `permissionGranted` | Location permission was granted, so location signals could run |
+| `locationAvailable` | A location was actually available to inspect |
+| `applicable` | Always `true` |
+
+The first `impossible_velocity` check only records a location. Speed can be
+compared from the second check onwards, within the same app process.

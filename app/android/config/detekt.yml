@@ -1,0 +1,11 @@
+# detekt static analysis for the plugin's Kotlin sources. Run with
+# --build-upon-default-config, so only deviations from detekt's defaults
+# are listed here. Formatting is ktlint's job, not detekt's.
+build:
+  maxIssues: 0
+
+naming:
+  PackageNaming:
+    # Allows the underscore in com.geekyants.device_shield, which matches
+    # the Dart package name.
+    packagePattern: '[a-z]+(\.[a-z][a-z0-9_]*)*'

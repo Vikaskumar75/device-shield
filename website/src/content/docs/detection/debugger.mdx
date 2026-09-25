@@ -1,0 +1,41 @@
+---
+title: Debugger detection
+description: Detect an attached debugger with device_shield on Android and iOS.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+```dart
+final result = await DebuggerDetector(nativeBridge: DefaultNativeBridge()).check();
+```
+
+## Android signals
+
+| Signal | Check |
+|---|---|
+| `debugger_connected` | `Debug.isDebuggerConnected()` |
+| `waiting_for_debugger` | `Debug.waitingForDebugger()` |
+| `debuggable_flag` | The app was built with `android:debuggable` (`ApplicationInfo.FLAG_DEBUGGABLE`) |
+
+`confidence` is the fraction of the 3 signals that fired.
+
+<Aside type="caution" title="Debug builds always report a debugger">
+  Every debug build sets `debuggable_flag`, so `detected` is `true` at
+  confidence 0.33 even with no debugger attached. In a release build, only a
+  real debugger triggers detection.
+</Aside>
+
+## iOS signal
+
+| Signal | Check |
+|---|---|
+| `ptrace_flag` | The kernel marks the process as traced (`P_TRACED`, read with `sysctl`) |
+
+This is Apple's documented technique (Technical Q&A QA1361). It's a single,
+exact signal, so `confidence` is `1.0` when a debugger is attached. If the
+`sysctl` call fails, the result is "not traced".
+
+## Limitations
+
+A debugger attached *after* a check has run isn't noticed until the next
+check. Tools that hook the check itself (such as Frida) can hide a debugger.

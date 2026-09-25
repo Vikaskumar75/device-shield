@@ -1,17 +1,17 @@
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/config/default_configuration_manager.dart';
-import 'package:flutter_shield/src/core/console_logger.dart';
-import 'package:flutter_shield/src/events/default_event_manager.dart';
-import 'package:flutter_shield/src/managers/default_detection_manager.dart';
-import 'package:flutter_shield/src/managers/default_policy_manager.dart';
-import 'package:flutter_shield/src/managers/default_security_manager.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/models/flutter_shield_config.dart';
-import 'package:flutter_shield/src/models/sdk_state.dart';
-import 'package:flutter_shield/src/models/security_event.dart';
-import 'package:flutter_shield/src/registry/default_detector_registry.dart';
-import 'package:flutter_shield/src/registry/detector.dart';
-import 'package:flutter_shield/src/state/security_state_manager.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/config/default_configuration_manager.dart';
+import 'package:device_shield/src/core/console_logger.dart';
+import 'package:device_shield/src/events/default_event_manager.dart';
+import 'package:device_shield/src/managers/default_detection_manager.dart';
+import 'package:device_shield/src/managers/default_policy_manager.dart';
+import 'package:device_shield/src/managers/default_security_manager.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/models/device_shield_config.dart';
+import 'package:device_shield/src/models/sdk_state.dart';
+import 'package:device_shield/src/models/security_event.dart';
+import 'package:device_shield/src/registry/default_detector_registry.dart';
+import 'package:device_shield/src/registry/detector.dart';
+import 'package:device_shield/src/state/security_state_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeNativeBridge implements NativeBridge {
@@ -19,7 +19,7 @@ class _FakeNativeBridge implements NativeBridge {
 
   final Map<String, void Function(dynamic data)> callbacks = {};
   final Future<Object?> Function(String method, Map<String, dynamic>? args)?
-      respond;
+  respond;
   final List<String> invokedMethods = [];
 
   @override
@@ -65,11 +65,11 @@ class _FakeDetector implements Detector {
   Future<void> dispose() async {}
   @override
   Future<DetectionResult> check() async => DetectionResult(
-        type: type,
-        detected: detected,
-        confidence: detected ? 0.9 : 0.0,
-        timestamp: DateTime.now(),
-      );
+    type: type,
+    detected: detected,
+    confidence: detected ? 0.9 : 0.0,
+    timestamp: DateTime.now(),
+  );
 }
 
 DefaultSecurityManager _buildManager({
@@ -79,12 +79,12 @@ DefaultSecurityManager _buildManager({
   required DefaultSecurityStateManager lifecycle,
   NativeBridge? nativeBridge,
   // A very long interval so the periodic timer never fires mid-test. Every
-  // other field defaults false, matching FlutterShieldConfig's own
+  // other field defaults false, matching DeviceShieldConfig's own
   // least-invasive defaults — callers that need push callbacks registered
   // must opt in explicitly via this parameter, exactly like a real host
   // app must, now that config actually gates registration (see the
   // config-gated boot group below).
-  FlutterShieldConfig config = const FlutterShieldConfig(
+  DeviceShieldConfig config = const DeviceShieldConfig(
     periodicCheckInterval: 999999,
   ),
 }) {
@@ -101,11 +101,14 @@ DefaultSecurityManager _buildManager({
 
 void main() {
   group('DefaultSecurityManager — coordination only', () {
-    test('checkNow drives Detection -> Policy -> Event, end to end',
-        () async {
-      final detectionManager = DefaultDetectionManager(logger: ConsoleLogger(), registry: DefaultDetectorRegistry());
-      await detectionManager
-          .registerDetector(_FakeDetector('x', detected: true));
+    test('checkNow drives Detection -> Policy -> Event, end to end', () async {
+      final detectionManager = DefaultDetectionManager(
+        logger: ConsoleLogger(),
+        registry: DefaultDetectorRegistry(),
+      );
+      await detectionManager.registerDetector(
+        _FakeDetector('x', detected: true),
+      );
       final policyManager = DefaultPolicyManager(logger: ConsoleLogger());
       final eventManager = DefaultEventManager();
       final lifecycle = DefaultSecurityStateManager()
@@ -145,7 +148,9 @@ void main() {
         ..transitionTo(SDKState.running);
       final manager = _buildManager(
         detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
+          logger: ConsoleLogger(),
+          registry: DefaultDetectorRegistry(),
+        ),
         policyManager: policyManager,
         eventManager: eventManager,
         lifecycle: lifecycle,
@@ -154,12 +159,14 @@ void main() {
       eventManager.subscribe(received.add);
       await manager.initialize();
 
-      await manager.processResult(DetectionResult(
-        type: 'screenshot',
-        detected: true,
-        confidence: 1.0,
-        timestamp: DateTime.now(),
-      ));
+      await manager.processResult(
+        DetectionResult(
+          type: 'screenshot',
+          detected: true,
+          confidence: 1.0,
+          timestamp: DateTime.now(),
+        ),
+      );
       await Future<void>.delayed(Duration.zero);
 
       expect(received, hasLength(1));
@@ -175,9 +182,15 @@ void main() {
         'the same events as calling processResult directly for each — no '
         'result is ever processed twice', () async {
       final detectionManager = DefaultDetectionManager(
-          logger: ConsoleLogger(), registry: DefaultDetectorRegistry());
-      await detectionManager.registerDetector(_FakeDetector('a', detected: true));
-      await detectionManager.registerDetector(_FakeDetector('b', detected: true));
+        logger: ConsoleLogger(),
+        registry: DefaultDetectorRegistry(),
+      );
+      await detectionManager.registerDetector(
+        _FakeDetector('a', detected: true),
+      );
+      await detectionManager.registerDetector(
+        _FakeDetector('b', detected: true),
+      );
       final policyManager = DefaultPolicyManager(logger: ConsoleLogger());
       final eventManager = DefaultEventManager();
       final lifecycle = DefaultSecurityStateManager()
@@ -206,8 +219,7 @@ void main() {
 
     test('a real native push, routed through the actual '
         'ScreenCaptureController this manager owns, reaches an event — '
-        'end-to-end, not just via processResult() called directly',
-        () async {
+        'end-to-end, not just via processResult() called directly', () async {
       final nativeBridge = _FakeNativeBridge();
       final policyManager = DefaultPolicyManager(logger: ConsoleLogger());
       final eventManager = DefaultEventManager();
@@ -217,12 +229,14 @@ void main() {
         ..transitionTo(SDKState.running);
       final manager = _buildManager(
         detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
+          logger: ConsoleLogger(),
+          registry: DefaultDetectorRegistry(),
+        ),
         policyManager: policyManager,
         eventManager: eventManager,
         lifecycle: lifecycle,
         nativeBridge: nativeBridge,
-        config: const FlutterShieldConfig(
+        config: const DeviceShieldConfig(
           periodicCheckInterval: 999999,
           enableScreenshotDetection: true,
         ),
@@ -235,9 +249,11 @@ void main() {
       // ...) — routed through the real DefaultNativeBridge mechanism in
       // production; here, directly through the fake's stored callback,
       // exactly mirroring default_native_bridge_test.dart's own approach.
-      nativeBridge.callbacks['onScreenshotTaken']!(
-        {'detected': true, 'confidence': 1.0, 'signals': []},
-      );
+      nativeBridge.callbacks['onScreenshotTaken']!({
+        'detected': true,
+        'confidence': 1.0,
+        'signals': <String>[],
+      });
       await Future<void>.delayed(Duration.zero);
 
       expect(received, hasLength(1));
@@ -253,26 +269,30 @@ void main() {
   });
 
   group('DefaultSecurityManager — protection commands (Step 10)', () {
-    test('enableScreenshotProtection delegates to the owned '
-        'ScreenCaptureController and returns the native "applied" answer',
-        () async {
-      final nativeBridge = _FakeNativeBridge(
-        respond: (method, args) async => {'applied': true},
-      );
-      final manager = _buildManager(
-        detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
-        policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
-        eventManager: DefaultEventManager(),
-        lifecycle: DefaultSecurityStateManager(),
-        nativeBridge: nativeBridge,
-      );
+    test(
+      'enableScreenshotProtection delegates to the owned '
+      'ScreenCaptureController and returns the native "applied" answer',
+      () async {
+        final nativeBridge = _FakeNativeBridge(
+          respond: (method, args) async => {'applied': true},
+        );
+        final manager = _buildManager(
+          detectionManager: DefaultDetectionManager(
+            logger: ConsoleLogger(),
+            registry: DefaultDetectorRegistry(),
+          ),
+          policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
+          eventManager: DefaultEventManager(),
+          lifecycle: DefaultSecurityStateManager(),
+          nativeBridge: nativeBridge,
+        );
 
-      final applied = await manager.enableScreenshotProtection();
+        final applied = await manager.enableScreenshotProtection();
 
-      expect(applied, isTrue);
-      expect(manager.isScreenshotProtectionEnabled, isTrue);
-    });
+        expect(applied, isTrue);
+        expect(manager.isScreenshotProtectionEnabled, isTrue);
+      },
+    );
 
     test('disableScreenshotProtection delegates and clears the enabled '
         'state', () async {
@@ -281,7 +301,9 @@ void main() {
       );
       final manager = _buildManager(
         detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
+          logger: ConsoleLogger(),
+          registry: DefaultDetectorRegistry(),
+        ),
         policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
         eventManager: DefaultEventManager(),
         lifecycle: DefaultSecurityStateManager(),
@@ -303,7 +325,9 @@ void main() {
       );
       final manager = _buildManager(
         detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
+          logger: ConsoleLogger(),
+          registry: DefaultDetectorRegistry(),
+        ),
         policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
         eventManager: DefaultEventManager(),
         lifecycle: DefaultSecurityStateManager(),
@@ -320,7 +344,9 @@ void main() {
         'enable() call', () {
       final manager = _buildManager(
         detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
+          logger: ConsoleLogger(),
+          registry: DefaultDetectorRegistry(),
+        ),
         policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
         eventManager: DefaultEventManager(),
         lifecycle: DefaultSecurityStateManager(),
@@ -332,77 +358,89 @@ void main() {
   });
 
   group('DefaultSecurityManager — coordination only (continued)', () {
-    test('status delegates to Lifecycle.current, never tracks its own copy',
-        () async {
-      final lifecycle = DefaultSecurityStateManager();
-      final manager = _buildManager(
-        detectionManager: DefaultDetectionManager(logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
-        policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
-        eventManager: DefaultEventManager(),
-        lifecycle: lifecycle,
-      );
+    test(
+      'status delegates to Lifecycle.current, never tracks its own copy',
+      () async {
+        final lifecycle = DefaultSecurityStateManager();
+        final manager = _buildManager(
+          detectionManager: DefaultDetectionManager(
+            logger: ConsoleLogger(),
+            registry: DefaultDetectorRegistry(),
+          ),
+          policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
+          eventManager: DefaultEventManager(),
+          lifecycle: lifecycle,
+        );
 
-      expect(manager.status, SDKState.uninitialized);
-      lifecycle.transitionTo(SDKState.initializing);
-      expect(manager.status, SDKState.initializing);
+        expect(manager.status, SDKState.uninitialized);
+        lifecycle.transitionTo(SDKState.initializing);
+        expect(manager.status, SDKState.initializing);
 
-      lifecycle.dispose();
-    });
-
-    test('pause transitions running -> paused; resume transitions back',
-        () async {
-      final lifecycle = DefaultSecurityStateManager()
-        ..transitionTo(SDKState.initializing)
-        ..transitionTo(SDKState.initialized)
-        ..transitionTo(SDKState.running);
-      final manager = _buildManager(
-        detectionManager: DefaultDetectionManager(logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
-        policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
-        eventManager: DefaultEventManager(),
-        lifecycle: lifecycle,
-      );
-      await manager.initialize();
-
-      await manager.pause();
-      expect(lifecycle.current, SDKState.paused);
-
-      await manager.resume();
-      expect(lifecycle.current, SDKState.running);
-
-      await manager.dispose();
-      lifecycle.dispose();
-    });
+        lifecycle.dispose();
+      },
+    );
 
     test(
-        'regression: resume() while already running is a no-op, not a '
-        'StateError (bug found via AppLifecycleState.resumed firing while '
-        'already running, e.g. a transient inactive-then-resumed blip)',
-        () async {
-      final lifecycle = DefaultSecurityStateManager()
-        ..transitionTo(SDKState.initializing)
-        ..transitionTo(SDKState.initialized)
-        ..transitionTo(SDKState.running);
-      final manager = _buildManager(
-        detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
-        policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
-        eventManager: DefaultEventManager(),
-        lifecycle: lifecycle,
-      );
-      await manager.initialize();
+      'pause transitions running -> paused; resume transitions back',
+      () async {
+        final lifecycle = DefaultSecurityStateManager()
+          ..transitionTo(SDKState.initializing)
+          ..transitionTo(SDKState.initialized)
+          ..transitionTo(SDKState.running);
+        final manager = _buildManager(
+          detectionManager: DefaultDetectionManager(
+            logger: ConsoleLogger(),
+            registry: DefaultDetectorRegistry(),
+          ),
+          policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
+          eventManager: DefaultEventManager(),
+          lifecycle: lifecycle,
+        );
+        await manager.initialize();
 
-      // Already running — resume() must not throw and must leave the
-      // state unchanged, matching real repeated AppLifecycleState.resumed
-      // delivery via onResume() below.
-      await expectLater(manager.resume(), completes);
-      expect(lifecycle.current, SDKState.running);
+        await manager.pause();
+        expect(lifecycle.current, SDKState.paused);
 
-      await manager.dispose();
-      lifecycle.dispose();
-    });
+        await manager.resume();
+        expect(lifecycle.current, SDKState.running);
+
+        await manager.dispose();
+        lifecycle.dispose();
+      },
+    );
 
     test(
-        'regression: pause() while already paused is a no-op, not a '
+      'regression: resume() while already running is a no-op, not a '
+      'StateError (bug found via AppLifecycleState.resumed firing while '
+      'already running, e.g. a transient inactive-then-resumed blip)',
+      () async {
+        final lifecycle = DefaultSecurityStateManager()
+          ..transitionTo(SDKState.initializing)
+          ..transitionTo(SDKState.initialized)
+          ..transitionTo(SDKState.running);
+        final manager = _buildManager(
+          detectionManager: DefaultDetectionManager(
+            logger: ConsoleLogger(),
+            registry: DefaultDetectorRegistry(),
+          ),
+          policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
+          eventManager: DefaultEventManager(),
+          lifecycle: lifecycle,
+        );
+        await manager.initialize();
+
+        // Already running — resume() must not throw and must leave the
+        // state unchanged, matching real repeated AppLifecycleState.resumed
+        // delivery via onResume() below.
+        await expectLater(manager.resume(), completes);
+        expect(lifecycle.current, SDKState.running);
+
+        await manager.dispose();
+        lifecycle.dispose();
+      },
+    );
+
+    test('regression: pause() while already paused is a no-op, not a '
         'StateError', () async {
       final lifecycle = DefaultSecurityStateManager()
         ..transitionTo(SDKState.initializing)
@@ -410,7 +448,9 @@ void main() {
         ..transitionTo(SDKState.running);
       final manager = _buildManager(
         detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
+          logger: ConsoleLogger(),
+          registry: DefaultDetectorRegistry(),
+        ),
         policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
         eventManager: DefaultEventManager(),
         lifecycle: lifecycle,
@@ -427,18 +467,18 @@ void main() {
       lifecycle.dispose();
     });
 
-    test(
-        'regression: onResume() delivered twice in a row while running '
+    test('regression: onResume() delivered twice in a row while running '
         '(simulating a real inactive->resumed blip from the OS, e.g. the '
-        'notification shade or a screenshot toast) does not throw',
-        () async {
+        'notification shade or a screenshot toast) does not throw', () async {
       final lifecycle = DefaultSecurityStateManager()
         ..transitionTo(SDKState.initializing)
         ..transitionTo(SDKState.initialized)
         ..transitionTo(SDKState.running);
       final manager = _buildManager(
         detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
+          logger: ConsoleLogger(),
+          registry: DefaultDetectorRegistry(),
+        ),
         policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
         eventManager: DefaultEventManager(),
         lifecycle: lifecycle,
@@ -454,55 +494,65 @@ void main() {
       lifecycle.dispose();
     });
 
-    test('shutdown stops the timer but does not transition Lifecycle state',
-        () async {
-      final lifecycle = DefaultSecurityStateManager()
-        ..transitionTo(SDKState.initializing)
-        ..transitionTo(SDKState.initialized)
-        ..transitionTo(SDKState.running);
-      final manager = _buildManager(
-        detectionManager: DefaultDetectionManager(logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
-        policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
-        eventManager: DefaultEventManager(),
-        lifecycle: lifecycle,
-      );
-      await manager.initialize();
+    test(
+      'shutdown stops the timer but does not transition Lifecycle state',
+      () async {
+        final lifecycle = DefaultSecurityStateManager()
+          ..transitionTo(SDKState.initializing)
+          ..transitionTo(SDKState.initialized)
+          ..transitionTo(SDKState.running);
+        final manager = _buildManager(
+          detectionManager: DefaultDetectionManager(
+            logger: ConsoleLogger(),
+            registry: DefaultDetectorRegistry(),
+          ),
+          policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
+          eventManager: DefaultEventManager(),
+          lifecycle: lifecycle,
+        );
+        await manager.initialize();
 
-      await manager.shutdown();
+        await manager.shutdown();
 
-      // State-transition ownership for `-> stopped` belongs to
-      // PluginInitializer/ShutdownSequence, not SecurityManager itself.
-      expect(lifecycle.current, SDKState.running);
+        // State-transition ownership for `-> stopped` belongs to
+        // PluginInitializer/ShutdownSequence, not SecurityManager itself.
+        expect(lifecycle.current, SDKState.running);
 
-      lifecycle.dispose();
-    });
+        lifecycle.dispose();
+      },
+    );
 
-    test('SecurityLifecycleHandler callbacks delegate to resume/pause/shutdown',
-        () async {
-      final lifecycle = DefaultSecurityStateManager()
-        ..transitionTo(SDKState.initializing)
-        ..transitionTo(SDKState.initialized)
-        ..transitionTo(SDKState.running);
-      final manager = _buildManager(
-        detectionManager: DefaultDetectionManager(logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
-        policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
-        eventManager: DefaultEventManager(),
-        lifecycle: lifecycle,
-      );
-      await manager.initialize();
+    test(
+      'SecurityLifecycleHandler callbacks delegate to resume/pause/shutdown',
+      () async {
+        final lifecycle = DefaultSecurityStateManager()
+          ..transitionTo(SDKState.initializing)
+          ..transitionTo(SDKState.initialized)
+          ..transitionTo(SDKState.running);
+        final manager = _buildManager(
+          detectionManager: DefaultDetectionManager(
+            logger: ConsoleLogger(),
+            registry: DefaultDetectorRegistry(),
+          ),
+          policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
+          eventManager: DefaultEventManager(),
+          lifecycle: lifecycle,
+        );
+        await manager.initialize();
 
-      await manager.onPause();
-      expect(lifecycle.current, SDKState.paused);
+        await manager.onPause();
+        expect(lifecycle.current, SDKState.paused);
 
-      await manager.onResume();
-      expect(lifecycle.current, SDKState.running);
+        await manager.onResume();
+        expect(lifecycle.current, SDKState.running);
 
-      await expectLater(manager.onInactive(), completes);
-      await expectLater(manager.onDetached(), completes);
+        await expectLater(manager.onInactive(), completes);
+        await expectLater(manager.onDetached(), completes);
 
-      await manager.dispose();
-      lifecycle.dispose();
-    });
+        await manager.dispose();
+        lifecycle.dispose();
+      },
+    );
   });
 
   group('DefaultSecurityManager — config-driven boot (dead-config fix, '
@@ -516,12 +566,14 @@ void main() {
       );
       final manager = _buildManager(
         detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
+          logger: ConsoleLogger(),
+          registry: DefaultDetectorRegistry(),
+        ),
         policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
         eventManager: DefaultEventManager(),
         lifecycle: DefaultSecurityStateManager(),
         nativeBridge: nativeBridge,
-        config: const FlutterShieldConfig(
+        config: const DeviceShieldConfig(
           periodicCheckInterval: 999999,
           enableScreenshotProtection: true,
         ),
@@ -540,7 +592,9 @@ void main() {
       final nativeBridge = _FakeNativeBridge();
       final manager = _buildManager(
         detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
+          logger: ConsoleLogger(),
+          registry: DefaultDetectorRegistry(),
+        ),
         policyManager: DefaultPolicyManager(logger: ConsoleLogger()),
         eventManager: DefaultEventManager(),
         lifecycle: DefaultSecurityStateManager(),

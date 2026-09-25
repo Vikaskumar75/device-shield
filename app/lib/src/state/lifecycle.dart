@@ -10,7 +10,7 @@ import '../models/sdk_state.dart';
 ///
 /// Public/Internal: write access is internal only — nothing but the
 /// concrete state machine calls [transitionTo]. Read access
-/// (`current`/`stateStream`) is exposed publicly via `FlutterShield.status`.
+/// (`current`/`stateStream`) is exposed publicly via `DeviceShield.status`.
 ///
 /// Extension point: no.
 abstract class Lifecycle {

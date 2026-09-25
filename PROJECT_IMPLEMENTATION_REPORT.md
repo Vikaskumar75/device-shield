@@ -1,4 +1,4 @@
-# FlutterShield SDK — Project Implementation Report
+# DeviceShield SDK — Project Implementation Report
 
 **Prepared:** 2026-08-03
 **Method:** every file under `lib/`, `test/`, `android/`, `ios/`, and `example/` was read directly in full; `flutter analyze` and `flutter test` were executed against the current working tree; every claim below is drawn from that direct reading, not from prior documentation. Where this report's findings differ from `CURRENT_PROGRESS.md` (dated 2026-07-24) or `CURRENT_STATE.md` (an early-scaffold snapshot, now badly stale), that is called out explicitly — the codebase has moved since those documents were written, most notably: `PermissionManager` now exists and is wired into boot, `PluginInitializer` now constructs every manager itself, `DetectorFactory` exists, a full P0 detector (`EmulatorDetector`) is implemented end-to-end on both platforms, and the iOS/Android platform-floor mismatch has been resolved.
@@ -10,7 +10,7 @@
 ## 1. Project Overview
 
 ### Purpose
-FlutterShield is a Flutter plugin SDK for mobile application security: runtime threat detection (root/jailbreak, emulator, debugger, hooking frameworks, app-integrity attestation), a policy engine that turns detections into actions, an event bus for observability, and (per the roadmap, not yet built) app-hardening protections (screenshot/recording blocking, SSL pinning, clipboard protection, overlay detection).
+DeviceShield is a Flutter plugin SDK for mobile application security: runtime threat detection (root/jailbreak, emulator, debugger, hooking frameworks, app-integrity attestation), a policy engine that turns detections into actions, an event bus for observability, and (per the roadmap, not yet built) app-hardening protections (screenshot/recording blocking, SSL pinning, clipboard protection, overlay detection).
 
 ### Goals (as expressed by the frozen architecture documents)
 - A layered, dependency-injected core that is technique-agnostic — detectors and rules are pluggable via narrow contracts (`Detector`, `Rule`), never hardcoded into the managers that run them.
@@ -22,7 +22,7 @@ FlutterShield is a Flutter plugin SDK for mobile application security: runtime t
 ### SDK Responsibilities (as currently implemented — see §2/§8 for what's still missing)
 - Boot/shutdown/reinitialize lifecycle management with a strict, tested state machine.
 - Dependency injection and service composition (`ServiceContainer`, `PluginInitializer`).
-- A native bridge over two dedicated Flutter platform channels (`flutter_shield/native_bridge`, `flutter_shield/events`), separate from the legacy Phase-1 `flutter_shield` channel.
+- A native bridge over two dedicated Flutter platform channels (`device_shield/native_bridge`, `device_shield/events`), separate from the legacy Phase-1 `device_shield` channel.
 - Detector registration/execution with bounded concurrency, per-detector timeout, and optional TTL caching.
 - Policy rule registration/evaluation (mechanism only — no default rule content yet).
 - An event bus with history, pause/resume queuing, and per-subscriber failure isolation.
@@ -30,8 +30,8 @@ FlutterShield is a Flutter plugin SDK for mobile application security: runtime t
 
 ### Supported Platforms
 - **Android:** `minSdk 21`, `compileSdk 36`, Kotlin, Gradle (`com.android.library` plugin, AGP 9.0.1, Kotlin 2.3.20, JVM target 17).
-- **iOS:** deployment target `18.0` (both `flutter_shield.podspec` and `Package.swift`), Swift 5.0/5.9 tools, Swift Package Manager layout (`ios/flutter_shield/Sources/flutter_shield`).
-- Both platform floors were previously mismatched against the documented SRS targets (iOS was 13.0, Android was 24) — **this has since been corrected**: `ios/flutter_shield.podspec:16` and `ios/flutter_shield/Package.swift:9` both read `18.0`; `android/build.gradle.kts:31` reads `minSdk = 21`.
+- **iOS:** deployment target `18.0` (both `device_shield.podspec` and `Package.swift`), Swift 5.0/5.9 tools, Swift Package Manager layout (`ios/device_shield/Sources/device_shield`).
+- Both platform floors were previously mismatched against the documented SRS targets (iOS was 13.0, Android was 24) — **this has since been corrected**: `ios/device_shield.podspec:16` and `ios/device_shield/Package.swift:9` both read `18.0`; `android/build.gradle.kts:31` reads `minSdk = 21`.
 - No web, desktop, or other platform target exists or is planned in any frozen document.
 
 ### High-Level Architecture
@@ -41,7 +41,7 @@ Layered, top-down, strictly acyclic by design rule ("a component may depend on a
 Flutter App
    │
    ▼
-FlutterShield (static facade)  ──────────────────────────────┐
+DeviceShield (static facade)  ──────────────────────────────┐
    │                                                          │
    ▼                                                          │
 PluginInitializer  (constructs + wires every service, once)   │
@@ -61,7 +61,7 @@ ServiceContainer  (type-keyed DI: singleton / lazy / factory) │
 NativeBridge → MethodChannelService / EventChannelService → Native (Kotlin / Swift)
 ```
 
-This matches the frozen design in `ARCHITECTURE.md`/`ARCHITECTURE_CONTRACTS.md` with one material, deliberate deviation from those documents' literal wording (see §17): construction of `DetectionManager`/`PolicyManager`/`SecurityManager`/`LifecycleManager` now lives inside `PluginInitializer` itself (as of the current code), not split across `PluginInitializer` and `FlutterShield` as `CURRENT_PROGRESS.md` (2026-07-24) found — that specific finding is **resolved** in the code as it stands today.
+This matches the frozen design in `ARCHITECTURE.md`/`ARCHITECTURE_CONTRACTS.md` with one material, deliberate deviation from those documents' literal wording (see §17): construction of `DetectionManager`/`PolicyManager`/`SecurityManager`/`LifecycleManager` now lives inside `PluginInitializer` itself (as of the current code), not split across `PluginInitializer` and `DeviceShield` as `CURRENT_PROGRESS.md` (2026-07-24) found — that specific finding is **resolved** in the code as it stands today.
 
 ---
 
@@ -99,10 +99,10 @@ This matches the frozen design in `ARCHITECTURE.md`/`ARCHITECTURE_CONTRACTS.md` 
 | M22 | v1.0 Release | Not started | 0% |
 
 ### Implemented Components (summary — full detail in §4/§9)
-Bootstrap (`ServiceContainer`, `DependencyResolver`, `PluginInitializer`, `BootstrapContext`), all 4 orchestration managers (`SecurityManager`, `DetectionManager`, `PolicyManager`, `EventManager`) with real implementations, `DetectorRegistry` + `DetectorFactory`, `PermissionManager`, `ConfigurationManager` + validator, `NativeBridge` + both channel services, `Logger`/`ConsoleLogger`, the full `SDKState` state machine, `LifecycleManager`, bounded concurrency (`ConcurrencyController`), a generic multi-level TTL cache backing `DetectionCache`, the complete model layer, the complete exception hierarchy, the `FlutterShield` public facade, and one real built-in detector (`EmulatorDetector`, Dart + Kotlin + Swift).
+Bootstrap (`ServiceContainer`, `DependencyResolver`, `PluginInitializer`, `BootstrapContext`), all 4 orchestration managers (`SecurityManager`, `DetectionManager`, `PolicyManager`, `EventManager`) with real implementations, `DetectorRegistry` + `DetectorFactory`, `PermissionManager`, `ConfigurationManager` + validator, `NativeBridge` + both channel services, `Logger`/`ConsoleLogger`, the full `SDKState` state machine, `LifecycleManager`, bounded concurrency (`ConcurrencyController`), a generic multi-level TTL cache backing `DetectionCache`, the complete model layer, the complete exception hierarchy, the `DeviceShield` public facade, and one real built-in detector (`EmulatorDetector`, Dart + Kotlin + Swift).
 
 ### Pending Components (summary)
-Every detector except emulator (root, jailbreak, debugger, runtime-hook, app-integrity, developer-options, mock-location), all 5 protections (screenshot, screen-recording, overlay, clipboard, SSL pinning), all policy *content* (default rules, `ActionHandler`s, `CustomRule`), the 5 named `SecurityProfile` factory presets, storage/encryption utilities, compliance packs (GDPR/PCI-DSS/HIPAA), internationalization, `FlutterShieldWidget`/`SecurityAlertDialog`, production logging/recovery/retry infrastructure, the public export barrel (still exports only the facade), CI/CD, and all documentation/DX artifacts (the example app is still the unmodified `flutter create` counter template).
+Every detector except emulator (root, jailbreak, debugger, runtime-hook, app-integrity, developer-options, mock-location), all 5 protections (screenshot, screen-recording, overlay, clipboard, SSL pinning), all policy *content* (default rules, `ActionHandler`s, `CustomRule`), the 5 named `SecurityProfile` factory presets, storage/encryption utilities, compliance packs (GDPR/PCI-DSS/HIPAA), internationalization, `DeviceShieldWidget`/`SecurityAlertDialog`, production logging/recovery/retry infrastructure, the public export barrel (still exports only the facade), CI/CD, and all documentation/DX artifacts (the example app is still the unmodified `flutter create` counter template).
 
 ### Current Test Count
 **202 tests**, all passing (`flutter test` run for this report, full pass, zero skips/failures), across 22 test files. Verified independently by counting `test(` occurrences directly (`grep -rc "test(" test --include="*.dart"` → 202), matching the runner's own `+202` completion line.
@@ -118,11 +118,11 @@ Zero circular dependencies found (matches `ARCHITECTURE_CONTRACTS.md`'s own veri
 ## 3. Folder Structure
 
 ```
-flutter_shield/
+device_shield/
 ├── lib/
-│   ├── flutter_shield.dart              # public export barrel (1 line)
+│   ├── device_shield.dart              # public export barrel (1 line)
 │   └── src/
-│       ├── api/                         # the FlutterShield public facade
+│       ├── api/                         # the DeviceShield public facade
 │       ├── bootstrap/                   # DI container + boot/shutdown sequencing
 │       ├── bridge/                      # native channel transport layer
 │       ├── config/                      # configuration storage + validation
@@ -138,10 +138,10 @@ flutter_shield/
 │       └── utilities/                   # EMPTY — no files (see §17 findings)
 ├── test/                                # mirrors lib/src/ layout, one *_test.dart per class-ish
 ├── android/src/main/kotlin/.../
-│   ├── FlutterShieldPlugin.kt           # plugin registration, channel dispatch
+│   ├── DeviceShieldPlugin.kt           # plugin registration, channel dispatch
 │   └── detection/EmulatorDetector.kt    # native emulator-detection heuristics
-├── ios/flutter_shield/Sources/flutter_shield/
-│   ├── FlutterShieldPlugin.swift        # plugin registration, channel dispatch
+├── ios/device_shield/Sources/device_shield/
+│   ├── DeviceShieldPlugin.swift        # plugin registration, channel dispatch
 │   └── Detection/EmulatorDetector.swift # native simulator-detection (compile-time check)
 ├── example/                             # UNMODIFIED flutter create counter-app template
 ├── ARCHITECTURE.md                      # frozen high-level design + diagrams
@@ -161,7 +161,7 @@ flutter_shield/
 
 **`lib/src/bridge/`** — Purpose: the sole path any Dart code takes to reach native code. Responsibility: method-channel request/response (`MethodChannelService`), event-channel native-push forwarding (`EventChannelService`), the unifying façade and callback router (`NativeBridge`/`DefaultNativeBridge`), method-name constants (`MethodCodes`). Dependencies: `flutter/services.dart`, `models` (for `NativeBridgeException`). Used by: `managers` (`DetectionManager`), `detectors`.
 
-**`lib/src/config/`** — Purpose: sole ownership of the active SDK configuration. Responsibility: bound validation before storage (`FlutterShieldConfigValidator`), pure store/expose/update (`ConfigurationManager`/`DefaultConfigurationManager`) — deliberately no validation logic of its own. Dependencies: `models` (`FlutterShieldConfig`, `FlutterShieldException`). Used by: `bootstrap`, `managers` (`SecurityManager`, indirectly `DetectionManager` at construction time only).
+**`lib/src/config/`** — Purpose: sole ownership of the active SDK configuration. Responsibility: bound validation before storage (`DeviceShieldConfigValidator`), pure store/expose/update (`ConfigurationManager`/`DefaultConfigurationManager`) — deliberately no validation logic of its own. Dependencies: `models` (`DeviceShieldConfig`, `DeviceShieldException`). Used by: `bootstrap`, `managers` (`SecurityManager`, indirectly `DetectionManager` at construction time only).
 
 **`lib/src/core/`** — Purpose: the SDK's only sanctioned output path. Responsibility: level-gated logging with a registrable `LogSink` fan-out (`Logger`/`ConsoleLogger`). Dependencies: none. Used by: nearly every other module (constructor-injected).
 
@@ -171,11 +171,11 @@ flutter_shield/
 
 **`lib/src/managers/`** — Purpose: the orchestration layer — the four managers plus their shared infrastructure. Responsibility: `SecurityManager` (runtime orchestrator), `DetectionManager` (runs detectors, bounded-concurrent, cached, timeout-bound), `PolicyManager` (rule evaluation, currently placeholder decisions), `ConcurrencyController` (generic bounded-parallel executor), `DetectionCache`/`MultiLevelCache`/`CacheLevel`/`MemoryCacheLevel` (generic TTL+LRU cache stack). Dependencies: `core`, `config`, `events`, `models`, `registry`, `state`. Used by: `bootstrap`, `api`.
 
-**`lib/src/models/`** — Purpose: every immutable value type, enum, and exception the SDK uses. Responsibility: `DetectionResult`, `SecurityEvent`/`EventSeverity`, `FlutterShieldConfig`, `SDKState`, `SecurityAction`, `SecurityProfile`/`DetectionConfig`/`PolicyConfig`/`ProtectionConfig`, `FlutterShieldException` + 6 subtypes. Dependencies: none (leaf, pure Dart). Used by: everything.
+**`lib/src/models/`** — Purpose: every immutable value type, enum, and exception the SDK uses. Responsibility: `DetectionResult`, `SecurityEvent`/`EventSeverity`, `DeviceShieldConfig`, `SDKState`, `SecurityAction`, `SecurityProfile`/`DetectionConfig`/`PolicyConfig`/`ProtectionConfig`, `DeviceShieldException` + 6 subtypes. Dependencies: none (leaf, pure Dart). Used by: everything.
 
 **`lib/src/permission/`** — Purpose: OS permission request/tracking for whatever the active profile's detectors/protections require. Responsibility: `PermissionManager` contract + `DefaultPermissionManager` (honest about its own incompleteness — throws `UnimplementedError` for any non-empty request rather than fabricating a grant). Dependencies: `managers/manager.dart` only. Used by: `bootstrap`.
 
-**`lib/src/platform/`** — Purpose: the pre-existing, unrelated Phase-1 `getPlatformVersion()` path — legacy, not part of the current Bridge architecture. Responsibility: `FlutterShieldPlatform` (federated-plugin interface) + `MethodChannelFlutterShield`. Dependencies: `plugin_platform_interface`, `flutter/services.dart`. Used by: `api`'s instance-method `getPlatformVersion()` only.
+**`lib/src/platform/`** — Purpose: the pre-existing, unrelated Phase-1 `getPlatformVersion()` path — legacy, not part of the current Bridge architecture. Responsibility: `DeviceShieldPlatform` (federated-plugin interface) + `MethodChannelDeviceShield`. Dependencies: `plugin_platform_interface`, `flutter/services.dart`. Used by: `api`'s instance-method `getPlatformVersion()` only.
 
 **`lib/src/registry/`** — Purpose: the FR-18/FR-17 extension mechanism itself. Responsibility: generic `Registry<T>` base, `Detector`/`Rule` contracts, `DetectorRegistry`/`DefaultDetectorRegistry` (priority-ordered storage), `DetectorFactory` (constructs built-in detectors by type-string). Dependencies: `models`, `bridge` (factory only), `detectors` (factory only). Used by: `managers` (`DetectionManager`, `PolicyManager`), `bootstrap`.
 
@@ -183,13 +183,13 @@ flutter_shield/
 
 **`lib/src/utilities/`** — **Empty.** No files, no subdirectories beyond itself. Scaffolding left over from an earlier structural decision, never populated. Flagged in §17.
 
-**`test/`** — Mirrors `lib/src/` one level down (`test/api/`, `test/bootstrap/`, `test/bridge/`, `test/config/`, `test/detectors/`, `test/events/`, `test/managers/`, `test/permission/`, `test/registry/`, `test/state/`), plus two root-level files (`test/flutter_shield_test.dart`, `test/flutter_shield_method_channel_test.dart`) covering the legacy `platform/` module. No `test/unit/`, `test/integration/`, `test/native/` split exists — `ROADMAP.md` M0/M18 calls for one; it was not adopted.
+**`test/`** — Mirrors `lib/src/` one level down (`test/api/`, `test/bootstrap/`, `test/bridge/`, `test/config/`, `test/detectors/`, `test/events/`, `test/managers/`, `test/permission/`, `test/registry/`, `test/state/`), plus two root-level files (`test/device_shield_test.dart`, `test/device_shield_method_channel_test.dart`) covering the legacy `platform/` module. No `test/unit/`, `test/integration/`, `test/native/` split exists — `ROADMAP.md` M0/M18 calls for one; it was not adopted.
 
-**`android/src/main/kotlin/com/example/flutter_shield/`** — `FlutterShieldPlugin.kt` (plugin registration + channel dispatch) and `detection/EmulatorDetector.kt` (the only native detection package that exists — `protection/`, `bridge/`, `utils/` subpackages from `ROADMAP.md` M0 were never created; everything else lives flat in the plugin file).
+**`android/src/main/kotlin/com/example/device_shield/`** — `DeviceShieldPlugin.kt` (plugin registration + channel dispatch) and `detection/EmulatorDetector.kt` (the only native detection package that exists — `protection/`, `bridge/`, `utils/` subpackages from `ROADMAP.md` M0 were never created; everything else lives flat in the plugin file).
 
-**`ios/flutter_shield/Sources/flutter_shield/`** — Same shape: `FlutterShieldPlugin.swift` + `Detection/EmulatorDetector.swift`. Same missing-subpackage gap as Android.
+**`ios/device_shield/Sources/device_shield/`** — Same shape: `DeviceShieldPlugin.swift` + `Detection/EmulatorDetector.swift`. Same missing-subpackage gap as Android.
 
-**`example/`** — Purpose (intended): a working demo app proving the public API. Actual state: **unmodified** `flutter create --template=plugin` counter-app boilerplate — confirmed directly (`example/lib/main.dart` still constructs `FlutterShield()` and calls the legacy `getPlatformVersion()`, no reference to `initialize()`/`status`/`events`/any manager).
+**`example/`** — Purpose (intended): a working demo app proving the public API. Actual state: **unmodified** `flutter create --template=plugin` counter-app boilerplate — confirmed directly (`example/lib/main.dart` still constructs `DeviceShield()` and calls the legacy `getPlatformVersion()`, no reference to `initialize()`/`status`/`events`/any manager).
 
 ---
 
@@ -197,26 +197,26 @@ flutter_shield/
 
 Every file under `lib/src/` (50 files) plus the barrel export, documented individually. Native files (Android/iOS) are documented in §11. Test files are documented in aggregate in §10 (individually listing all 22 would duplicate §10's table without adding information).
 
-### `lib/flutter_shield.dart` (1 line)
-- **Why it exists:** the package's public export barrel — the only file a host app's `import 'package:flutter_shield/flutter_shield.dart'` resolves against.
+### `lib/device_shield.dart` (1 line)
+- **Why it exists:** the package's public export barrel — the only file a host app's `import 'package:device_shield/device_shield.dart'` resolves against.
 - **Responsibility:** re-export the public API surface.
-- **Public surface exported:** `src/api/flutter_shield.dart` only.
-- **Dependency graph:** → `src/api/flutter_shield.dart`.
+- **Public surface exported:** `src/api/device_shield.dart` only.
+- **Dependency graph:** → `src/api/device_shield.dart`.
 - **Lifecycle:** N/A (no runtime object).
 - **Who creates/owns/disposes it:** N/A.
 - **Communication:** static re-export, no runtime behavior.
 - **Design pattern:** Barrel/Facade export.
 - **SOLID:** N/A (not a class).
 - **Extension point:** no.
-- **Gap/future work:** **incomplete** — `Detector`, `Rule`, `SecurityEvent`, `DetectionResult`, `FlutterShieldConfig`, and the exception hierarchy are not re-exported here, meaning a host app cannot today build a custom detector or rule (FR-17/FR-18) without importing from `package:flutter_shield/src/...` directly. This is a real, checkable, still-open public-API completeness gap (unchanged from `CURRENT_PROGRESS.md`'s finding — verified still true by reading this file directly).
+- **Gap/future work:** **incomplete** — `Detector`, `Rule`, `SecurityEvent`, `DetectionResult`, `DeviceShieldConfig`, and the exception hierarchy are not re-exported here, meaning a host app cannot today build a custom detector or rule (FR-17/FR-18) without importing from `package:device_shield/src/...` directly. This is a real, checkable, still-open public-API completeness gap (unchanged from `CURRENT_PROGRESS.md`'s finding — verified still true by reading this file directly).
 
-### `lib/src/api/flutter_shield.dart` (154 lines)
+### `lib/src/api/device_shield.dart` (154 lines)
 - **Why it exists:** the SDK's single public entry point — per its own doc comment, "the only symbol a host app ever imports."
 - **Responsibility:** delegate every call 1:1 to `PluginInitializer`/`SecurityManager`/`DetectionManager`/`PolicyManager`/`NativeBridge`/`EventManager`; owns no logic of its own.
-- **Public classes:** `FlutterShield`.
+- **Public classes:** `DeviceShield`.
 - **Public methods:** `getPlatformVersion()` (legacy instance method, unchanged since Phase 1), `initialize({config})`, `status` (getter), `pause()`, `resume()`, `checkNow()`, `shutdown()`, `reinitialize({config})`, `dispose()`, `registerDetector(Detector)`, `addRule(Rule)`, `removeRule(String)`, `registerCallback(String, callback)`, `unregisterCallback(String)`, `subscribe(handler, {filter})`.
 - **Important private members:** `_container`/`_initializer` (static, hold the current `ServiceContainer`/`PluginInitializer`), `_requireContainer` (throws `InitializationException(NOT_INITIALIZED)` if called before `initialize()`).
-- **Dependency graph:** → `PluginInitializer`, `ServiceContainer`, and (via container resolution) `NativeBridge`, `EventManager`, `DetectionManager`, `PolicyManager`, `SecurityManager`, `Lifecycle`, `FlutterShieldPlatform` (legacy only).
+- **Dependency graph:** → `PluginInitializer`, `ServiceContainer`, and (via container resolution) `NativeBridge`, `EventManager`, `DetectionManager`, `PolicyManager`, `SecurityManager`, `Lifecycle`, `DeviceShieldPlatform` (legacy only).
 - **Lifecycle:** process-lifetime static class, never instantiated for the static surface; the *instance* side (`getPlatformVersion()`) can be constructed freely and holds no state.
 - **Who creates it:** N/A — static.
 - **Who owns it:** N/A.
@@ -226,15 +226,15 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Design pattern:** Stateless Facade over the composed subsystem.
 - **SOLID:** SRP holds (delegation only). DIP holds at the call-site level (depends on `SecurityManager`/`DetectionManager` interfaces via `ServiceContainer.resolve<T>()`, never a concrete class directly) — the one place concrete types are named is inside `PluginInitializer`, not here.
 - **Extension point:** indirectly — `registerDetector`/`addRule` are how FR-18/FR-17 extensions reach the SDK.
-- **Gap/future work:** no `profile` parameter on `initialize()` (blocked on M10's five factory presets not existing); no public `events` getter (the equivalent exists only via `subscribe()`, not the exact `FlutterShield.events` surface `ARCHITECTURE_CONTRACTS.md` describes).
+- **Gap/future work:** no `profile` parameter on `initialize()` (blocked on M10's five factory presets not existing); no public `events` getter (the equivalent exists only via `subscribe()`, not the exact `DeviceShield.events` surface `ARCHITECTURE_CONTRACTS.md` describes).
 
 ### `lib/src/bootstrap/bootstrap_context.dart` (22 lines)
 - **Why it exists:** accumulates state across one `PluginInitializer.initialize()` run so a mid-boot failure can report exactly what completed and roll it back in reverse.
 - **Responsibility:** pure bookkeeping — no logic beyond recording.
 - **Public classes:** `BootstrapContext`.
 - **Public methods:** `recordStep(String)`, `elapsed` (getter).
-- **Fields:** `config` (the `FlutterShieldConfig` being booted with), `startedAt`, `completedSteps` (`List<String>`).
-- **Dependency graph:** → `models/flutter_shield_config.dart` only.
+- **Fields:** `config` (the `DeviceShieldConfig` being booted with), `startedAt`, `completedSteps` (`List<String>`).
+- **Dependency graph:** → `models/device_shield_config.dart` only.
 - **Lifecycle:** transient — one instance per `initialize()` call, discarded after boot succeeds or fails.
 - **Who creates it:** `PluginInitializer.initialize()`.
 - **Who owns it:** `PluginInitializer`, for the duration of one boot call.
@@ -252,7 +252,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Public classes:** `DependencyResolver`.
 - **Public methods:** `guard<T>(T Function() resolve)`.
 - **Important private state:** `_resolutionStack` (`List<Type>`).
-- **Dependency graph:** → `models/flutter_shield_exception.dart` (`InitializationException`).
+- **Dependency graph:** → `models/device_shield_exception.dart` (`InitializationException`).
 - **Lifecycle:** one instance per `ServiceContainer`, lives exactly as long as the container.
 - **Who creates it:** `ServiceContainer`'s own field initializer.
 - **Who owns it:** `ServiceContainer` exclusively — never held elsewhere.
@@ -268,14 +268,14 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Why it exists:** the single code path that runs the SDK's fixed boot sequence, wires every service through `ServiceContainer`, and reverses cleanly on shutdown/dispose.
 - **Responsibility:** validate config; construct-or-resolve every service in order (Logger → Permission → Configuration → NativeBridge → EventManager → Registries → Managers → Lifecycle → Ready); start monitoring; emit the `initialized` event; unwind to `failure` on any step's exception; own shutdown/dispose/reinitialize.
 - **Public classes:** `PluginInitializer`.
-- **Public methods:** `initialize(FlutterShieldConfig)`, `shutdown()`, `dispose()`, `reinitialize(FlutterShieldConfig)`.
+- **Public methods:** `initialize(DeviceShieldConfig)`, `shutdown()`, `dispose()`, `reinitialize(DeviceShieldConfig)`.
 - **Important private methods:** `_resolveOrRegisterStateManager/Logger/PermissionManager/Configuration/NativeBridge/EventManager/DetectorRegistry/DetectionManager/PolicyManager/SecurityManager/LifecycleManager` (one per boot step — each resolves an already-registered instance or constructs+registers a sensible default), `_unwind(BootstrapContext)` (reverse-order best-effort teardown on failure).
-- **Dependency graph:** → every concrete default implementation in the codebase (`DefaultNativeBridge`, `DefaultConfigurationManager`, `FlutterShieldConfigValidator`, `ConsoleLogger`, `DefaultEventManager`, `DefaultDetectionManager`, `DefaultPolicyManager`, `DefaultSecurityManager`, `DefaultPermissionManager`, `DefaultDetectorRegistry`, `DefaultLifecycleManager`, `DefaultSecurityStateManager`) plus every corresponding contract type and `models/*`.
-- **Lifecycle:** transient per the frozen contract's description, but in practice held by `FlutterShield` across the SDK's running lifetime (`FlutterShield._initializer`) so `shutdown()`/`reinitialize()` can be called on the same instance later.
-- **Who creates it:** `FlutterShield.initialize()` (`_initializer ??= PluginInitializer(container: container)`).
-- **Who owns it:** `FlutterShield` (via its static field), for the process lifetime until `FlutterShield.dispose()` discards the reference.
+- **Dependency graph:** → every concrete default implementation in the codebase (`DefaultNativeBridge`, `DefaultConfigurationManager`, `DeviceShieldConfigValidator`, `ConsoleLogger`, `DefaultEventManager`, `DefaultDetectionManager`, `DefaultPolicyManager`, `DefaultSecurityManager`, `DefaultPermissionManager`, `DefaultDetectorRegistry`, `DefaultLifecycleManager`, `DefaultSecurityStateManager`) plus every corresponding contract type and `models/*`.
+- **Lifecycle:** transient per the frozen contract's description, but in practice held by `DeviceShield` across the SDK's running lifetime (`DeviceShield._initializer`) so `shutdown()`/`reinitialize()` can be called on the same instance later.
+- **Who creates it:** `DeviceShield.initialize()` (`_initializer ??= PluginInitializer(container: container)`).
+- **Who owns it:** `DeviceShield` (via its static field), for the process lifetime until `DeviceShield.dispose()` discards the reference.
 - **Who disposes it:** itself — no separate disposer; `dispose()` is a method on the class.
-- **Who depends on it:** `FlutterShield` exclusively; every bootstrap-layer test.
+- **Who depends on it:** `DeviceShield` exclusively; every bootstrap-layer test.
 - **Communication:** synchronous/async method calls into `ServiceContainer` and each service's own `initialize()`/`dispose()`; emits exactly one `SecurityEvent(type: 'initialized')` through `EventManager` at the end of a successful boot.
 - **Design pattern:** Builder/Director (drives construction order), Command (encapsulates the whole boot operation), Template Method (fixed step sequence with per-step hooks).
 - **SOLID:** SRP holds at the "orchestrate boot" level even though the file is large — every individual concern (constructing one service) is a separate, narrowly-named private method. OCP: adding a new defaultable service means adding one more `_resolveOrRegisterX` method, not editing existing ones. DIP: depends on every service's abstract contract for its own field/parameter types, only reaching for a concrete class inside the one `_resolveOrRegisterX` method responsible for defaulting it.
@@ -289,11 +289,11 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Public classes:** `ServiceContainer`. Private helper: `_Registration` (wraps one of the three registration kinds), `_RegistrationKind` (enum).
 - **Public methods:** `registerSingleton<T>(T)`, `registerLazySingleton<T>(T Function())`, `registerFactory<T>(T Function())`, `isRegistered<T>()`, `resolve<T>()`, `unregister<T>()`, `reset()`.
 - **Important private methods:** `_assertNotRegistered<T>()` (throws `DUPLICATE_REGISTRATION` if `T` is already present).
-- **Dependency graph:** → `models/flutter_shield_exception.dart`, `dependency_resolver.dart`. No dependency on anything above it — a true foundation component.
+- **Dependency graph:** → `models/device_shield_exception.dart`, `dependency_resolver.dart`. No dependency on anything above it — a true foundation component.
 - **Lifecycle:** SDK-lifetime — persists as an empty shell across `initialize`/`shutdown` cycles (confirmed by `plugin_initializer_test.dart`'s "the same container survives dispose and can be reused" test).
-- **Who creates it:** whatever wires the SDK together — today, `FlutterShield.initialize()` (`_container ??= ServiceContainer()`) and test code directly.
-- **Who owns it:** `FlutterShield` (static field), independent of `PluginInitializer`'s own lifetime — Architecture Correction 1, explicitly documented in `plugin_initializer.dart`'s own comments and verified by the container-reuse test.
-- **Who disposes it:** never explicitly — `reset()` clears registrations but the container object itself is discarded only when `FlutterShield.dispose()` nulls out its static reference.
+- **Who creates it:** whatever wires the SDK together — today, `DeviceShield.initialize()` (`_container ??= ServiceContainer()`) and test code directly.
+- **Who owns it:** `DeviceShield` (static field), independent of `PluginInitializer`'s own lifetime — Architecture Correction 1, explicitly documented in `plugin_initializer.dart`'s own comments and verified by the container-reuse test.
+- **Who disposes it:** never explicitly — `reset()` clears registrations but the container object itself is discarded only when `DeviceShield.dispose()` nulls out its static reference.
 - **Who depends on it:** `PluginInitializer` exclusively at the framework level; every bootstrap/managers-integration test constructs one directly.
 - **Communication:** entirely synchronous — no `Future`, no `await` anywhere in this class, by design (documented thread-safety rationale: Dart's single-threaded event loop only preempts at `await` points, so no partial-mutation window exists).
 - **Design pattern:** Service Locator / Dependency Injection Container, Registry.
@@ -316,7 +316,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 ### `lib/src/bridge/default_native_bridge.dart` (100 lines)
 - **Why it exists:** the real, production implementation of `NativeBridge`.
 - **Responsibility:** compose `MethodChannelService` + `EventChannelService`; route `registerCallback`/`unregisterCallback` requests against native-pushed events by name; hold **no** reference to `EventManager` or `SecurityEvent`.
-- **Public classes:** `DefaultNativeBridge`. Public constants: `kNativeBridgeMethodChannel` (`'flutter_shield/native_bridge'`), `kNativeBridgeEventChannel` (`'flutter_shield/events'`).
+- **Public classes:** `DefaultNativeBridge`. Public constants: `kNativeBridgeMethodChannel` (`'device_shield/native_bridge'`), `kNativeBridgeEventChannel` (`'device_shield/events'`).
 - **Public methods:** `invoke<T>()`, `invokeAsync()`, `registerCallback()`, `unregisterCallback()`, `dispose()`.
 - **Important private methods:** `_ensureListening()` (lazily starts the event-channel subscription on first `registerCallback` call), `_routeNativeEvent(dynamic raw)` (dispatches by the `callback` key in a `{'callback': name, 'data': ...}` shaped map; silently drops anything malformed or unregistered).
 - **Dependency graph:** → `event_channel_service.dart`, `method_channel_service.dart`, `native_bridge.dart` (implements it).
@@ -336,7 +336,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Responsibility:** `invoke<T>()` (timeout-bound, translates every failure mode to `NativeBridgeException`), `invokeAsync()` (fire-and-forget).
 - **Public classes:** `MethodChannelService`.
 - **Public methods:** `invoke<T>({method, arguments, timeout})`, `invokeAsync({method, arguments})`.
-- **Dependency graph:** → `flutter/services.dart` (`MethodChannel`, `PlatformException`, `MissingPluginException`), `models/flutter_shield_exception.dart`.
+- **Dependency graph:** → `flutter/services.dart` (`MethodChannel`, `PlatformException`, `MissingPluginException`), `models/device_shield_exception.dart`.
 - **Lifecycle:** shares `NativeBridge`'s exact lifetime.
 - **Who creates it:** `DefaultNativeBridge`'s constructor (`MethodChannelService.withName(kNativeBridgeMethodChannel)`), or a test supplying one directly against a fake channel.
 - **Who owns it:** `DefaultNativeBridge` exclusively — never held elsewhere.
@@ -381,9 +381,9 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 
 ### `lib/src/config/configuration_manager.dart` (28 lines)
 - **Why it exists:** the sole-owner contract for the active configuration.
-- **Responsibility:** `current` (getter), `updateConfig()` — deliberately performs **no validation**; that's `FlutterShieldConfigValidator`'s job, run before a config ever reaches this contract.
+- **Responsibility:** `current` (getter), `updateConfig()` — deliberately performs **no validation**; that's `DeviceShieldConfigValidator`'s job, run before a config ever reaches this contract.
 - **Public classes:** `ConfigurationManager` (abstract, `implements Manager`).
-- **Dependency graph:** → `managers/manager.dart`, `models/flutter_shield_config.dart`.
+- **Dependency graph:** → `managers/manager.dart`, `models/device_shield_config.dart`.
 - **Who depends on it:** every manager that reads `.current` live (`DetectionManager` at construction only, `SecurityManager` continuously for its periodic-check interval).
 - **Design pattern:** Repository (single-owner store), Strategy contract.
 - **SOLID:** SRP — explicitly narrowed by "Architecture Correction 2" (validation split out).
@@ -392,10 +392,10 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 
 ### `lib/src/config/default_configuration_manager.dart` (32 lines)
 - **Why it exists:** the real, complete implementation of `ConfigurationManager`.
-- **Responsibility:** store/expose/update whatever config it's given, unconditionally — trusts its caller entirely (an out-of-bounds config passed directly to its constructor or `updateConfig` will **not** throw; that's by design, verified by `flutter_shield_config_validator_test.dart`'s "Architecture Correction 2" test group).
+- **Responsibility:** store/expose/update whatever config it's given, unconditionally — trusts its caller entirely (an out-of-bounds config passed directly to its constructor or `updateConfig` will **not** throw; that's by design, verified by `device_shield_config_validator_test.dart`'s "Architecture Correction 2" test group).
 - **Public classes:** `DefaultConfigurationManager`.
-- **Public methods:** `current` (getter), `initialize()` (no-op), `dispose()` (no-op), `updateConfig(FlutterShieldConfig)`.
-- **Dependency graph:** → `configuration_manager.dart`, `models/flutter_shield_config.dart`.
+- **Public methods:** `current` (getter), `initialize()` (no-op), `dispose()` (no-op), `updateConfig(DeviceShieldConfig)`.
+- **Dependency graph:** → `configuration_manager.dart`, `models/device_shield_config.dart`.
 - **Lifecycle:** SDK-lifetime, and unusually **persists across a shutdown/reinitialize cycle** — `PluginInitializer.shutdown()` deliberately does not dispose or unregister it, so a subsequent `reinitialize()` with a new config calls `updateConfig()` in place rather than losing continuity (verified directly in `plugin_initializer.dart`'s `_resolveOrRegisterConfiguration` and by `plugin_initializer_test.dart`'s "reinitialize with a different config updates the persisting ConfigurationManager in place" test).
 - **Who creates it:** `PluginInitializer._resolveOrRegisterConfiguration()`.
 - **Who owns it:** `ServiceContainer`.
@@ -405,13 +405,13 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Extension point:** no.
 - **Future work:** none identified for this class specifically.
 
-### `lib/src/config/flutter_shield_config_validator.dart` (48 lines)
+### `lib/src/config/device_shield_config_validator.dart` (48 lines)
 - **Why it exists:** validates a config *before* it ever reaches `ConfigurationManager` — a dedicated, single-purpose component per "Architecture Correction 2."
 - **Responsibility:** enforce 4 bounds and throw `ConfigurationException` on the first violation.
-- **Public classes:** `FlutterShieldConfigValidator`.
-- **Public methods:** `validate(FlutterShieldConfig) → FlutterShieldConfig` (returns the same instance unchanged if valid).
+- **Public classes:** `DeviceShieldConfigValidator`.
+- **Public methods:** `validate(DeviceShieldConfig) → DeviceShieldConfig` (returns the same instance unchanged if valid).
 - **Bounds enforced (verified against tests):** `periodicCheckInterval ≥ 5000ms` (`INVALID_INTERVAL`); `0 ≤ maxRetryAttempts ≤ 10` (`INVALID_RETRY`); `500 ≤ retryDelay ≤ 10000ms` (`INVALID_RETRY_DELAY`); `1000 ≤ checkTimeout ≤ 30000ms` (`INVALID_TIMEOUT`).
-- **Dependency graph:** → `models/flutter_shield_config.dart`, `models/flutter_shield_exception.dart`.
+- **Dependency graph:** → `models/device_shield_config.dart`, `models/device_shield_exception.dart`.
 - **Who creates it:** `PluginInitializer.initialize()`, constructed fresh (stateless) on every boot call.
 - **Who depends on it:** `PluginInitializer` exclusively.
 - **Design pattern:** Validator/Specification.
@@ -433,7 +433,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 
 ### `lib/src/core/console_logger.dart` (85 lines)
 - **Why it exists:** the real, complete implementation of `Logger` — console output gated by level, plus `LogSink` fan-out.
-- **Responsibility:** format and print (`[FlutterShield] [LEVEL] message {data}`), gate by `minLevel`, forward to every registered sink.
+- **Responsibility:** format and print (`[DeviceShield] [LEVEL] message {data}`), gate by `minLevel`, forward to every registered sink.
 - **Public classes:** `ConsoleLogger`.
 - **Public methods:** `debug/info/warning/error/exception`, `addSink`, `removeSink`.
 - **Important private methods:** `_shouldLog(LogLevel)` (level-gate check), `_write(...)` (the single formatting/printing/fan-out path every public method funnels through).
@@ -510,7 +510,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Responsibility:** declare `status`, `pause()`, `resume()`, `shutdown()`, `checkNow()`.
 - **Public classes:** `SecurityManager` (abstract, `implements Manager`).
 - **Dependency graph:** → `models/sdk_state.dart`, `managers/manager.dart`.
-- **Who depends on it:** `FlutterShield` (via `ServiceContainer.resolve`), `LifecycleManager` (via the inverted `SecurityLifecycleHandler` callback, not a direct reference).
+- **Who depends on it:** `DeviceShield` (via `ServiceContainer.resolve`), `LifecycleManager` (via the inverted `SecurityLifecycleHandler` callback, not a direct reference).
 - **Design pattern:** Facade contract, Mediator (coordinates the other three managers without them knowing about each other).
 - **SOLID:** ISP — narrow public surface; all pipeline logic is delegated, not exposed here.
 - **Extension point:** no.
@@ -525,7 +525,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Dependency graph:** → `DetectionManager`, `PolicyManager`, `EventManager`, `ConfigurationManager`, `Lifecycle`, `Logger` (constructor-injected). **Deliberately holds no `NativeBridge` reference** — even though the frozen matrix lists it as allowed, this class has no legitimate use for one (all native communication happens inside `DetectionManager`).
 - **Lifecycle:** SDK-lifetime — constructed at boot step 7 (last manager), its own `dispose()` stops the timer and cascades to `DetectionManager`/`PolicyManager`.
 - **Who creates it:** `PluginInitializer._resolveOrRegisterSecurityManager()`.
-- **Who owns it:** `ServiceContainer`; `FlutterShield` resolves it for every delegating call.
+- **Who owns it:** `ServiceContainer`; `DeviceShield` resolves it for every delegating call.
 - **Who disposes it:** `PluginInitializer.shutdown()`.
 - **State-transition ownership (important, verified against tests):** `pause()`/`resume()` transition `running ⇄ paused` themselves. `shutdown()` does **not** transition state to `stopped` — that belongs to `PluginInitializer` — this class only stops its own timer (verified by `default_security_manager_test.dart`'s "shutdown stops the timer but does not transition Lifecycle state" test).
 - **Communication:** `checkNow()` calls `detectionManager.runAllChecks()`, then for each result: `policyManager.evaluate()` → `policyManager.executeAction()` → `eventManager.emit(SecurityEvent(...))` — all three per-result steps run sequentially, not in parallel, matching the architecture's "everything downstream of a single result is sequential" governing rule.
@@ -539,7 +539,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Responsibility:** declare `runAllChecks()`, `runCheck(String type)`, `registerDetector(Detector)`.
 - **Public classes:** `DetectionManager` (abstract, `implements Manager`).
 - **Dependency graph:** → `models/detection_result.dart`, `registry/detector.dart`, `managers/manager.dart`.
-- **Who depends on it:** `SecurityManager`, `api` (`FlutterShield.registerDetector`).
+- **Who depends on it:** `SecurityManager`, `api` (`DeviceShield.registerDetector`).
 - **Design pattern:** Strategy contract, Registry consumer.
 - **SOLID:** ISP; the extension point is explicitly `Detector`+`DetectorRegistry`, not this interface itself.
 - **Extension point:** no (by design — see above).
@@ -552,7 +552,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Public methods:** `initialize()`, `dispose()`, `runAllChecks()`, `runCheck(String)`, `registerDetector(Detector)`.
 - **Important private methods:** `_runAllChecks()` (the actual batch-execution logic `runAllChecks()` wraps with the in-flight guard), `_checkWithCache(Detector)` (cache-aware per-detector execution — a thrown/timed-out check is never cached, since the exception simply propagates to `ConcurrencyController`'s own `onError`).
 - **Fields:** `logger`, `registry` (`DetectorRegistry`), `concurrencyController`, `detectionCache` (nullable — `null` disables caching entirely), `detectorTimeout` (default 5000ms), `_inFlight` (the reentrancy-guard `Future`).
-- **Dependency graph:** → `core/logger.dart`, `models/detection_result.dart`, `models/flutter_shield_exception.dart` (`DetectionException`), `registry/detector.dart`, `registry/detector_registry.dart`, `concurrency_controller.dart`, `detection_cache.dart`.
+- **Dependency graph:** → `core/logger.dart`, `models/detection_result.dart`, `models/device_shield_exception.dart` (`DetectionException`), `registry/detector.dart`, `registry/detector_registry.dart`, `concurrency_controller.dart`, `detection_cache.dart`.
 - **Lifecycle:** SDK-lifetime, constructed as part of `SecurityManager`'s own construction at boot step 7.
 - **Who creates it:** `PluginInitializer._resolveOrRegisterDetectionManager()` (reads `checkTimeout` off the already-registered `ConfigurationManager` as a plain primitive — never holds a `ConfigurationManager` reference itself, preserving the frozen dependency matrix exactly).
 - **Who owns it:** `ServiceContainer`; composed into `DefaultSecurityManager`.
@@ -673,21 +673,21 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Extension point:** the open `type: String` field is itself the extension mechanism.
 - **Future work:** `evidence` equality is by-reference, not deep — two results built from equivalent-but-distinct evidence maps are not `==`, a documented, intentional limitation (avoids adding the `collection` package dependency).
 
-### `lib/src/models/flutter_shield_config.dart` (92 lines)
+### `lib/src/models/device_shield_config.dart` (92 lines)
 - **Why it exists:** SDK-wide configuration (SRS §7.1, generic fields only).
 - **Responsibility:** immutable value object with `copyWith`/`toJson`/`fromJson`/equality.
-- **Public classes:** `FlutterShieldConfig`.
+- **Public classes:** `DeviceShieldConfig`.
 - **Fields:** `debugLogging` (false), `runOnUIThread` (false), `periodicCheckInterval` (30000), `maxRetryAttempts` (3), `retryDelay` (1000), `checkTimeout` (5000) — all with documented defaults.
 - **Dependency graph:** none.
 - **Design pattern:** Value Object, Builder-lite (`copyWith`).
 - **SOLID:** SRP — deliberately has no `validate()` method (that's `ConfigurationManager`'s/the validator's job, not the model's).
 - **Extension point:** no.
-- **Future work:** no detection/protection sub-config fields yet (deliberately deferred — additive, non-breaking once M7/M11 land); no `FlutterShieldConfigBuilder` fluent builder exists (SRS §7.2); no `ConfigurationPersistence` (SharedPreferences-backed save/load, §7.6) — `shared_preferences` isn't even a declared dependency in `pubspec.yaml`.
+- **Future work:** no detection/protection sub-config fields yet (deliberately deferred — additive, non-breaking once M7/M11 land); no `DeviceShieldConfigBuilder` fluent builder exists (SRS §7.2); no `ConfigurationPersistence` (SharedPreferences-backed save/load, §7.6) — `shared_preferences` isn't even a declared dependency in `pubspec.yaml`.
 
-### `lib/src/models/flutter_shield_exception.dart` (107 lines)
+### `lib/src/models/device_shield_exception.dart` (107 lines)
 - **Why it exists:** the base of the SDK's exception hierarchy (SRS §8.1).
 - **Responsibility:** carry `code`/`message`/`details`/`stackTrace`; deliberately **not** value-equal (two exceptions are distinct occurrences even with matching fields).
-- **Public classes:** `FlutterShieldException` (base, `implements Exception`), `ConfigurationException`, `PermissionException` (adds `missingPermissions`), `InitializationException`, `NativeBridgeException` (adds `method`/`nativeError`), `PolicyException`, `DetectionException` (adds nullable `type`).
+- **Public classes:** `DeviceShieldException` (base, `implements Exception`), `ConfigurationException`, `PermissionException` (adds `missingPermissions`), `InitializationException`, `NativeBridgeException` (adds `method`/`nativeError`), `PolicyException`, `DetectionException` (adds nullable `type`).
 - **Dependency graph:** none.
 - **Who depends on it:** every layer of the codebase — the shared error vocabulary.
 - **Design pattern:** Exception hierarchy (classic), Value carrier (though not value-equal).
@@ -735,7 +735,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Design pattern:** Value Object, Configuration Aggregate.
 - **SOLID:** SRP — generic, open-identifier-based (`type: String`) sub-configs, never naming a specific detector/protection.
 - **Extension point:** the open `type` fields on all three nested configs.
-- **Future work:** **the model is complete; the wiring is not.** None of the five named factory presets (`fintech()`, `healthcare()`, `government()`, `enterprise()`, `consumer()`) exist; `FlutterShield.initialize()` takes only a `FlutterShieldConfig`, with no `profile` parameter at all — confirmed by direct reading of `api/flutter_shield.dart`.
+- **Future work:** **the model is complete; the wiring is not.** None of the five named factory presets (`fintech()`, `healthcare()`, `government()`, `enterprise()`, `consumer()`) exist; `DeviceShield.initialize()` takes only a `DeviceShieldConfig`, with no `profile` parameter at all — confirmed by direct reading of `api/device_shield.dart`.
 
 ### `lib/src/permission/permission_manager.dart` (39 lines)
 - **Why it exists:** the contract for requesting/tracking OS permissions the active profile's detectors/protections require.
@@ -767,27 +767,27 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Documented reasoning for its own gap:** deliberately does **not** depend on `NativeBridge`, even though a real permission request is inherently native — the frozen Init Matrix places this at step 2, two steps before `NativeBridge` (step 4); requiring one now would force reordering past what a real implementation could consistently want. Deferred, not resolved by inventing a premature dependency.
 - **Future work:** the actual OS-permission-request mechanism (needs a native bridge method that doesn't exist on either platform yet).
 
-### `lib/src/platform/flutter_shield_platform_interface.dart` (39 lines)
+### `lib/src/platform/device_shield_platform_interface.dart` (39 lines)
 - **Why it exists:** the pre-existing, Phase-1 federated-plugin platform interface — **legacy as of the Phase 7 architecture correction**, no longer part of the `NativeBridge` dependency chain.
-- **Responsibility:** expose the abstract surface `MethodChannelFlutterShield` implements; token-verified singleton swap point.
-- **Public classes:** `FlutterShieldPlatform` (abstract, `extends PlatformInterface`).
+- **Responsibility:** expose the abstract surface `MethodChannelDeviceShield` implements; token-verified singleton swap point.
+- **Public classes:** `DeviceShieldPlatform` (abstract, `extends PlatformInterface`).
 - **Public methods:** `instance` (getter/setter, token-verified), `getPlatformVersion()`.
-- **Dependency graph:** → `plugin_platform_interface` package, `flutter_shield_method_channel.dart`.
+- **Dependency graph:** → `plugin_platform_interface` package, `device_shield_method_channel.dart`.
 - **Lifecycle:** **process lifetime** — the one component in the codebase that outlives individual `initialize()`/`shutdown()` cycles (a process-level singleton, not an SDK-lifetime one).
 - **Who creates it:** package load time / a platform package's `registerWith()`.
-- **Who depends on it:** `api/flutter_shield.dart`'s legacy instance method `getPlatformVersion()` only.
+- **Who depends on it:** `api/device_shield.dart`'s legacy instance method `getPlatformVersion()` only.
 - **Design pattern:** Federated Plugin pattern (Platform Interface), token-verified Singleton.
 - **SOLID:** the correct, standard Flutter federated-plugin shape.
 - **Extension point:** public, so a platform package could register its own implementation — a capability that remains available even though nothing in the frozen bridge architecture currently exercises it.
 - **Future work:** none — deliberately frozen/unchanged; superseded by `NativeBridge` (swappable via `ServiceContainer`) as the real "new platform" extension point for everything except the one legacy call this still backs.
 
-### `lib/src/platform/flutter_shield_method_channel.dart` (19 lines)
-- **Why it exists:** the concrete `MethodChannel`-based implementation of `FlutterShieldPlatform`.
-- **Responsibility:** wrap the single legacy `flutter_shield` channel; `getPlatformVersion()`.
-- **Public classes:** `MethodChannelFlutterShield` (`extends FlutterShieldPlatform`).
-- **Public fields:** `methodChannel` (`@visibleForTesting`, `MethodChannel('flutter_shield')`).
-- **Dependency graph:** → `flutter/services.dart`, `flutter/foundation.dart`, `flutter_shield_platform_interface.dart`.
-- **Who creates it:** `FlutterShieldPlatform`'s own static field default (`_instance = MethodChannelFlutterShield()`).
+### `lib/src/platform/device_shield_method_channel.dart` (19 lines)
+- **Why it exists:** the concrete `MethodChannel`-based implementation of `DeviceShieldPlatform`.
+- **Responsibility:** wrap the single legacy `device_shield` channel; `getPlatformVersion()`.
+- **Public classes:** `MethodChannelDeviceShield` (`extends DeviceShieldPlatform`).
+- **Public fields:** `methodChannel` (`@visibleForTesting`, `MethodChannel('device_shield')`).
+- **Dependency graph:** → `flutter/services.dart`, `flutter/foundation.dart`, `device_shield_platform_interface.dart`.
+- **Who creates it:** `DeviceShieldPlatform`'s own static field default (`_instance = MethodChannelDeviceShield()`).
 - **Design pattern:** Adapter (federated-plugin default implementation).
 - **SOLID:** SRP — one method, one channel.
 - **Extension point:** no (it's the default instance, not itself extensible).
@@ -861,7 +861,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Public classes:** `DetectorFactory`.
 - **Public methods:** `availableTypes` (getter), `create(String type)`.
 - **Important private methods:** `_register(String, Detector Function())` (called once per built-in in the constructor — today, exactly once, for `EmulatorDetector`).
-- **Dependency graph:** → `bridge/native_bridge.dart`, `detectors/emulator_detector.dart`, `models/flutter_shield_exception.dart`, `detector.dart`.
+- **Dependency graph:** → `bridge/native_bridge.dart`, `detectors/emulator_detector.dart`, `models/device_shield_exception.dart`, `detector.dart`.
 - **Lifecycle:** standalone utility — **not** constructed by `PluginInitializer`'s boot sequence at all (deliberately: which built-ins should be enabled by default is a `SecurityProfile` decision that doesn't exist yet; auto-registering unconditionally here would preempt that not-yet-built policy).
 - **Who creates it:** a test, a host app, or a future profile-driven step — explicitly, not the framework itself today.
 - **Who depends on it:** `test/registry/detector_factory_test.dart` (5 tests) — no production code path constructs or calls this class yet.
@@ -892,7 +892,7 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 - **Dependency graph:** → `models/sdk_state.dart`, `lifecycle.dart` (implements it), `dart:async`.
 - **Lifecycle:** SDK-lifetime, created before anything that could fail and need to report `failure` (effectively "step 0b," alongside `ServiceContainer`).
 - **Who creates it:** `PluginInitializer._resolveOrRegisterStateManager()`.
-- **Who owns it:** `ServiceContainer`; read continuously by `SecurityManager`, `LifecycleManager` (indirectly), and publicly via `FlutterShield.status`.
+- **Who owns it:** `ServiceContainer`; read continuously by `SecurityManager`, `LifecycleManager` (indirectly), and publicly via `DeviceShield.status`.
 - **Who disposes it:** `PluginInitializer.dispose()` calls its `dispose()` (closes the `StreamController`) only after transitioning to `destroyed` — never while a transition might still need to broadcast.
 - **Verified transition table (matches the frozen contract exactly, state-for-state):**
 
@@ -935,14 +935,14 @@ Every file under `lib/src/` (50 files) plus the barrel export, documented indivi
 
 ```
 Application
-   │  calls FlutterShield.initialize(config: ...)
+   │  calls DeviceShield.initialize(config: ...)
    ▼
-FlutterShield API  (lib/src/api/flutter_shield.dart)
+DeviceShield API  (lib/src/api/device_shield.dart)
    │  lazily creates a ServiceContainer + PluginInitializer (once), then
    │  delegates to initializer.initialize(config)
    ▼
 Bootstrap  (PluginInitializer)
-   │  validates config via FlutterShieldConfigValidator; runs the fixed
+   │  validates config via DeviceShieldConfigValidator; runs the fixed
    │  9-step sequence, resolving-or-defaulting each service against the
    │  container as it goes
    ▼
@@ -966,20 +966,20 @@ Native  (Android Kotlin / iOS Swift plugin classes)
 
 **Step-by-step, as the code actually runs (verified against `plugin_initializer.dart`):**
 
-1. **App → API.** The host app never sees anything below `FlutterShield`. `FlutterShield.initialize()` is idempotent at the container level (`_container ??= ServiceContainer()`, `_initializer ??= PluginInitializer(...)`) — a second call reuses the same container/initializer, and `PluginInitializer.initialize()` itself throws `ALREADY_INITIALIZING` if the state machine is already past `uninitialized`.
+1. **App → API.** The host app never sees anything below `DeviceShield`. `DeviceShield.initialize()` is idempotent at the container level (`_container ??= ServiceContainer()`, `_initializer ??= PluginInitializer(...)`) — a second call reuses the same container/initializer, and `PluginInitializer.initialize()` itself throws `ALREADY_INITIALIZING` if the state machine is already past `uninitialized`.
 2. **API → Bootstrap.** `PluginInitializer.initialize(config)` runs the boot sequence documented in full in §4's `plugin_initializer.dart` entry and diagrammed in §7 below.
 3. **Bootstrap → ServiceContainer.** Every step is a `_resolveOrRegisterX()` call: if the caller (a test, or a future profile-driven composition layer) already registered an implementation, it's used as-is and only `initialize()`d; otherwise a sensible built-in default is constructed and registered. This is true uniformly for `Logger`, `PermissionManager`, `ConfigurationManager`, `NativeBridge`, `EventManager`, `DetectorRegistry`, `DetectionManager`, `PolicyManager`, `SecurityManager`, and `LifecycleManager` — all ten now follow the identical pattern (as of this codebase state; `CURRENT_PROGRESS.md`, 2026-07-24, found the last four were **not** yet handled this way).
 4. **Bootstrap → Managers.** `_resolveOrRegisterSecurityManager()` composes `DefaultSecurityManager` from a `DetectionManager` and `PolicyManager` it resolves-or-constructs first (in that order), plus the already-registered `EventManager`/`ConfigurationManager`/`Lifecycle`/`Logger`.
 5. **Managers → Registry.** `DefaultDetectionManager` never stores detectors itself — it holds a `DetectorRegistry` (constructor-injected) and delegates every registration/lookup/ordering concern to it.
 6. **Managers → Bridge.** Only `DetectionManager` (via the detectors it hosts) ever reaches `NativeBridge`. `SecurityManager` deliberately holds no `NativeBridge` reference; `PolicyManager` never reaches it at all.
-7. **Bridge → Native.** `DefaultNativeBridge.invoke()` → `MethodChannelService.invoke()` → Flutter's `MethodChannel.invokeMethod()`, marshaled by the engine onto the platform thread, dispatched by `FlutterShieldPlugin.onMethodCall`/`.handle(_:result:)` on Android/iOS respectively.
+7. **Bridge → Native.** `DefaultNativeBridge.invoke()` → `MethodChannelService.invoke()` → Flutter's `MethodChannel.invokeMethod()`, marshaled by the engine onto the platform thread, dispatched by `DeviceShieldPlugin.onMethodCall`/`.handle(_:result:)` on Android/iOS respectively.
 
 ---
 
 ## 6. Dependency Graph
 
 ```
-FlutterShield (static facade)
+DeviceShield (static facade)
 │
 ├── PluginInitializer  (held statically, constructed once)
 │    │
@@ -1015,9 +1015,9 @@ FlutterShield (static facade)
 │         └── LifecycleManager
 │              └── SecurityLifecycleHandler (narrow callback — implemented by SecurityManager)
 │
-└── FlutterShieldPlatform (LEGACY — separate graph entirely)
-     └── MethodChannelFlutterShield
-          └── flutter_shield channel (getPlatformVersion only)
+└── DeviceShieldPlatform (LEGACY — separate graph entirely)
+     └── MethodChannelDeviceShield
+          └── device_shield channel (getPlatformVersion only)
 ```
 
 **Standalone, not yet wired into the graph above:**
@@ -1030,11 +1030,11 @@ DetectorFactory
 
 **Native-side graph (per platform, structurally identical):**
 ```
-FlutterShieldPlugin (Kotlin / Swift)
-├── legacy MethodChannel "flutter_shield"        → getPlatformVersion
-├── bridge MethodChannel "flutter_shield/native_bridge" → checkEmulator, else notImplemented
+DeviceShieldPlugin (Kotlin / Swift)
+├── legacy MethodChannel "device_shield"        → getPlatformVersion
+├── bridge MethodChannel "device_shield/native_bridge" → checkEmulator, else notImplemented
 │    └── EmulatorDetector (native heuristics / compile-time simulator check)
-└── bridge EventChannel "flutter_shield/events"  → sendEvent() outbound helper
+└── bridge EventChannel "device_shield/events"  → sendEvent() outbound helper
 ```
 
 ---
@@ -1046,7 +1046,7 @@ All phases below are transcribed directly from `plugin_initializer.dart`'s actua
 ### SDK Initialization (chronological)
 
 1. **Idempotency guard.** `PluginInitializer.initialize()` resolves/creates `Lifecycle` first. If the current state is `initializing`/`initialized`/`running`/`paused`, throws `InitializationException(ALREADY_INITIALIZING)`. If `destroyed`, throws `InitializationException(ALREADY_DISPOSED)`. Only a fresh boot (`uninitialized`) transitions to `initializing` — a restart from `stopped` or `failure` skips that observable phase entirely, matching the frozen transition table's actual reachable edges.
-2. **Config validation.** `FlutterShieldConfigValidator().validate(config)` runs *before* any service is touched — an invalid config throws `ConfigurationException` before step 1 (Logger) even begins.
+2. **Config validation.** `DeviceShieldConfigValidator().validate(config)` runs *before* any service is touched — an invalid config throws `ConfigurationException` before step 1 (Logger) even begins.
 3. **Step 1 — Logger.** Resolved or defaulted to `ConsoleLogger()`. Logs `"Bootstrap: Logger ready"`.
 4. **Step 2 — PermissionManager.** Resolved or defaulted to `DefaultPermissionManager()`; `initialize()` called (trivially succeeds for today's only reachable case, an empty required-permission set). Logs `"Bootstrap: Permission ready"`.
 5. **Step 3 — Configuration.** Resolves-or-registers `ConfigurationManager` with the already-validated config; if one already exists (persisted from a prior shutdown), `updateConfig()` is called in place instead of recreating it. `initialize()` called. Logs `"Bootstrap: Configuration ready"`.
@@ -1068,7 +1068,7 @@ Every service registers into `ServiceContainer` as its step completes — never 
 Order is: `DetectionManager.initialize()` (cascades to every registered detector — but at fresh boot, the registry is empty, so this is a no-op until detectors are registered post-boot) → `PolicyManager.initialize()` (no-op today) → `SecurityManager._startPeriodicChecks()` (starts the `Timer.periodic` at `ConfigurationManager.current.periodicCheckInterval`).
 
 ### Detector Registration
-Happens **after** boot completes, via `FlutterShield.registerDetector(detector)` → `DetectionManager.registerDetector(detector)` → `detector.initialize()` then `registry.register(detector)` (throws if the type is already registered). Nothing in the current boot sequence auto-registers any built-in detector — `DetectorFactory` exists but isn't called by `PluginInitializer`.
+Happens **after** boot completes, via `DeviceShield.registerDetector(detector)` → `DetectionManager.registerDetector(detector)` → `detector.initialize()` then `registry.register(detector)` (throws if the type is already registered). Nothing in the current boot sequence auto-registers any built-in detector — `DetectorFactory` exists but isn't called by `PluginInitializer`.
 
 ### Detection Execution
 `SecurityManager.checkNow()` (called by the periodic timer or on demand) → `DetectionManager.runAllChecks()` → duplicate-execution guard (`_inFlight`) → `ConcurrencyController.run()` bounded-parallel over every registered detector, each individually timeout-bound and cache-aware → results aggregated in **input order** (registry priority order), not completion order.
@@ -1088,10 +1088,10 @@ For each `DetectionResult` in the aggregated batch, sequentially: `PolicyManager
 6. State transitions to `stopped`. `ConfigurationManager`/`PermissionManager`/`LifecycleManager` are **deliberately not disposed or unregistered** here — they persist so a subsequent `reinitialize()` can reuse/update them without losing continuity.
 
 ### Dispose (full teardown)
-`PluginInitializer.dispose()`: calls `shutdown()` if still `running`/`paused`; transitions state to `destroyed` (terminal — no way back per the frozen table); closes `DefaultSecurityStateManager`'s own `StreamController`; calls `container.reset()`, clearing every remaining registration (including the ones `shutdown()` deliberately left behind). `FlutterShield.dispose()` additionally nulls its own static `_container`/`_initializer` references, so the *next* `initialize()` call starts with a genuinely fresh container and initializer, not a reused one.
+`PluginInitializer.dispose()`: calls `shutdown()` if still `running`/`paused`; transitions state to `destroyed` (terminal — no way back per the frozen table); closes `DefaultSecurityStateManager`'s own `StreamController`; calls `container.reset()`, clearing every remaining registration (including the ones `shutdown()` deliberately left behind). `DeviceShield.dispose()` additionally nulls its own static `_container`/`_initializer` references, so the *next* `initialize()` call starts with a genuinely fresh container and initializer, not a reused one.
 
 ### Reinitialize
-Semantically identical to `initialize()` — `reinitialize(config)` is a named alias, since the transition guard inside `initialize()` already permits restarting from both `stopped` and `failure`. A fresh `DetectionManager`/`PolicyManager`/`SecurityManager`/`LifecycleManager` are constructed (the previous ones were unregistered by `shutdown()`), so a detector registered before shutdown is **not** silently retained — verified directly by `test/api/flutter_shield_test.dart`'s "reinitialize restarts with fresh managers" test.
+Semantically identical to `initialize()` — `reinitialize(config)` is a named alias, since the transition guard inside `initialize()` already permits restarting from both `stopped` and `failure`. A fresh `DetectionManager`/`PolicyManager`/`SecurityManager`/`LifecycleManager` are constructed (the previous ones were unregistered by `shutdown()`), so a detector registered before shutdown is **not** silently retained — verified directly by `test/api/device_shield_test.dart`'s "reinitialize restarts with fresh managers" test.
 
 > **Note on step-numbering vs. the frozen documents:** `ARCHITECTURE_CONTRACTS.md` Part 3 describes a 10-step Init Matrix (steps 0/0b through 10) with `DetectionManager`/`PolicyManager`/`SecurityManager`/`LifecycleManager` as separately-numbered steps 6–9. The actual code (`plugin_initializer.dart`) uses 9 named steps (`Logger, Permission, Configuration, NativeBridge, EventManager, Registries, Managers, Lifecycle, Ready`), collapsing the frozen document's steps 6–8 into one `"Managers"` step. This is a naming/granularity difference only — the *order* and *content* match exactly; nothing is skipped or reordered.
 
@@ -1103,11 +1103,11 @@ Each milestone below reflects this report's own direct-code assessment, not a co
 
 ### M0 — Decisions & Repo Setup — **Partial, ~57%** (up from ~35%)
 - **Purpose:** lock folder structure, channel naming, platform floors, and MVP scope before any downstream milestone builds on them.
-- **Features implemented:** layer-first `lib/src/{api,bootstrap,bridge,config,core,detectors,events,managers,models,permission,platform,registry,state,utilities}` structure; channel naming decided and implemented exactly as specified (`flutter_shield/native_bridge`, `flutter_shield/events`, legacy `flutter_shield` kept separate); **platform floors are now resolved** — iOS `18.0` (`podspec` + `Package.swift`), Android `minSdk 21` — this is a change since `CURRENT_PROGRESS.md` (2026-07-24) found both still mismatched.
-- **Files added/modified:** all of `lib/src/`, `android/build.gradle.kts`, `ios/flutter_shield.podspec`, `ios/flutter_shield/Package.swift`.
+- **Features implemented:** layer-first `lib/src/{api,bootstrap,bridge,config,core,detectors,events,managers,models,permission,platform,registry,state,utilities}` structure; channel naming decided and implemented exactly as specified (`device_shield/native_bridge`, `device_shield/events`, legacy `device_shield` kept separate); **platform floors are now resolved** — iOS `18.0` (`podspec` + `Package.swift`), Android `minSdk 21` — this is a change since `CURRENT_PROGRESS.md` (2026-07-24) found both still mismatched.
+- **Files added/modified:** all of `lib/src/`, `android/build.gradle.kts`, `ios/device_shield.podspec`, `ios/device_shield/Package.swift`.
 - **Architecture changes:** the legacy `lib/features/*` scaffold from `CURRENT_STATE.md`'s snapshot is entirely gone.
 - **Tests added:** N/A (structural milestone).
-- **Remaining work:** placeholder identifiers are still unresolved (`com.example.flutter_shield` throughout Android, podspec `homepage: http://example.com` / `author: 'Your Company'`, `pubspec.yaml`'s `description: "A new Flutter plugin project."` and empty `homepage:`); no `test/unit/`/`test/integration/`/`test/native/` split (tests live in `test/{module}/` instead); native package skeletons exist only partially (`detection/` on both platforms; `protection/`, `bridge/`, `utils/` do not exist on either); no written MVP-scope decision document.
+- **Remaining work:** placeholder identifiers are still unresolved (`com.example.device_shield` throughout Android, podspec `homepage: http://example.com` / `author: 'Your Company'`, `pubspec.yaml`'s `description: "A new Flutter plugin project."` and empty `homepage:`); no `test/unit/`/`test/integration/`/`test/native/` split (tests live in `test/{module}/` instead); native package skeletons exist only partially (`detection/` on both platforms; `protection/`, `bridge/`, `utils/` do not exist on either); no written MVP-scope decision document.
 - **Status:** Partial, blocking items resolved, cosmetic items open.
 - **Dependencies:** none (this is the root).
 - **Next milestone:** M1 (already substantially underway in parallel).
@@ -1124,15 +1124,15 @@ Each milestone below reflects this report's own direct-code assessment, not a co
 
 ### M2 — Configuration & Dependency Injection — **Partial, ~55%** (unchanged)
 - **Purpose:** configuration storage/validation and the DI container.
-- **Features implemented:** `FlutterShieldConfig` (6 fields, `copyWith`/`toJson`/`fromJson`/equality); `FlutterShieldConfigValidator` (4 bounds, all enforced and tested); `ConfigurationManager`/`DefaultConfigurationManager` (correctly validation-free); `ServiceContainer` (fully implemented, exceeds spec).
-- **Remaining work:** no `FlutterShieldConfigBuilder` fluent builder; no `ConfigurationPersistence` (SharedPreferences-backed save/load — `shared_preferences` isn't a declared dependency); no detection/protection sub-config fields on `FlutterShieldConfig` (deliberately deferred).
+- **Features implemented:** `DeviceShieldConfig` (6 fields, `copyWith`/`toJson`/`fromJson`/equality); `DeviceShieldConfigValidator` (4 bounds, all enforced and tested); `ConfigurationManager`/`DefaultConfigurationManager` (correctly validation-free); `ServiceContainer` (fully implemented, exceeds spec).
+- **Remaining work:** no `DeviceShieldConfigBuilder` fluent builder; no `ConfigurationPersistence` (SharedPreferences-backed save/load — `shared_preferences` isn't a declared dependency); no detection/protection sub-config fields on `DeviceShieldConfig` (deliberately deferred).
 - **Status:** Partial.
 - **Dependencies:** M1.
 - **Next milestone:** M3.
 
 ### M3 — Native Bridge & Platform Channels — **Partial, ~68%** (up from ~62%)
 - **Purpose:** the transport layer to native code.
-- **Features implemented:** `MethodChannelService` (full timeout/error-translation logic), `EventChannelService` (listen/dispose/re-listen), `NativeBridge`/`DefaultNativeBridge` (callback routing by name, dispose), channel names locked in on both platforms, both `FlutterShieldPlugin` classes registering all three channels; **`checkEmulator` is now a real, working end-to-end bridge method** on both platforms (new since the last audit) — `method_codes.dart` now exists with that one constant.
+- **Features implemented:** `MethodChannelService` (full timeout/error-translation logic), `EventChannelService` (listen/dispose/re-listen), `NativeBridge`/`DefaultNativeBridge` (callback routing by name, dispose), channel names locked in on both platforms, both `DeviceShieldPlugin` classes registering all three channels; **`checkEmulator` is now a real, working end-to-end bridge method** on both platforms (new since the last audit) — `method_codes.dart` now exists with that one constant.
 - **Files added since last audit:** `bridge/method_codes.dart`, `android/.../detection/EmulatorDetector.kt`, `ios/.../Detection/EmulatorDetector.swift`.
 - **Tests added:** `detector_factory_test.dart`, `emulator_detector_test.dart` (Dart), `EmulatorDetectorTest.kt` (5 tests), `EmulatorDetectorTests.swift` (2 tests).
 - **Remaining work:** `method_codes.dart` has only one constant — every future detector/protection still needs its own; no Android manifest permissions declared (`AndroidManifest.xml` contains only the package declaration); no iOS `Info.plist` entries; no native `protection/`/`bridge/`/`utils/` subpackages on either platform.
@@ -1187,7 +1187,7 @@ Each milestone below reflects this report's own direct-code assessment, not a co
 
 ### M10 — Security Profiles — **Partial, ~25%** (unchanged)
 - **Implemented:** `SecurityProfile`/`DetectionConfig`/`PolicyConfig`/`ProtectionConfig` — complete, immutable, serializable, equatable value classes.
-- **Missing:** none of the five named factory presets (`fintech()`, `healthcare()`, `government()`, `enterprise()`, `consumer()`); no wiring anywhere accepts or applies a profile — `initialize()` takes only a `FlutterShieldConfig`.
+- **Missing:** none of the five named factory presets (`fintech()`, `healthcare()`, `government()`, `enterprise()`, `consumer()`); no wiring anywhere accepts or applies a profile — `initialize()` takes only a `DeviceShieldConfig`.
 - **Dependencies:** none blocking (model is done); wiring blocked on product decisions about default detector/rule sets per profile.
 
 ### M11 — Protections — **Not started, 0%** (unchanged)
@@ -1195,8 +1195,8 @@ Each milestone below reflects this report's own direct-code assessment, not a co
 - **Dependencies:** M2, M3 (both already satisfied) — could start in parallel with M7/M8 any time.
 
 ### M12 — Public API & UI Components — **Partial, ~52%** (unchanged in scope, verified still accurate)
-- **Implemented:** the `FlutterShield` static facade — `initialize`, `status`, `pause`, `resume`, `checkNow`, `shutdown`, `reinitialize`, `dispose`, `registerDetector`, `addRule`, `removeRule`, `registerCallback`/`unregisterCallback`, `subscribe`; legacy `getPlatformVersion()` preserved unchanged.
-- **Missing:** `FlutterShieldWidget`, `SecurityAlertDialog`, `ScreenshotProtection` widget — none exist; no `profile` property/parameter; **the public export barrel (`lib/flutter_shield.dart`) still only exports `src/api/flutter_shield.dart`** — `Detector`, `Rule`, `SecurityEvent`, `DetectionResult`, `FlutterShieldConfig`, and the exception types are not re-exported, confirmed unchanged by direct reading of the 1-line barrel file.
+- **Implemented:** the `DeviceShield` static facade — `initialize`, `status`, `pause`, `resume`, `checkNow`, `shutdown`, `reinitialize`, `dispose`, `registerDetector`, `addRule`, `removeRule`, `registerCallback`/`unregisterCallback`, `subscribe`; legacy `getPlatformVersion()` preserved unchanged.
+- **Missing:** `DeviceShieldWidget`, `SecurityAlertDialog`, `ScreenshotProtection` widget — none exist; no `profile` property/parameter; **the public export barrel (`lib/device_shield.dart`) still only exports `src/api/device_shield.dart`** — `Detector`, `Rule`, `SecurityEvent`, `DetectionResult`, `DeviceShieldConfig`, and the exception types are not re-exported, confirmed unchanged by direct reading of the 1-line barrel file.
 - **Dependencies:** M9/M10 for alert content, M11 for the protection widget.
 
 ### M13 — Storage, Encryption & Security Utilities — **Not started, 0%** (unchanged)
@@ -1210,7 +1210,7 @@ Each milestone below reflects this report's own direct-code assessment, not a co
 - `GDPRCompliance`, `PCIDSSCompliance`, `HIPAACompliance` — none exist.
 
 ### M16 — Internationalization — **Not started, 0%** (unchanged)
-- No `FlutterShieldLocalization`/`getLocalizedMessage()` (and no `SecurityAlertDialog` yet for it to localize).
+- No `DeviceShieldLocalization`/`getLocalizedMessage()` (and no `SecurityAlertDialog` yet for it to localize).
 
 ### M17 — Logging & Error-Handling Hardening — **Partial, ~10%** (unchanged)
 - **Implemented:** ad hoc error translation inside `MethodChannelService`; `PluginInitializer` unwinds cleanly on failure.
@@ -1266,13 +1266,13 @@ This section adds cross-cutting integration detail on top of §4's per-file entr
 
 **DetectionCache** — opt-in, not defaulted anywhere in the current boot sequence; `PluginInitializer` never constructs one, meaning **caching is off by default** in the running SDK today unless a caller manually composes `DefaultDetectionManager` with one.
 
-**FlutterShield API** — see §4's entry; the one place two different "shapes" coexist deliberately (an instance method for the legacy call, a fully static surface for everything else).
+**DeviceShield API** — see §4's entry; the one place two different "shapes" coexist deliberately (an instance method for the legacy call, a fully static surface for everything else).
 
-**Platform layer (legacy)** — `FlutterShieldPlatform`/`MethodChannelFlutterShield` — entirely disconnected from the Bridge architecture; kept only for `getPlatformVersion()` backward compatibility.
+**Platform layer (legacy)** — `DeviceShieldPlatform`/`MethodChannelDeviceShield` — entirely disconnected from the Bridge architecture; kept only for `getPlatformVersion()` backward compatibility.
 
 **Models** — see §4; all leaf, dependency-free, hand-serialized (no `json_serializable`/code-gen anywhere in `pubspec.yaml`).
 
-**Exceptions** — a flat, one-level hierarchy (`FlutterShieldException` base + 6 direct subtypes) — no further specialization exists (e.g., no `RootDetectionException` extending `DetectionException`).
+**Exceptions** — a flat, one-level hierarchy (`DeviceShieldException` base + 6 direct subtypes) — no further specialization exists (e.g., no `RootDetectionException` extending `DetectionException`).
 
 ---
 
@@ -1286,7 +1286,7 @@ This section adds cross-cutting integration detail on top of §4's per-file entr
 | `test/managers/default_detection_manager_test.dart` | 23 |
 | `test/registry/default_detector_registry_test.dart` | 21 |
 | `test/bootstrap/plugin_initializer_test.dart` | 15 |
-| `test/api/flutter_shield_test.dart` | 14 |
+| `test/api/device_shield_test.dart` | 14 |
 | `test/managers/multi_level_cache_test.dart` | 14 |
 | `test/managers/detection_cache_test.dart` | 13 |
 | `test/managers/concurrency_controller_test.dart` | 12 |
@@ -1296,14 +1296,14 @@ This section adds cross-cutting integration detail on top of §4's per-file entr
 | `test/bridge/default_native_bridge_test.dart` | 8 |
 | `test/managers/default_policy_manager_test.dart` | 8 |
 | `test/detectors/emulator_detector_test.dart` | 8 |
-| `test/config/flutter_shield_config_validator_test.dart` | 7 |
+| `test/config/device_shield_config_validator_test.dart` | 7 |
 | `test/events/default_event_manager_test.dart` | 7 |
 | `test/bridge/event_channel_service_test.dart` | 6 |
 | `test/managers/default_security_manager_test.dart` | 5 |
 | `test/registry/detector_factory_test.dart` | 5 |
 | `test/state/default_lifecycle_manager_test.dart` | 3 |
-| `test/flutter_shield_test.dart` | 2 |
-| `test/flutter_shield_method_channel_test.dart` | 1 |
+| `test/device_shield_test.dart` | 2 |
+| `test/device_shield_method_channel_test.dart` | 1 |
 | `test/bootstrap/phase5_managers_integration_test.dart` | 1 |
 
 ### Coverage
@@ -1313,17 +1313,17 @@ This section adds cross-cutting integration detail on top of §4's per-file entr
 - **Dart tests:** almost entirely hand-written fakes (`_FakeDetector`, `_FakeRule`, `_FakeNativeBridge`, `_FakeEventManager`, `_FakeSecurityManager`, `_FakeLifecycleManager`, `_FakePermissionManager`, `_ThrowingPermissionManager`, `_ControllableDetector`) implementing the real interfaces directly — no mocking framework (e.g. `mockito` for Dart) is used anywhere in `test/`.
 - **Channel-level tests** use Flutter's own `TestDefaultBinaryMessengerBinding` + `setMockMethodCallHandler`/`setMockStreamHandler`/`MockStreamHandler.inline` — the standard, real Flutter-SDK-provided test surface, not a third-party mock.
 - **Android (Kotlin):** uses real Mockito (`org.mockito:mockito-core:5.14.2`, bumped from `5.0.0` per `CURRENT_PROGRESS.md`'s note to resolve a JDK 21/ByteBuddy incompatibility — a test-tooling fix, not a production dependency change).
-- **iOS (Swift):** plain `XCTest`, no mocking library — `@testable import flutter_shield` with direct construction and `expectation`-based async assertions.
+- **iOS (Swift):** plain `XCTest`, no mocking library — `@testable import device_shield` with direct construction and `expectation`-based async assertions.
 
 ### Integration Tests
 - `test/bootstrap/plugin_initializer_test.dart` functions as the primary integration suite — exercises the full boot→running→shutdown→reinitialize→dispose cycle against a real `ServiceContainer`, with a mix of pre-registered fakes and framework-defaulted real services.
 - `test/bootstrap/phase5_managers_integration_test.dart` (1 test) specifically proves the real Phase 5 managers and Phase 6 `DetectorRegistry` wire correctly through `PluginInitializer` end-to-end, including a real `DefaultNativeBridge` (registered but never invoked, since nothing in that test calls a channel method).
-- `test/api/flutter_shield_test.dart` is effectively a black-box integration suite for the public facade, driving real detector registration → `checkNow()` → event delivery through the entire stack.
+- `test/api/device_shield_test.dart` is effectively a black-box integration suite for the public facade, driving real detector registration → `checkNow()` → event delivery through the entire stack.
 - No dedicated `integration_test/` directory exists at the package root (only `example/integration_test/plugin_integration_test.dart`, which is still the default, unmodified template).
 
 ### Platform Tests
-- **Android:** 9 Kotlin tests total (4 in `FlutterShieldPluginTest.kt` covering the legacy path + notImplemented + `sendEvent`/`onListen`/`onCancel`/`onDetachedFromEngine`, plus the actual count is: `FlutterShieldPluginTest.kt` has 9 `@Test` methods, `EmulatorDetectorTest.kt` has 5 `@Test` methods — 14 total Kotlin tests). Confirmed runnable via Gradle (per prior documented work; not re-executed for this report).
-- **iOS:** `FlutterShieldPluginTests.swift` (7 test methods) + `EmulatorDetectorTests.swift` (2 test methods) — 9 total Swift XCTest methods. **Cannot currently execute in a bare checkout** — `swift build`/`swift test` requires `../FlutterFramework`, a local SwiftPM package Flutter's own iOS build tooling generates, which does not exist outside a full Flutter iOS build context. This is a documented environment limitation, not a defect in the test code (re-confirmed for this report by checking `ios/flutter_shield/Package.swift`'s dependency on `path: "../FlutterFramework"`, which does not exist in this checkout).
+- **Android:** 9 Kotlin tests total (4 in `DeviceShieldPluginTest.kt` covering the legacy path + notImplemented + `sendEvent`/`onListen`/`onCancel`/`onDetachedFromEngine`, plus the actual count is: `DeviceShieldPluginTest.kt` has 9 `@Test` methods, `EmulatorDetectorTest.kt` has 5 `@Test` methods — 14 total Kotlin tests). Confirmed runnable via Gradle (per prior documented work; not re-executed for this report).
+- **iOS:** `DeviceShieldPluginTests.swift` (7 test methods) + `EmulatorDetectorTests.swift` (2 test methods) — 9 total Swift XCTest methods. **Cannot currently execute in a bare checkout** — `swift build`/`swift test` requires `../FlutterFramework`, a local SwiftPM package Flutter's own iOS build tooling generates, which does not exist outside a full Flutter iOS build context. This is a documented environment limitation, not a defect in the test code (re-confirmed for this report by checking `ios/device_shield/Package.swift`'s dependency on `path: "../FlutterFramework"`, which does not exist in this checkout).
 
 ### What Is Validated
 State machine transition legality (every edge and every non-edge); DI container registration modes and circular-dependency detection; the full boot/shutdown/reinitialize/dispose cycle including config-persistence-across-reinit and fresh-manager-construction-after-shutdown; bounded concurrency (parallelism, ordering, timeout, exception isolation, dispose-during-run cancellation); TTL+LRU cache correctness (hit/miss/expiry/eviction/promotion); event pub-sub (filtering, pause/resume queuing, subscriber isolation, processor chain); detector registry priority ordering and duplicate rejection; native bridge error-code translation for every documented failure mode; one real detector's full behavior including its native heuristics on both platforms.
@@ -1332,10 +1332,10 @@ State machine transition legality (every edge and every non-edge); DI container 
 - No coverage measurement of any kind.
 - No performance/benchmark tests (`test/performance/` doesn't exist).
 - No `test/edge_cases/` covering the SRS's §26.1 resilience scenarios.
-- No dedicated model-level test file for `FlutterShieldConfig`/`SecurityEvent`/`DetectionResult`/`SecurityProfile` (`toJson`/`fromJson`/equality) — only indirectly exercised elsewhere.
+- No dedicated model-level test file for `DeviceShieldConfig`/`SecurityEvent`/`DetectionResult`/`SecurityProfile` (`toJson`/`fromJson`/equality) — only indirectly exercised elsewhere.
 - No dedicated `Logger`/`ConsoleLogger` test file.
 - No real-device (rooted/jailbroken) validation — impossible today, since no root/jailbreak detector exists yet.
-- No widget tests (no widgets exist to test — `FlutterShieldWidget` etc. are all unbuilt).
+- No widget tests (no widgets exist to test — `DeviceShieldWidget` etc. are all unbuilt).
 
 ### Future Tests (implied by remaining work)
 One test suite per remaining P0/P1 detector, following `emulator_detector_test.dart`'s pattern; `Rule`/`ActionHandler` content tests once M9 has real rules; a benchmark suite once M14's `PerformanceMonitor` exists; an edge-case suite for M21.
@@ -1345,20 +1345,20 @@ One test suite per remaining P0/P1 detector, following `emulator_detector_test.d
 ## 11. Platform Layer
 
 ### Android
-`android/src/main/kotlin/com/example/flutter_shield/FlutterShieldPlugin.kt` implements `FlutterPlugin`, `MethodChannelHandler`, and `EventChannel.StreamHandler` in one class. `onAttachedToEngine` constructs and registers all three channels: the legacy `flutter_shield` channel, the bridge `flutter_shield/native_bridge` `MethodChannel`, and the bridge `flutter_shield/events` `EventChannel`. `onMethodCall` dispatches on `call.method`: `"getPlatformVersion"` → `"Android ${Build.VERSION.RELEASE}"`; `"checkEmulator"` → `EmulatorDetector.check()`'s result map; anything else → `result.notImplemented()`. `sendEvent(callback, data)` is the outbound half of the callback-routing contract `DefaultNativeBridge` implements on the Dart side — shapes a `{"callback": ..., "data": ...}` map and pushes it through the currently-held `EventChannel.EventSink`, a no-op if nothing is listening. `onDetachedFromEngine` unregisters all three channel handlers and clears the event sink.
+`android/src/main/kotlin/com/example/device_shield/DeviceShieldPlugin.kt` implements `FlutterPlugin`, `MethodChannelHandler`, and `EventChannel.StreamHandler` in one class. `onAttachedToEngine` constructs and registers all three channels: the legacy `device_shield` channel, the bridge `device_shield/native_bridge` `MethodChannel`, and the bridge `device_shield/events` `EventChannel`. `onMethodCall` dispatches on `call.method`: `"getPlatformVersion"` → `"Android ${Build.VERSION.RELEASE}"`; `"checkEmulator"` → `EmulatorDetector.check()`'s result map; anything else → `result.notImplemented()`. `sendEvent(callback, data)` is the outbound half of the callback-routing contract `DefaultNativeBridge` implements on the Dart side — shapes a `{"callback": ..., "data": ...}` map and pushes it through the currently-held `EventChannel.EventSink`, a no-op if nothing is listening. `onDetachedFromEngine` unregisters all three channel handlers and clears the event sink.
 
 `android/.../detection/EmulatorDetector.kt` is a Kotlin `object` (no state) exposing `check(): Map<String, Any>`. Its decision logic is deliberately factored into an internal, pure `evaluate(...)` function taking every `Build.*` field as a parameter — this lets `EmulatorDetectorTest.kt` exercise every branch with synthetic inputs without Robolectric, since `android.os.Build`'s real fields are static and effectively unmockable in a plain JVM unit test. Seven independent signal categories (fingerprint, model, manufacturer, hardware, product, brand+device combined, QEMU pipe file existence); confidence = fired-signal-count / 7.0, capped at 1.0.
 
 ### iOS
-`ios/flutter_shield/Sources/flutter_shield/FlutterShieldPlugin.swift` implements `FlutterPlugin` and `FlutterStreamHandler`. The static `register(with:)` factory method constructs the plugin instance and all three channels via `registrar.messenger()`, functionally mirroring Android's `onAttachedToEngine`. `handle(_:result:)` dispatches identically to Android's `onMethodCall` (`getPlatformVersion` → `"iOS " + UIDevice.current.systemVersion`; `checkEmulator` → `EmulatorDetector.check()`; else → `FlutterMethodNotImplemented`). `sendEvent` mirrors Android's helper exactly (`nil` data forwarded as `NSNull()`). `detachFromEngine(for:)` tears down both bridge channels and clears the event sink — the Android/iOS cleanup behavior is verified functionally identical by direct comparison of both files.
+`ios/device_shield/Sources/device_shield/DeviceShieldPlugin.swift` implements `FlutterPlugin` and `FlutterStreamHandler`. The static `register(with:)` factory method constructs the plugin instance and all three channels via `registrar.messenger()`, functionally mirroring Android's `onAttachedToEngine`. `handle(_:result:)` dispatches identically to Android's `onMethodCall` (`getPlatformVersion` → `"iOS " + UIDevice.current.systemVersion`; `checkEmulator` → `EmulatorDetector.check()`; else → `FlutterMethodNotImplemented`). `sendEvent` mirrors Android's helper exactly (`nil` data forwarded as `NSNull()`). `detachFromEngine(for:)` tears down both bridge channels and clears the event sink — the Android/iOS cleanup behavior is verified functionally identical by direct comparison of both files.
 
 `ios/.../Detection/EmulatorDetector.swift` is a Swift `enum` (no cases — used purely as a namespace) exposing `static func check() -> [String: Any]`. Unlike Android's heuristic scoring, iOS uses a compile-time `#if targetEnvironment(simulator)` directive — an exact, Apple-provided signal, not a weighted heuristic — reporting full confidence (`1.0`) when compiled for the Simulator target, zero otherwise.
 
 ### MethodChannel
-Both platforms use the identical two-channel naming scheme: legacy `flutter_shield` (Phase 1) and bridge `flutter_shield/native_bridge`. Every `invoke()` from Dart is marshaled by the Flutter engine onto the platform's native thread, dispatched synchronously into `onMethodCall`/`handle(_:result:)`, and the `result`/`FlutterResult` callback marshals the response back.
+Both platforms use the identical two-channel naming scheme: legacy `device_shield` (Phase 1) and bridge `device_shield/native_bridge`. Every `invoke()` from Dart is marshaled by the Flutter engine onto the platform's native thread, dispatched synchronously into `onMethodCall`/`handle(_:result:)`, and the `result`/`FlutterResult` callback marshals the response back.
 
 ### EventChannel
-Both platforms use `flutter_shield/events`. `onListen`/`onCancel` (Android) and `onListen(withArguments:eventSink:)`/`onCancel(withArguments:)` (iOS) capture/release the sink reference; `sendEvent` on both platforms is the only thing that ever writes to it, and both correctly no-op rather than crash when no sink is currently registered (verified by dedicated tests on both platforms: `sendEvent_withNoActiveListener_isANoOpRatherThanThrowing` / `testSendEventWithNoActiveListenerIsANoOpRatherThanCrashing`).
+Both platforms use `device_shield/events`. `onListen`/`onCancel` (Android) and `onListen(withArguments:eventSink:)`/`onCancel(withArguments:)` (iOS) capture/release the sink reference; `sendEvent` on both platforms is the only thing that ever writes to it, and both correctly no-op rather than crash when no sink is currently registered (verified by dedicated tests on both platforms: `sendEvent_withNoActiveListener_isANoOpRatherThanThrowing` / `testSendEventWithNoActiveListenerIsANoOpRatherThanCrashing`).
 
 ### NativeBridge (Dart-side integration)
 `DefaultNativeBridge` is the sole consumer of both native channels from the Dart side. It never inspects native-pushed event *content* beyond the `{'callback': ..., 'data': ...}` routing envelope — matching both native implementations' payload shape exactly, verified end-to-end by `default_native_bridge_test.dart`'s callback-routing test group.
@@ -1370,7 +1370,7 @@ Native code calls `sendEvent(callback, data)` → `EventChannel.EventSink.succes
 `EmulatorDetector.check()` → `NativeBridge.invoke<Map>(method: MethodCodes.checkEmulator)` → `DefaultNativeBridge.invoke()` → `MethodChannelService.invoke()` → `MethodChannel.invokeMethod('checkEmulator', null).timeout(5s)` → native `onMethodCall`/`handle` → `EmulatorDetector.check()` (native) → response marshaled back → typed as `Map<Object?, Object?>` → shaped into a `DetectionResult` by the Dart `EmulatorDetector`.
 
 ### Lifecycle
-Both plugins' registration (`onAttachedToEngine`/`register(with:)`) and teardown (`onDetachedFromEngine`/`detachFromEngine(for:)`) are driven entirely by the Flutter engine's own plugin lifecycle — independent of, and unrelated to, the Dart-side `SDKState` machine. A plugin instance can be attached to an engine well before `FlutterShield.initialize()` is ever called, and remains attached across an `SDKState` `stopped`/`running` cycle.
+Both plugins' registration (`onAttachedToEngine`/`register(with:)`) and teardown (`onDetachedFromEngine`/`detachFromEngine(for:)`) are driven entirely by the Flutter engine's own plugin lifecycle — independent of, and unrelated to, the Dart-side `SDKState` machine. A plugin instance can be attached to an engine well before `DeviceShield.initialize()` is ever called, and remains attached across an `SDKState` `stopped`/`running` cycle.
 
 ---
 
@@ -1378,7 +1378,7 @@ Both plugins' registration (`onAttachedToEngine`/`register(with:)`) and teardown
 
 ### Initialization
 ```
-App          FlutterShield      PluginInitializer     ServiceContainer      Services
+App          DeviceShield      PluginInitializer     ServiceContainer      Services
  │  initialize(config) │                   │                    │                │
  │─────────────────────►│                   │                    │                │
  │                       │ init(config)      │                    │                │
@@ -1448,7 +1448,7 @@ Native Plugin        EventChannel(engine)      EventChannelService      DefaultN
 
 ### Shutdown
 ```
-FlutterShield      PluginInitializer      LifecycleManager   SecurityManager   DetectionManager/PolicyManager   EventManager   NativeBridge
+DeviceShield      PluginInitializer      LifecycleManager   SecurityManager   DetectionManager/PolicyManager   EventManager   NativeBridge
      │  shutdown()      │                        │                  │                    │                          │              │
      │─────────────────►│ detach()                │                  │                    │                          │              │
      │                  │────────────────────────►│                  │                    │                          │              │
@@ -1474,11 +1474,11 @@ FlutterShield      PluginInitializer      LifecycleManager   SecurityManager   D
 | **Registry** | `Registry<T>` → `DetectorRegistry`/`DefaultDetectorRegistry` | Generic base + domain-specific priority-ordering/duplicate-prevention subtype. |
 | **Strategy** | `Detector`, `Rule`, `NativeBridge`, `CacheLevel` | Every one of these is a narrow interface the framework programs against, with concrete implementations swapped in without the framework's own code changing. |
 | **Observer** | `EventManager` (pub/sub), `LogSink` (fan-out), `WidgetsBindingObserver` (`DefaultLifecycleManager`), `SecurityLifecycleHandler` (narrow callback observer) | Four distinct applications of the same underlying pattern, at four different layers. |
-| **Singleton (per-SDK-lifetime)** | Every service registered via `ServiceContainer.registerSingleton`/`registerLazySingleton` | Not a classic static-global singleton — scoped to one `ServiceContainer` instance, allowing multiple independent SDK "sessions" in theory (never exercised, since `FlutterShield` itself holds one static container). |
+| **Singleton (per-SDK-lifetime)** | Every service registered via `ServiceContainer.registerSingleton`/`registerLazySingleton` | Not a classic static-global singleton — scoped to one `ServiceContainer` instance, allowing multiple independent SDK "sessions" in theory (never exercised, since `DeviceShield` itself holds one static container). |
 | **Composition (Composite-ish)** | `DefaultSecurityManager` composing `DetectionManager`+`PolicyManager`+`EventManager` | `SecurityManager` is a pure coordinator holding references to, never subclassing, its collaborators. |
-| **Facade** | `FlutterShield` | Single static entry point hiding `PluginInitializer`/`ServiceContainer`/every manager from the host app entirely. |
+| **Facade** | `DeviceShield` | Single static entry point hiding `PluginInitializer`/`ServiceContainer`/every manager from the host app entirely. |
 | **Bridge (structural)** | `NativeBridge` module (`bridge/`) | Decouples the Dart-side abstraction (`invoke`/`registerCallback`) from the platform-channel implementation — literally the pattern this module is named after. |
-| **Adapter** | `MethodChannelService`, `EventChannelService`, `EmulatorDetector` (Dart shim), `MethodChannelFlutterShield` | Each wraps a lower-level API (Flutter's raw channels, or a native heuristic response) into the SDK's own typed vocabulary. |
+| **Adapter** | `MethodChannelService`, `EventChannelService`, `EmulatorDetector` (Dart shim), `MethodChannelDeviceShield` | Each wraps a lower-level API (Flutter's raw channels, or a native heuristic response) into the SDK's own typed vocabulary. |
 | **State** | `SDKState` (enum) + `DefaultSecurityStateManager` (context/machine) | Classic State pattern split across a pure-data enum and a single-writer machine enforcing the transition table. |
 | **Chain of Responsibility** | `PolicyManager.evaluate()` (priority-ordered rule scan, first match wins), `EventManager`'s `_processors` chain | Both stop at the first success/apply-in-sequence shape. |
 | **Decorator** | `_checkWithCache` in `DefaultDetectionManager` (wraps raw `Detector.check()` with cache-aside behavior), `MultiLevelCache` (wraps `CacheLevel`s with TTL) | Adds behavior around an existing call without changing its interface. |
@@ -1510,9 +1510,9 @@ For every major class, evaluated against direct code reading (not the frozen doc
 | `ConcurrencyController` | ✅ | ✅ generic over `<T, R>` | N/A | ✅ | N/A (infrastructure, not swapped) |
 | `MultiLevelCache` | ✅ | ✅ pluggable `levels` list | ✅ | ✅ | ✅ depends on `CacheLevel` abstraction |
 | `EmulatorDetector` | ✅ thin shim, all technique logic native | N/A (a leaf instance, not extended) | ✅ fully substitutable behind `Detector` | ✅ | ✅ depends on `NativeBridge` interface |
-| `FlutterShield` (facade) | ✅ delegation only | ✅ new capability = new delegating static method | N/A | ⚠ one large class covering the whole public surface — arguably a fat interface by definition of being *the* facade, though each method individually is narrow and this is the documented, intentional shape of a facade | ✅ resolves everything through `ServiceContainer.resolve<T>()` against abstractions |
+| `DeviceShield` (facade) | ✅ delegation only | ✅ new capability = new delegating static method | N/A | ⚠ one large class covering the whole public surface — arguably a fat interface by definition of being *the* facade, though each method individually is narrow and this is the documented, intentional shape of a facade | ✅ resolves everything through `ServiceContainer.resolve<T>()` against abstractions |
 
-**Overall verdict:** SOLID holds cleanly through the framework layer. The one class worth flagging on ISP grounds (`FlutterShield`) is a facade by design — a large surface is the *point* of a facade, so this is not treated as a defect. The one class worth flagging on SRP/hardcoded-decision grounds (`DefaultSecurityManager`'s constant `EventSeverity.info`) is a documented, deliberate scope limitation (severity assignment is explicitly deferred as "a policy-adjacent decision... out of scope for this phase"), not an oversight.
+**Overall verdict:** SOLID holds cleanly through the framework layer. The one class worth flagging on ISP grounds (`DeviceShield`) is a facade by design — a large surface is the *point* of a facade, so this is not treated as a defect. The one class worth flagging on SRP/hardcoded-decision grounds (`DefaultSecurityManager`'s constant `EventSeverity.info`) is a documented, deliberate scope limitation (severity assignment is explicitly deferred as "a policy-adjacent decision... out of scope for this phase"), not an oversight.
 
 ---
 
@@ -1525,7 +1525,7 @@ The dependency-injection container (`ServiceContainer`), the entire state machin
 The manager orchestration layer runs correctly but two of its four managers (`PolicyManager`, and by extension `SecurityManager`'s downstream behavior) have real mechanism and zero content; `DetectorFactory` exists but is disconnected from boot; `SecurityProfile` is a complete model with no wiring; the public API is functionally rich but its export barrel is incomplete; the native platform layer has full transport parity but only one detector's worth of feature parity; testing is extensive in raw count (202) but has never been measured for coverage and has no performance/edge-case suites.
 
 ### What Is Missing
-Every detector beyond emulator (5 of 6 P0, both P1); every protection (5 of 5); all policy content (default rules, action handlers, `CustomRule`); all five `SecurityProfile` factory presets and any wiring of `profile` into `initialize()`; storage/encryption utilities; compliance packs; internationalization; the widget layer (`FlutterShieldWidget`, `SecurityAlertDialog`, `ScreenshotProtection`); production logging/recovery/retry infrastructure; a rewritten example app and README; CI/CD; a version-controlled repository at all (confirmed: this directory is not a git repository).
+Every detector beyond emulator (5 of 6 P0, both P1); every protection (5 of 5); all policy content (default rules, action handlers, `CustomRule`); all five `SecurityProfile` factory presets and any wiring of `profile` into `initialize()`; storage/encryption utilities; compliance packs; internationalization; the widget layer (`DeviceShieldWidget`, `SecurityAlertDialog`, `ScreenshotProtection`); production logging/recovery/retry infrastructure; a rewritten example app and README; CI/CD; a version-controlled repository at all (confirmed: this directory is not a git repository).
 
 ### Technical Debt
 - No coverage measurement has ever been taken — the §16.5 targets are aspirational, not verified.
@@ -1538,7 +1538,7 @@ Every detector beyond emulator (5 of 6 P0, both P1); every protection (5 of 5); 
 ### Architecture Risks
 - The `PolicyManager` placeholder-decision behavior (`evaluate()` → `SecurityAction.ignore` unless a host app manually adds a matching rule) means **the SDK currently produces zero actionable security outcomes even when a detector correctly reports a threat** — this is an expected, documented gap for this phase, but it is the single biggest gap standing between "a well-tested skeleton" and "a security product."
 - Root/jailbreak/hook detection is inherently the kind of code that can pass every mocked unit test while still being wrong on real hardware — zero real-device validation exists yet, and can't until those detectors are built.
-- The public barrel-export gap (§4, `lib/flutter_shield.dart`) means FR-17/FR-18 (custom rules/detectors) are not actually usable by a host app through the *documented* public API today, only by reaching into `package:flutter_shield/src/...` directly.
+- The public barrel-export gap (§4, `lib/device_shield.dart`) means FR-17/FR-18 (custom rules/detectors) are not actually usable by a host app through the *documented* public API today, only by reaching into `package:device_shield/src/...` directly.
 
 ### Known Limitations
 - The iOS native test suite cannot execute in a bare checkout (missing `../FlutterFramework` local SwiftPM package) — an environment limitation of this specific working copy, not a defect in the test code.
@@ -1553,8 +1553,8 @@ Every detector beyond emulator (5 of 6 P0, both P1); every protection (5 of 5); 
 
 | # | Task | Priority | Complexity | Depends on | Milestone |
 |---|---|---|---|---|---|
-| 1 | Replace placeholder identifiers (`com.example.flutter_shield`, podspec homepage/author, pubspec description/homepage) | High | Low | none | M0 |
-| 2 | Export `Detector`, `Rule`, `SecurityEvent`, `DetectionResult`, `FlutterShieldConfig`, exceptions from `lib/flutter_shield.dart` | High | Low | none | M12 |
+| 1 | Replace placeholder identifiers (`com.example.device_shield`, podspec homepage/author, pubspec description/homepage) | High | Low | none | M0 |
+| 2 | Export `Detector`, `Rule`, `SecurityEvent`, `DetectionResult`, `DeviceShieldConfig`, exceptions from `lib/device_shield.dart` | High | Low | none | M12 |
 | 3 | Implement the remaining 5 P0 detectors (root, jailbreak, debugger, runtime-hook, app-integrity) following `EmulatorDetector`'s pattern | High | High (×5) | native package skeleton (`protection/`/`bridge/`/`utils/` still missing) | M7 |
 | 4 | Implement default `Rule` content + `ActionHandler`s for each detection type as it lands | High | Medium | Task 3 | M9 |
 | 5 | Add a built-in dedup `EventProcessor` matching `ARCHITECTURE.md` §5's pipeline diagram, or formally amend the diagram | High | Low | none | M4 |
@@ -1565,16 +1565,16 @@ Every detector beyond emulator (5 of 6 P0, both P1); every protection (5 of 5); 
 | 10 | Grow `method_codes.dart` alongside every new detector/protection (discipline item, not a milestone of its own) | Medium | Low | ongoing | M3 |
 | 11 | Add required Android permissions / iOS `Info.plist` entries as specific detectors/protections need them | Medium | Low | Tasks 3, 12 | M3 |
 | 12 | Implement the 5 protections | Medium | High | M2/M3 (done) — can run in parallel with detectors | M11 |
-| 13 | Implement `FlutterShieldConfigBuilder` and `ConfigurationPersistence` | Medium | Medium | `shared_preferences` dependency | M2 |
+| 13 | Implement `DeviceShieldConfigBuilder` and `ConfigurationPersistence` | Medium | Medium | `shared_preferences` dependency | M2 |
 | 14 | Implement `CustomRule` public class + 100-rule cap + circular-dependency validation | Medium | Medium | Task 4 | M9 |
-| 15 | Implement `FlutterShieldWidget`, `SecurityAlertDialog`, `ScreenshotProtection` widget | Medium | Medium | Tasks 4/6 (alert content), Task 12 (protection widget) | M12 |
+| 15 | Implement `DeviceShieldWidget`, `SecurityAlertDialog`, `ScreenshotProtection` widget | Medium | Medium | Tasks 4/6 (alert content), Task 12 (protection widget) | M12 |
 | 16 | Implement `DataFilter` and wire it into `Logger` | Medium | Low | none | M1 |
 | 17 | Implement `SecureStorage`/`EncryptionUtils`/`KeyManager`/`IntegrityValidator`/`DataProtection` | Medium | Medium | crypto/secure-storage packages | M13 |
 | 18 | Implement `ProductionLogger`/`RecoveryStrategy`/`RetryLogic`, wired into real catch blocks | Medium | Medium | none blocking | M17 |
 | 19 | Restructure `test/` into `unit/`/`integration/`/`native/`; run and record `flutter test --coverage` against the §16.5 targets | Medium | Low | none blocking | M18 |
 | 20 | Implement `PerformanceMonitor` and an automated benchmark suite | Low | Medium | a real detector set (Task 3) | M14 |
 | 21 | Implement `GDPRCompliance`/`PCIDSSCompliance`/`HIPAACompliance` + legal sign-off | Low | Medium (High legal overhead) | Tasks 16, 17 | M15 |
-| 22 | Implement `FlutterShieldLocalization`/`getLocalizedMessage()` | Low | Low | Task 15 | M16 |
+| 22 | Implement `DeviceShieldLocalization`/`getLocalizedMessage()` | Low | Low | Task 15 | M16 |
 | 23 | Rewrite the example app, README, integration guide, `DevelopmentTools` | Low | Medium | a feature-complete public API (Tasks 3–15 substantially done) | M19 |
 | 24 | Set up `.github/workflows/release.yml`, finalize `pubspec.yaml`, document versioning/deprecation policy | Low | Low | Task 23 | M20 |
 | 25 | Write and pass tests for the SRS's §26.1 edge-case rows | Low | High | nearly everything above | M21 |

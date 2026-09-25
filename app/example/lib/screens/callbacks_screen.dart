@@ -34,7 +34,8 @@ class _CallbacksScreenState extends State<CallbacksScreen> {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             const InfoBanner(
-              message: 'The names "onScreenshotTaken" and '
+              message:
+                  'The names "onScreenshotTaken" and '
                   '"onScreenCaptureStateChanged" are reserved internally by '
                   'ScreenCaptureController. Registering them here is '
                   'refused — see Advanced below to intercept them '
@@ -59,11 +60,15 @@ class _CallbacksScreenState extends State<CallbacksScreen> {
                     final name = _nameController.text.trim();
                     if (name.isEmpty) return;
                     final ok = controller.registerCallback(name);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(ok
-                          ? 'Registered "$name"'
-                          : '"$name" is reserved — refused'),
-                    ));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          ok
+                              ? 'Registered "$name"'
+                              : '"$name" is reserved — refused',
+                        ),
+                      ),
+                    );
                     if (ok) _nameController.clear();
                   },
                 ),
@@ -77,13 +82,14 @@ class _CallbacksScreenState extends State<CallbacksScreen> {
                       for (final record in controller.callbacks.values)
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: Icon(record.registered
-                              ? Icons.link
-                              : Icons.link_off),
+                          leading: Icon(
+                            record.registered ? Icons.link : Icons.link_off,
+                          ),
                           title: Text(record.name),
                           subtitle: Text(
-                              'Invocations: ${record.invocationCount}'
-                              '${record.lastInvokedAt != null ? ' • last: ${record.lastInvokedAt}' : ''}'),
+                            'Invocations: ${record.invocationCount}'
+                            '${record.lastInvokedAt != null ? ' • last: ${record.lastInvokedAt}' : ''}',
+                          ),
                           trailing: Wrap(
                             spacing: 4,
                             children: [
@@ -98,8 +104,9 @@ class _CallbacksScreenState extends State<CallbacksScreen> {
                                 tooltip: 'Unregister',
                                 icon: const Icon(Icons.close),
                                 onPressed: record.registered
-                                    ? () => controller
-                                        .unregisterCallback(record.name)
+                                    ? () => controller.unregisterCallback(
+                                        record.name,
+                                      )
                                     : null,
                               ),
                             ],
@@ -109,7 +116,8 @@ class _CallbacksScreenState extends State<CallbacksScreen> {
             ),
             SectionCard(
               title: 'Advanced: raw callback interception',
-              subtitle: 'Deliberately demonstrates the collision risk — '
+              subtitle:
+                  'Deliberately demonstrates the collision risk — '
                   'do not enable unless you want to see SDK screenshot/'
                   'recording routing overridden.',
               children: [
@@ -117,8 +125,7 @@ class _CallbacksScreenState extends State<CallbacksScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Intercept reserved names'),
                   value: controller.advancedRawCallbackInterceptionEnabled,
-                  onChanged: (v) =>
-                      controller.setAdvancedRawCallbackInterception(v),
+                  onChanged: controller.setAdvancedRawCallbackInterception,
                 ),
               ],
             ),

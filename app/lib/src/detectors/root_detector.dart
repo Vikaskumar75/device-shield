@@ -4,7 +4,7 @@ import '../models/detection_result.dart';
 import '../registry/detector.dart';
 
 /// FR-01 (SRS §5.1): root detection.
-/// docs/features/ROOT_JAILBREAK_DETECTION.md.
+/// doc/features/ROOT_JAILBREAK_DETECTION.md.
 ///
 /// Constructible on either platform (`DetectorFactory` is platform-
 /// agnostic Dart) — the platform difference lives entirely in what

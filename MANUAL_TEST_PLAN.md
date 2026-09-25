@@ -1,4 +1,4 @@
-# Manual Test Plan — FlutterShield Reference Example App
+# Manual Test Plan — DeviceShield Reference Example App
 
 This document mirrors the in-app checklist on the **Manual Test** screen
 (`example/lib/core/manual_test_case.dart` → `buildDefaultManualTestCases()`)
@@ -46,7 +46,7 @@ expect**.
 
 | ID | Title | Steps | Expected result |
 |----|-------|-------|------------------|
-| config-1 | Configuration loads | Open Settings before initializing | Default `FlutterShieldConfig` values are pre-filled. |
+| config-1 | Configuration loads | Open Settings before initializing | Default `DeviceShieldConfig` values are pre-filled. |
 | config-2 | Configuration updates | Change **Periodic Check Interval** in Settings, tap **Apply** | Success SnackBar; new value reflected on Home. |
 | config-3 | Runtime updates | Apply a config change while already running | SDK transparently reinitializes and resumes `running`. |
 | config-4 | Screenshot protection auto-applies at boot | Settings → enable **"Enable screenshot protection at boot"** → Apply → Initialize | Android: `protectionEnabled` reads `Yes` on Home immediately after initialize, with **zero** manual "Enable protection" tap. This is the fix for the audit's dead-config finding — see §18.2 of the design doc. |
@@ -183,11 +183,11 @@ safely rather than crashing or silently succeeding:
   passes with no regressions.
 - **In-app regression cases**: regr-1, regr-2, regr-3 above.
 
-### Bug: `FlutterShieldConfig`'s screenshot/recording flags were validated and stored but never read
+### Bug: `DeviceShieldConfig`'s screenshot/recording flags were validated and stored but never read
 
 - **Root cause**: `enableScreenshotDetection`, `enableScreenRecordingDetection`,
-  and `enableScreenshotProtection` were added to `FlutterShieldConfig`,
-  passed through `FlutterShieldConfigValidator`, and persisted by
+  and `enableScreenshotProtection` were added to `DeviceShieldConfig`,
+  passed through `DeviceShieldConfigValidator`, and persisted by
   `ConfigurationManager` — but no runtime code ever read them back.
   `ScreenCaptureController.initialize()` registered both native push
   listeners unconditionally regardless of the flags, and protection was
@@ -224,7 +224,7 @@ app** (About screen, `ShieldController` doc comments), not silently
 worked around. As part of manual testing, confirm each is still
 accurately represented in-app:
 
-1. **No detector removal API** — `FlutterShield`/`DetectionManager` expose
+1. **No detector removal API** — `DeviceShield`/`DetectionManager` expose
    `registerDetector()` but no `unregisterDetector()`/`removeDetector()`.
    Turning a detector off in Runtime Controls only takes effect on the next
    **Reinitialize**.
@@ -242,10 +242,10 @@ accurately represented in-app:
    silently overrides the SDK's own internal routing. The Callbacks
    screen refuses these names by default; an explicit "Advanced" opt-in
    demonstrates the risk.
-5. **Public library exports only `FlutterShield`** —
-   `package:flutter_shield/flutter_shield.dart` re-exports nothing else.
+5. **Public library exports only `DeviceShield`** —
+   `package:device_shield/device_shield.dart` re-exports nothing else.
    Any app that registers a custom `Detector`/`Rule` or constructs a
-   `FlutterShieldConfig` must import from `lib/src/...` directly, which is
+   `DeviceShieldConfig` must import from `lib/src/...` directly, which is
    why `flutter analyze` reports `implementation_imports` info-lints
    throughout this example app — expected, not a defect in the app.
 6. **No observable signal for periodic-timer check ticks** — the SDK's
@@ -263,7 +263,7 @@ accurately represented in-app:
 | Platform | Build | Native tests | Manual pass | Signed off by | Date |
 |----------|-------|---------------|-------------|----------------|------|
 | Android (Gradle, `testDebugUnitTest`) | ✅ built via `flutter build ios`/Gradle compile | ✅ 40/40 passed (2026-08-11 audit run) | Not run on a real Android emulator/device this session — NOT TESTED interactively | | |
-| iOS (26.4.1 Simulator, iPhone 17 Pro Max) | ✅ `flutter build ios --simulator` (two runs, including after adding `ScreenCaptureProtection.swift`) | ⚠️ NOT TESTED — `xcodebuild test -scheme flutter_shieldTests` cannot run standalone in this repo (`ios/FlutterFramework` is an unpopulated placeholder SPM package outside Flutter's own build pipeline, and `Runner`'s scheme `TestAction` only wires up `RunnerTests`, not `flutter_shieldTests` — a pre-existing repo/tooling gap). Both new files (`AppSwitcherProtection.swift`, `ScreenCaptureProtection.swift`) were independently type-checked standalone (`swiftc -typecheck`, zero errors). | ✅ **protect-5/6/7 confirmed working live.** ⚠️ **protect-1/protect-9 tested live and found NOT working on Simulator** — see below. protect-10 (real device) NOT TESTED. | | 2026-08-11 |
+| iOS (26.4.1 Simulator, iPhone 17 Pro Max) | ✅ `flutter build ios --simulator` (two runs, including after adding `ScreenCaptureProtection.swift`) | ⚠️ NOT TESTED — `xcodebuild test -scheme device_shieldTests` cannot run standalone in this repo (`ios/FlutterFramework` is an unpopulated placeholder SPM package outside Flutter's own build pipeline, and `Runner`'s scheme `TestAction` only wires up `RunnerTests`, not `device_shieldTests` — a pre-existing repo/tooling gap). Both new files (`AppSwitcherProtection.swift`, `ScreenCaptureProtection.swift`) were independently type-checked standalone (`swiftc -typecheck`, zero errors). | ✅ **protect-5/6/7 confirmed working live.** ⚠️ **protect-1/protect-9 tested live and found NOT working on Simulator** — see below. protect-10 (real device) NOT TESTED. | | 2026-08-11 |
 
 **What "live" verification actually covered this session (iOS Simulator, real device pipeline, not simulated/assumed):**
 - **App-switcher protection (protect-5/6/7) — confirmed working**: SDK initialized via real UI tap → Protection screen → "Enable app-switcher protection" → live status flipped to `Yes` via the real MethodChannel round-trip → Home-button-backgrounded the app → **the real App Switcher card showed an opaque blurred rectangle, not the actual Protection screen content** → foregrounded again → content restored correctly, no crash, no stuck overlay.

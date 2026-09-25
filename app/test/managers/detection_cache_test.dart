@@ -1,5 +1,5 @@
-import 'package:flutter_shield/src/managers/detection_cache.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/managers/detection_cache.dart';
+import 'package:device_shield/src/models/detection_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 DetectionResult _result(String type, {bool detected = false}) =>
@@ -88,7 +88,7 @@ void main() {
 
   group('DetectionCache — cache hit / miss', () {
     test('cache hit: a valid entry is returned by get', () {
-      final cache = DetectionCache(ttl: const Duration(seconds: 30));
+      final cache = DetectionCache();
       final result = _result('alpha');
       cache.put('alpha', result);
 

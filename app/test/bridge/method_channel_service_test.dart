@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:device_shield/src/bridge/method_channel_service.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_shield/src/bridge/method_channel_service.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -26,36 +26,45 @@ void main() {
       expect(result, 42);
     });
 
-    test('arguments are serialized through to the native side unchanged',
-        () async {
-      Map<Object?, Object?>? received;
-      messenger.setMockMethodCallHandler(channel, (call) async {
-        received = call.arguments as Map<Object?, Object?>?;
-        return null;
-      });
-      final service = MethodChannelService(channel);
+    test(
+      'arguments are serialized through to the native side unchanged',
+      () async {
+        Map<Object?, Object?>? received;
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          received = call.arguments as Map<Object?, Object?>?;
+          return null;
+        });
+        final service = MethodChannelService(channel);
 
-      await service.invoke<void>(
-        method: 'doSomething',
-        arguments: {'confidenceThreshold': 0.8, 'techniques': ['a', 'b']},
-      );
+        await service.invoke<void>(
+          method: 'doSomething',
+          arguments: {
+            'confidenceThreshold': 0.8,
+            'techniques': ['a', 'b'],
+          },
+        );
 
-      expect(received?['confidenceThreshold'], 0.8);
-      expect(received?['techniques'], ['a', 'b']);
-    });
+        expect(received?['confidenceThreshold'], 0.8);
+        expect(received?['techniques'], ['a', 'b']);
+      },
+    );
 
     test('a complex nested response deserializes correctly', () async {
-      messenger.setMockMethodCallHandler(channel, (call) async => {
-            'detected': true,
-            'confidence': 0.95,
-            'evidence': {
-              'paths': ['/a', '/b']
-            },
-          });
+      messenger.setMockMethodCallHandler(
+        channel,
+        (call) async => {
+          'detected': true,
+          'confidence': 0.95,
+          'evidence': {
+            'paths': ['/a', '/b'],
+          },
+        },
+      );
       final service = MethodChannelService(channel);
 
-      final result =
-          await service.invoke<Map<Object?, Object?>>(method: 'check');
+      final result = await service.invoke<Map<Object?, Object?>>(
+        method: 'check',
+      );
 
       expect(result['detected'], true);
       expect((result['evidence'] as Map)['paths'], ['/a', '/b']);
@@ -75,35 +84,48 @@ void main() {
   });
 
   group('MethodChannelService — error mapping', () {
-    test('PlatformException maps to NativeBridgeException with the same code',
-        () async {
-      messenger.setMockMethodCallHandler(
-        channel,
-        (call) async => throw PlatformException(
-            code: 'ROOT_CHECK_FAILED', message: 'native failure'),
-      );
-      final service = MethodChannelService(channel);
+    test(
+      'PlatformException maps to NativeBridgeException with the same code',
+      () async {
+        messenger.setMockMethodCallHandler(
+          channel,
+          (call) async => throw PlatformException(
+            code: 'ROOT_CHECK_FAILED',
+            message: 'native failure',
+          ),
+        );
+        final service = MethodChannelService(channel);
 
-      await expectLater(
-        service.invoke<void>(method: 'check'),
-        throwsA(isA<NativeBridgeException>()
-            .having((e) => e.code, 'code', 'ROOT_CHECK_FAILED')
-            .having((e) => e.message, 'message', 'native failure')),
-      );
-    });
+        await expectLater(
+          service.invoke<void>(method: 'check'),
+          throwsA(
+            isA<NativeBridgeException>()
+                .having((e) => e.code, 'code', 'ROOT_CHECK_FAILED')
+                .having((e) => e.message, 'message', 'native failure'),
+          ),
+        );
+      },
+    );
 
-    test('no handler registered (unknown method) maps to BRIDGE_UNAVAILABLE',
-        () async {
-      // No setMockMethodCallHandler call at all — the engine throws
-      // MissingPluginException automatically.
-      final service = MethodChannelService(channel);
+    test(
+      'no handler registered (unknown method) maps to BRIDGE_UNAVAILABLE',
+      () async {
+        // No setMockMethodCallHandler call at all — the engine throws
+        // MissingPluginException automatically.
+        final service = MethodChannelService(channel);
 
-      await expectLater(
-        service.invoke<void>(method: 'neverImplemented'),
-        throwsA(isA<NativeBridgeException>()
-            .having((e) => e.code, 'code', 'BRIDGE_UNAVAILABLE')),
-      );
-    });
+        await expectLater(
+          service.invoke<void>(method: 'neverImplemented'),
+          throwsA(
+            isA<NativeBridgeException>().having(
+              (e) => e.code,
+              'code',
+              'BRIDGE_UNAVAILABLE',
+            ),
+          ),
+        );
+      },
+    );
 
     test('a call exceeding the timeout maps to BRIDGE_TIMEOUT', () async {
       messenger.setMockMethodCallHandler(channel, (call) async {
@@ -117,23 +139,37 @@ void main() {
           method: 'slow',
           timeout: const Duration(milliseconds: 10),
         ),
-        throwsA(isA<NativeBridgeException>()
-            .having((e) => e.code, 'code', 'BRIDGE_TIMEOUT')),
+        throwsA(
+          isA<NativeBridgeException>().having(
+            (e) => e.code,
+            'code',
+            'BRIDGE_TIMEOUT',
+          ),
+        ),
       );
     });
 
-    test('a malformed (wrong-type) response maps to BRIDGE_MALFORMED_RESPONSE',
-        () async {
-      messenger.setMockMethodCallHandler(
-          channel, (call) async => 'not a map');
-      final service = MethodChannelService(channel);
+    test(
+      'a malformed (wrong-type) response maps to BRIDGE_MALFORMED_RESPONSE',
+      () async {
+        messenger.setMockMethodCallHandler(
+          channel,
+          (call) async => 'not a map',
+        );
+        final service = MethodChannelService(channel);
 
-      await expectLater(
-        service.invoke<Map<String, dynamic>>(method: 'check'),
-        throwsA(isA<NativeBridgeException>()
-            .having((e) => e.code, 'code', 'BRIDGE_MALFORMED_RESPONSE')),
-      );
-    });
+        await expectLater(
+          service.invoke<Map<String, dynamic>>(method: 'check'),
+          throwsA(
+            isA<NativeBridgeException>().having(
+              (e) => e.code,
+              'code',
+              'BRIDGE_MALFORMED_RESPONSE',
+            ),
+          ),
+        );
+      },
+    );
   });
 
   group('MethodChannelService — invokeAsync', () {
@@ -153,16 +189,17 @@ void main() {
       await called.future.timeout(const Duration(seconds: 1));
     });
 
-    test('invokeAsync swallows a native-side failure rather than throwing',
-        () {
+    test('invokeAsync swallows a native-side failure rather than throwing', () {
       messenger.setMockMethodCallHandler(
         channel,
         (call) async => throw PlatformException(code: 'ERR'),
       );
       final service = MethodChannelService(channel);
 
-      expect(() => service.invokeAsync(method: 'fireAndForget'),
-          returnsNormally);
+      expect(
+        () => service.invokeAsync(method: 'fireAndForget'),
+        returnsNormally,
+      );
     });
   });
 }

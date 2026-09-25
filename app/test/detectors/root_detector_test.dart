@@ -1,8 +1,8 @@
-import 'package:flutter_shield/src/bridge/method_codes.dart';
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/detectors/root_detector.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
+import 'package:device_shield/src/bridge/method_codes.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/detectors/root_detector.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeNativeBridge implements NativeBridge {
@@ -54,12 +54,14 @@ void main() {
 
   group('RootDetector — check() success path (Android-shaped response)', () {
     test('calls the bridge with MethodCodes.checkRoot', () async {
-      final bridge = _FakeNativeBridge((_) async => {
-            'detected': false,
-            'confidence': 0.0,
-            'signals': <String>[],
-            'applicable': true,
-          });
+      final bridge = _FakeNativeBridge(
+        (_) async => {
+          'detected': false,
+          'confidence': 0.0,
+          'signals': <String>[],
+          'applicable': true,
+        },
+      );
       final detector = RootDetector(nativeBridge: bridge);
 
       await detector.check();
@@ -69,12 +71,14 @@ void main() {
 
     test('maps a detected=true native response to a matching '
         'DetectionResult', () async {
-      final bridge = _FakeNativeBridge((_) async => {
-            'detected': true,
-            'confidence': 0.67,
-            'signals': ['su_binary_path', 'magisk_artifacts'],
-            'applicable': true,
-          });
+      final bridge = _FakeNativeBridge(
+        (_) async => {
+          'detected': true,
+          'confidence': 0.67,
+          'signals': ['su_binary_path', 'magisk_artifacts'],
+          'applicable': true,
+        },
+      );
       final detector = RootDetector(nativeBridge: bridge);
 
       final result = await detector.check();
@@ -83,21 +87,23 @@ void main() {
       expect(result.detected, isTrue);
       expect(result.confidence, 0.67);
       expect(result.status, DetectionStatus.completed);
-      expect(
-        result.evidence['signals'],
-        ['su_binary_path', 'magisk_artifacts'],
-      );
+      expect(result.evidence['signals'], [
+        'su_binary_path',
+        'magisk_artifacts',
+      ]);
       expect(result.evidence['applicable'], isTrue);
     });
 
     test('maps a detected=false native response to a matching '
         'DetectionResult', () async {
-      final bridge = _FakeNativeBridge((_) async => {
-            'detected': false,
-            'confidence': 0.0,
-            'signals': <String>[],
-            'applicable': true,
-          });
+      final bridge = _FakeNativeBridge(
+        (_) async => {
+          'detected': false,
+          'confidence': 0.0,
+          'signals': <String>[],
+          'applicable': true,
+        },
+      );
       final detector = RootDetector(nativeBridge: bridge);
 
       final result = await detector.check();
@@ -126,12 +132,14 @@ void main() {
   group('RootDetector — check() not-applicable response (iOS-shaped)', () {
     test('an explicit applicable:false is carried into evidence, never '
         'silently dropped', () async {
-      final bridge = _FakeNativeBridge((_) async => {
-            'detected': false,
-            'confidence': 0.0,
-            'signals': <String>[],
-            'applicable': false,
-          });
+      final bridge = _FakeNativeBridge(
+        (_) async => {
+          'detected': false,
+          'confidence': 0.0,
+          'signals': <String>[],
+          'applicable': false,
+        },
+      );
       final detector = RootDetector(nativeBridge: bridge);
 
       final result = await detector.check();
@@ -143,14 +151,15 @@ void main() {
 
   group('RootDetector — check() failure path (per the frozen Detector '
       'contract: reported as failed, never thrown)', () {
-    test('a NativeBridgeException results in DetectionStatus.failed',
-        () async {
-      final bridge = _FakeNativeBridge((_) async => throw NativeBridgeException(
-            method: MethodCodes.checkRoot,
-            nativeError: 'boom',
-            code: 'BRIDGE_UNAVAILABLE',
-            message: 'no native handler',
-          ));
+    test('a NativeBridgeException results in DetectionStatus.failed', () async {
+      final bridge = _FakeNativeBridge(
+        (_) async => throw const NativeBridgeException(
+          method: MethodCodes.checkRoot,
+          nativeError: 'boom',
+          code: 'BRIDGE_UNAVAILABLE',
+          message: 'no native handler',
+        ),
+      );
       final detector = RootDetector(nativeBridge: bridge);
 
       final result = await detector.check();

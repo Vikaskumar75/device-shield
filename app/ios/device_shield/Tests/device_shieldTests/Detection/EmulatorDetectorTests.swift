@@ -1,5 +1,6 @@
 import XCTest
-@testable import flutter_shield
+
+@testable import device_shield
 
 /// EmulatorDetector's logic is a compile-time `#if targetEnvironment(simulator)`
 /// branch, not runtime-parameterizable the way Android's Build-fingerprint
@@ -12,13 +13,13 @@ final class EmulatorDetectorTests: XCTestCase {
     let result = EmulatorDetector.check()
 
     #if targetEnvironment(simulator)
-    XCTAssertEqual(result["detected"] as? Bool, true)
-    XCTAssertEqual(result["confidence"] as? Double, 1.0)
-    XCTAssertEqual(result["signals"] as? [String], ["simulator_target"])
+      XCTAssertEqual(result["detected"] as? Bool, true)
+      XCTAssertEqual(result["confidence"] as? Double, 1.0)
+      XCTAssertEqual(result["signals"] as? [String], ["simulator_target"])
     #else
-    XCTAssertEqual(result["detected"] as? Bool, false)
-    XCTAssertEqual(result["confidence"] as? Double, 0.0)
-    XCTAssertEqual(result["signals"] as? [String], [])
+      XCTAssertEqual(result["detected"] as? Bool, false)
+      XCTAssertEqual(result["confidence"] as? Double, 0.0)
+      XCTAssertEqual(result["signals"] as? [String], [])
     #endif
   }
 

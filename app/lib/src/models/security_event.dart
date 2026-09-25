@@ -35,12 +35,12 @@ class SecurityEvent {
   });
 
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'timestamp': timestamp.toIso8601String(),
-        'data': data,
-        'severity': severity.name,
-        'source': source,
-      };
+    'type': type,
+    'timestamp': timestamp.toIso8601String(),
+    'data': data,
+    'severity': severity.name,
+    'source': source,
+  };
 
   factory SecurityEvent.fromJson(Map<String, dynamic> json) {
     return SecurityEvent(

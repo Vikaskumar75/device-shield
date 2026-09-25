@@ -1,12 +1,12 @@
-import 'package:flutter_shield/src/api/flutter_shield.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/models/flutter_shield_config.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
-import 'package:flutter_shield/src/models/sdk_state.dart';
-import 'package:flutter_shield/src/models/security_action.dart';
-import 'package:flutter_shield/src/models/security_event.dart';
-import 'package:flutter_shield/src/registry/detector.dart';
-import 'package:flutter_shield/src/registry/rule.dart';
+import 'package:device_shield/src/api/device_shield.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/models/device_shield_config.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
+import 'package:device_shield/src/models/sdk_state.dart';
+import 'package:device_shield/src/models/security_action.dart';
+import 'package:device_shield/src/models/security_event.dart';
+import 'package:device_shield/src/registry/detector.dart';
+import 'package:device_shield/src/registry/rule.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _ProbeDetector implements Detector {
@@ -50,113 +50,117 @@ class _AlwaysMatchRule implements Rule {
   }
 }
 
-/// Every test cleans up with dispose() so FlutterShield's static state
+/// Every test cleans up with dispose() so DeviceShield's static state
 /// never leaks between tests — this class is a process-lifetime facade
 /// by design (per its frozen contract), so tests must reset it themselves.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   tearDown(() async {
-    if (FlutterShield.status != SDKState.uninitialized) {
-      await FlutterShield.dispose();
+    if (DeviceShield.status != SDKState.uninitialized) {
+      await DeviceShield.dispose();
     }
   });
 
-  group('FlutterShield — status before initialize', () {
+  group('DeviceShield — status before initialize', () {
     test('status is uninitialized before any initialize() call', () {
-      expect(FlutterShield.status, SDKState.uninitialized);
+      expect(DeviceShield.status, SDKState.uninitialized);
     });
 
     test('calling a delegating method before initialize() throws '
         'NOT_INITIALIZED', () async {
       expect(
-        () => FlutterShield.pause(),
-        throwsA(isA<InitializationException>()
-            .having((e) => e.code, 'code', 'NOT_INITIALIZED')),
+        DeviceShield.pause,
+        throwsA(
+          isA<InitializationException>().having(
+            (e) => e.code,
+            'code',
+            'NOT_INITIALIZED',
+          ),
+        ),
       );
     });
   });
 
-  group('FlutterShield — initialize / status / pause / resume', () {
+  group('DeviceShield — initialize / status / pause / resume', () {
     test('initialize reaches running', () async {
-      await FlutterShield.initialize();
-      expect(FlutterShield.status, SDKState.running);
+      await DeviceShield.initialize();
+      expect(DeviceShield.status, SDKState.running);
     });
 
     test('pause transitions to paused; resume transitions back', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
 
-      await FlutterShield.pause();
-      expect(FlutterShield.status, SDKState.paused);
+      await DeviceShield.pause();
+      expect(DeviceShield.status, SDKState.paused);
 
-      await FlutterShield.resume();
-      expect(FlutterShield.status, SDKState.running);
+      await DeviceShield.resume();
+      expect(DeviceShield.status, SDKState.running);
     });
   });
 
-  group('FlutterShield — detector registration API', () {
-    test('registerDetector + checkNow reaches the detector end-to-end',
-        () async {
-      await FlutterShield.initialize();
-      final probe = _ProbeDetector('probe-1');
+  group('DeviceShield — detector registration API', () {
+    test(
+      'registerDetector + checkNow reaches the detector end-to-end',
+      () async {
+        await DeviceShield.initialize();
+        final probe = _ProbeDetector('probe-1');
 
-      await FlutterShield.registerDetector(probe);
-      await FlutterShield.checkNow();
+        await DeviceShield.registerDetector(probe);
+        await DeviceShield.checkNow();
 
-      expect(probe.checked, isTrue);
-    });
+        expect(probe.checked, isTrue);
+      },
+    );
   });
 
-  group('FlutterShield — rule registration API', () {
+  group('DeviceShield — rule registration API', () {
     test('addRule makes the rule reachable via the detection→policy '
         'pipeline', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
       final rule = _AlwaysMatchRule('rule-1');
       final probe = _ProbeDetector('probe-2');
 
-      await FlutterShield.addRule(rule);
-      await FlutterShield.registerDetector(probe);
-      await FlutterShield.checkNow();
+      await DeviceShield.addRule(rule);
+      await DeviceShield.registerDetector(probe);
+      await DeviceShield.checkNow();
 
       expect(rule.matchCalled, isTrue);
     });
 
     test('removeRule stops the rule from being evaluated', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
       final rule = _AlwaysMatchRule('rule-2');
-      await FlutterShield.addRule(rule);
+      await DeviceShield.addRule(rule);
 
-      await FlutterShield.removeRule('rule-2');
-      await FlutterShield.registerDetector(_ProbeDetector('probe-3'));
-      await FlutterShield.checkNow();
+      await DeviceShield.removeRule('rule-2');
+      await DeviceShield.registerDetector(_ProbeDetector('probe-3'));
+      await DeviceShield.checkNow();
 
       expect(rule.matchCalled, isFalse);
     });
   });
 
-  group('FlutterShield — callback registration API', () {
+  group('DeviceShield — callback registration API', () {
     test('registerCallback/unregisterCallback do not throw', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
 
       expect(
-        () => FlutterShield.registerCallback('probe', (_) {}),
+        () => DeviceShield.registerCallback('probe', (_) {}),
         returnsNormally,
       );
-      expect(
-        () => FlutterShield.unregisterCallback('probe'),
-        returnsNormally,
-      );
+      expect(() => DeviceShield.unregisterCallback('probe'), returnsNormally);
     });
   });
 
-  group('FlutterShield — event subscription API', () {
+  group('DeviceShield — event subscription API', () {
     test('subscribe receives the event checkNow emits', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
       final received = <SecurityEvent>[];
-      final subscription = FlutterShield.subscribe(received.add);
+      final subscription = DeviceShield.subscribe(received.add);
 
-      await FlutterShield.registerDetector(_ProbeDetector('probe-4'));
-      await FlutterShield.checkNow();
+      await DeviceShield.registerDetector(_ProbeDetector('probe-4'));
+      await DeviceShield.checkNow();
       await Future<void>.delayed(Duration.zero);
 
       expect(received, isNotEmpty);
@@ -164,15 +168,15 @@ void main() {
     });
 
     test('a filter restricts which events are delivered', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
       final received = <SecurityEvent>[];
-      final subscription = FlutterShield.subscribe(
+      final subscription = DeviceShield.subscribe(
         received.add,
         filter: (e) => e.type == 'never-matches',
       );
 
-      await FlutterShield.registerDetector(_ProbeDetector('probe-5'));
-      await FlutterShield.checkNow();
+      await DeviceShield.registerDetector(_ProbeDetector('probe-5'));
+      await DeviceShield.checkNow();
       await Future<void>.delayed(Duration.zero);
 
       expect(received, isEmpty);
@@ -180,12 +184,11 @@ void main() {
     });
   });
 
-  group('FlutterShield — screenshot/screen-recording protection API '
+  group('DeviceShield — screenshot/screen-recording protection API '
       '(Step 10)', () {
     test('isScreenshotProtectionEnabled is false before initialize() — '
-        'never throws, mirroring status\'s own always-answerable pattern',
-        () {
-      expect(FlutterShield.isScreenshotProtectionEnabled, isFalse);
+        'never throws, mirroring status\'s own always-answerable pattern', () {
+      expect(DeviceShield.isScreenshotProtectionEnabled, isFalse);
     });
 
     test('enableScreenshotProtection delegates all the way to a real '
@@ -193,50 +196,50 @@ void main() {
         'the honest result is a propagated NativeBridgeException, proving '
         'the call reaches the platform boundary rather than being '
         'short-circuited anywhere along the way', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
 
       await expectLater(
-        FlutterShield.enableScreenshotProtection(),
+        DeviceShield.enableScreenshotProtection(),
         throwsA(isA<NativeBridgeException>()),
       );
     });
 
     test('disableScreenshotProtection delegates the same way', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
 
       await expectLater(
-        FlutterShield.disableScreenshotProtection(),
+        DeviceShield.disableScreenshotProtection(),
         throwsA(isA<NativeBridgeException>()),
       );
     });
 
     test('isScreenshotProtectionEnabled remains false after a failed '
         'enable attempt', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
       try {
-        await FlutterShield.enableScreenshotProtection();
+        await DeviceShield.enableScreenshotProtection();
       } catch (_) {
         // Expected in this environment — see the test above.
       }
 
-      expect(FlutterShield.isScreenshotProtectionEnabled, isFalse);
+      expect(DeviceShield.isScreenshotProtectionEnabled, isFalse);
     });
   });
 
-  group('FlutterShield — onScreenshot / onScreenRecordingChanged (Step 10)',
-      () {
+  group('DeviceShield — onScreenshot / onScreenRecordingChanged (Step 10)', () {
     test('onScreenshot only receives events whose type is the screenshot '
         "detector's typeId — pure filtering over subscribe(), nothing "
         'else', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
       final screenshotEvents = <SecurityEvent>[];
       final recordingEvents = <SecurityEvent>[];
-      final screenshotSub = FlutterShield.onScreenshot(screenshotEvents.add);
-      final recordingSub =
-          FlutterShield.onScreenRecordingChanged(recordingEvents.add);
+      final screenshotSub = DeviceShield.onScreenshot(screenshotEvents.add);
+      final recordingSub = DeviceShield.onScreenRecordingChanged(
+        recordingEvents.add,
+      );
 
-      await FlutterShield.registerDetector(_ProbeDetector('screenshot'));
-      await FlutterShield.checkNow();
+      await DeviceShield.registerDetector(_ProbeDetector('screenshot'));
+      await DeviceShield.checkNow();
       await Future<void>.delayed(Duration.zero);
 
       expect(screenshotEvents, hasLength(1));
@@ -249,15 +252,16 @@ void main() {
 
     test('onScreenRecordingChanged only receives events whose type is the '
         "screen-recording detector's typeId", () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
       final screenshotEvents = <SecurityEvent>[];
       final recordingEvents = <SecurityEvent>[];
-      final screenshotSub = FlutterShield.onScreenshot(screenshotEvents.add);
-      final recordingSub =
-          FlutterShield.onScreenRecordingChanged(recordingEvents.add);
+      final screenshotSub = DeviceShield.onScreenshot(screenshotEvents.add);
+      final recordingSub = DeviceShield.onScreenRecordingChanged(
+        recordingEvents.add,
+      );
 
-      await FlutterShield.registerDetector(_ProbeDetector('screen_recording'));
-      await FlutterShield.checkNow();
+      await DeviceShield.registerDetector(_ProbeDetector('screen_recording'));
+      await DeviceShield.checkNow();
       await Future<void>.delayed(Duration.zero);
 
       expect(recordingEvents, hasLength(1));
@@ -270,15 +274,16 @@ void main() {
 
     test('an unrelated event type is delivered to neither convenience '
         'subscription', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
       final screenshotEvents = <SecurityEvent>[];
       final recordingEvents = <SecurityEvent>[];
-      final screenshotSub = FlutterShield.onScreenshot(screenshotEvents.add);
-      final recordingSub =
-          FlutterShield.onScreenRecordingChanged(recordingEvents.add);
+      final screenshotSub = DeviceShield.onScreenshot(screenshotEvents.add);
+      final recordingSub = DeviceShield.onScreenRecordingChanged(
+        recordingEvents.add,
+      );
 
-      await FlutterShield.registerDetector(_ProbeDetector('emulator'));
-      await FlutterShield.checkNow();
+      await DeviceShield.registerDetector(_ProbeDetector('emulator'));
+      await DeviceShield.checkNow();
       await Future<void>.delayed(Duration.zero);
 
       expect(screenshotEvents, isEmpty);
@@ -289,78 +294,80 @@ void main() {
     });
   });
 
-  group('FlutterShield — shutdown / reinitialize / dispose', () {
+  group('DeviceShield — shutdown / reinitialize / dispose', () {
     test('shutdown reaches stopped', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
 
-      await FlutterShield.shutdown();
+      await DeviceShield.shutdown();
 
-      expect(FlutterShield.status, SDKState.stopped);
+      expect(DeviceShield.status, SDKState.stopped);
     });
 
     test('reinitialize restarts with fresh managers — a detector '
         'registered before shutdown is not silently retained', () async {
-      await FlutterShield.initialize();
+      await DeviceShield.initialize();
       final firstProbe = _ProbeDetector('probe-6');
-      await FlutterShield.registerDetector(firstProbe);
-      await FlutterShield.shutdown();
+      await DeviceShield.registerDetector(firstProbe);
+      await DeviceShield.shutdown();
 
-      await FlutterShield.reinitialize();
+      await DeviceShield.reinitialize();
 
-      expect(FlutterShield.status, SDKState.running);
+      expect(DeviceShield.status, SDKState.running);
       // The fresh DetectionManager's registry was rebuilt empty —
       // checkNow() must not reach the old detector instance.
-      await FlutterShield.checkNow();
+      await DeviceShield.checkNow();
       expect(firstProbe.checked, isFalse);
     });
 
     test('reinitialize with a new config applies it', () async {
-      await FlutterShield.initialize(
-          config: const FlutterShieldConfig(periodicCheckInterval: 30000));
-      await FlutterShield.shutdown();
+      await DeviceShield.initialize();
+      await DeviceShield.shutdown();
 
       await expectLater(
-        FlutterShield.reinitialize(
-            config: const FlutterShieldConfig(periodicCheckInterval: 60000)),
+        DeviceShield.reinitialize(
+          config: const DeviceShieldConfig(periodicCheckInterval: 60000),
+        ),
         completes,
       );
-      expect(FlutterShield.status, SDKState.running);
+      expect(DeviceShield.status, SDKState.running);
     });
 
     test('screenshot protection state resets across shutdown/reinitialize '
         '— a fresh ScreenCaptureController is wired each cycle, not a '
         'stale or disposed one (Step 11 coverage-gap closure)', () async {
-      await FlutterShield.initialize();
-      expect(FlutterShield.isScreenshotProtectionEnabled, isFalse);
-      await FlutterShield.shutdown();
+      await DeviceShield.initialize();
+      expect(DeviceShield.isScreenshotProtectionEnabled, isFalse);
+      await DeviceShield.shutdown();
 
-      await FlutterShield.reinitialize();
+      await DeviceShield.reinitialize();
 
-      expect(FlutterShield.status, SDKState.running);
-      expect(FlutterShield.isScreenshotProtectionEnabled, isFalse);
+      expect(DeviceShield.status, SDKState.running);
+      expect(DeviceShield.isScreenshotProtectionEnabled, isFalse);
       // The freshly-wired ScreenCaptureController must still correctly
       // attempt delegation to a real NativeBridge — proving it's a live,
       // newly constructed instance after reinit, not a disposed reference
       // silently no-op'ing.
       await expectLater(
-        FlutterShield.enableScreenshotProtection(),
+        DeviceShield.enableScreenshotProtection(),
         throwsA(isA<NativeBridgeException>()),
       );
     });
 
-    test('dispose fully resets — a subsequent initialize() starts clean',
-        () async {
-      await FlutterShield.initialize();
-      await FlutterShield.registerDetector(_ProbeDetector('probe-7'));
+    test(
+      'dispose fully resets — a subsequent initialize() starts clean',
+      () async {
+        await DeviceShield.initialize();
+        await DeviceShield.registerDetector(_ProbeDetector('probe-7'));
 
-      await FlutterShield.dispose();
+        await DeviceShield.dispose();
 
-      expect(FlutterShield.status, SDKState.uninitialized);
+        expect(DeviceShield.status, SDKState.uninitialized);
 
-      // A fresh initialize() after full dispose must succeed and start
-      // with no detectors carried over.
-      await FlutterShield.initialize();
-      expect(FlutterShield.status, SDKState.running);
-    });
+        // A fresh initialize() after full dispose must succeed and start
+        // with no detectors carried over.
+        await DeviceShield.initialize();
+        expect(DeviceShield.status, SDKState.running);
+      },
+    );
   });
 }

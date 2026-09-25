@@ -1,0 +1,23 @@
+# Shared editor settings. ktlint also reads its rules from this file.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{kt,kts}]
+indent_size = 4
+max_line_length = 120
+# Android Studio's default Kotlin style, so IDE formatting and CI agree.
+ktlint_code_style = android_studio
+# The package is com.geekyants.device_shield, which matches the Dart package
+# name. ktlint's package-name rule rejects underscores.
+ktlint_standard_package-name = disabled
+

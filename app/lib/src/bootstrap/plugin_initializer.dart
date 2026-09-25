@@ -2,7 +2,7 @@ import '../bridge/default_native_bridge.dart';
 import '../bridge/native_bridge.dart';
 import '../config/configuration_manager.dart';
 import '../config/default_configuration_manager.dart';
-import '../config/flutter_shield_config_validator.dart';
+import '../config/device_shield_config_validator.dart';
 import '../core/console_logger.dart';
 import '../core/logger.dart';
 import '../events/default_event_manager.dart';
@@ -13,8 +13,8 @@ import '../managers/default_security_manager.dart';
 import '../managers/detection_manager.dart';
 import '../managers/policy_manager.dart';
 import '../managers/security_manager.dart';
-import '../models/flutter_shield_config.dart';
-import '../models/flutter_shield_exception.dart';
+import '../models/device_shield_config.dart';
+import '../models/device_shield_exception.dart';
 import '../models/sdk_state.dart';
 import '../models/security_event.dart';
 import '../permission/default_permission_manager.dart';
@@ -107,7 +107,7 @@ class PluginInitializer {
   /// already initializing/initialized/running/paused throws, and calling
   /// after [dispose] (state `destroyed`) always throws, since `destroyed`
   /// is terminal.
-  Future<void> initialize(FlutterShieldConfig config) async {
+  Future<void> initialize(DeviceShieldConfig config) async {
     final stateManager = _resolveOrRegisterStateManager();
     final startingState = stateManager.current;
 
@@ -124,7 +124,7 @@ class PluginInitializer {
       );
     }
     if (startingState == SDKState.destroyed) {
-      throw InitializationException(
+      throw const InitializationException(
         code: 'ALREADY_DISPOSED',
         message: 'Cannot initialize a disposed SDK instance',
       );
@@ -162,9 +162,10 @@ class PluginInitializer {
       // Step 3: Configuration. Architecture Correction 2 — validation runs
       // here, before storage, as its own component; ConfigurationManager
       // itself never validates.
-      final validatedConfig = FlutterShieldConfigValidator().validate(config);
-      final configManager =
-          await _resolveOrRegisterConfiguration(validatedConfig);
+      final validatedConfig = DeviceShieldConfigValidator().validate(config);
+      final configManager = await _resolveOrRegisterConfiguration(
+        validatedConfig,
+      );
       await configManager.initialize();
       context.recordStep('Configuration');
       logger.info('Bootstrap: Configuration ready');
@@ -215,22 +216,23 @@ class PluginInitializer {
         stateManager.transitionTo(SDKState.running);
       }
       context.recordStep('Ready');
-      await eventManager.emit(SecurityEvent(
-        type: 'initialized',
-        timestamp: DateTime.now(),
-        severity: EventSeverity.info,
-        source: 'PluginInitializer',
-      ));
-      logger.info(
-          'Bootstrap complete in ${context.elapsed.inMilliseconds}ms');
+      await eventManager.emit(
+        SecurityEvent(
+          type: 'initialized',
+          timestamp: DateTime.now(),
+          severity: EventSeverity.info,
+          source: 'PluginInitializer',
+        ),
+      );
+      logger.info('Bootstrap complete in ${context.elapsed.inMilliseconds}ms');
     } catch (error, stackTrace) {
       if (container.isRegistered<Logger>()) {
         container.resolve<Logger>().exception(
-              'Bootstrap failed at step after: '
-              '${context.completedSteps.join(', ')}',
-              error: error,
-              stackTrace: stackTrace,
-            );
+          'Bootstrap failed at step after: '
+          '${context.completedSteps.join(', ')}',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
       // `failure` is only reachable from `initializing` or `running` in
       // the frozen table. A restart attempt from `stopped` never entered
@@ -256,7 +258,7 @@ class PluginInitializer {
   /// [initialize]/[reinitialize] always resolves a fresh instance for
   /// these three afterward. `DetectionManager`/`PolicyManager` are this
   /// same class's own composition detail now (previously
-  /// `FlutterShield`'s), so they're unregistered alongside
+  /// `DeviceShield`'s), so they're unregistered alongside
   /// `SecurityManager` here too — already disposed via
   /// `SecurityManager.dispose()`'s own internal cascade, so only
   /// unregistering (not a second dispose call) is needed.
@@ -270,7 +272,7 @@ class PluginInitializer {
   /// unregistered, for the same reason.
   Future<void> shutdown() async {
     if (!container.isRegistered<Lifecycle>()) {
-      throw InitializationException(
+      throw const InitializationException(
         code: 'NOT_INITIALIZED',
         message: 'Cannot shut down — the SDK was never initialized',
       );
@@ -315,7 +317,7 @@ class PluginInitializer {
   /// transition guard inside [initialize] already permits both
   /// (`stopped`/`failure` → `initializing`), so no separate check is
   /// needed here.
-  Future<void> reinitialize(FlutterShieldConfig config) => initialize(config);
+  Future<void> reinitialize(DeviceShieldConfig config) => initialize(config);
 
   Lifecycle _resolveOrRegisterStateManager() {
     if (!container.isRegistered<Lifecycle>()) {
@@ -347,7 +349,8 @@ class PluginInitializer {
   /// recreated, so a `reinitialize()` call with a different config is
   /// correctly applied instead of silently ignored.
   Future<ConfigurationManager> _resolveOrRegisterConfiguration(
-      FlutterShieldConfig config) async {
+    DeviceShieldConfig config,
+  ) async {
     if (!container.isRegistered<ConfigurationManager>()) {
       container.registerSingleton<ConfigurationManager>(
         DefaultConfigurationManager(config),
@@ -375,9 +378,7 @@ class PluginInitializer {
 
   DetectorRegistry _resolveOrRegisterDetectorRegistry() {
     if (!container.isRegistered<DetectorRegistry>()) {
-      container.registerSingleton<DetectorRegistry>(
-        DefaultDetectorRegistry(),
-      );
+      container.registerSingleton<DetectorRegistry>(DefaultDetectorRegistry());
     }
     return container.resolve<DetectorRegistry>();
   }
@@ -393,8 +394,10 @@ class PluginInitializer {
           logger: container.resolve<Logger>(),
           registry: container.resolve<DetectorRegistry>(),
           detectorTimeout: Duration(
-            milliseconds:
-                container.resolve<ConfigurationManager>().current.checkTimeout,
+            milliseconds: container
+                .resolve<ConfigurationManager>()
+                .current
+                .checkTimeout,
           ),
         ),
       );
@@ -441,11 +444,8 @@ class PluginInitializer {
 
   LifecycleManager _resolveOrRegisterLifecycleManager() {
     if (!container.isRegistered<LifecycleManager>()) {
-      container.registerSingleton<LifecycleManager>(
-        DefaultLifecycleManager(),
-      );
+      container.registerSingleton<LifecycleManager>(DefaultLifecycleManager());
     }
     return container.resolve<LifecycleManager>();
   }
-
 }

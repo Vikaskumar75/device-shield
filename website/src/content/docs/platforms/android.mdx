@@ -1,0 +1,79 @@
+---
+title: Android setup
+description: What device_shield adds to your Android app, and what you need to configure yourself.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Minimum: **API 21**. The plugin compiles against API 36 with Java 17.
+
+## Merged into your manifest
+
+Gradle merges these entries from the plugin into your app's manifest. You
+don't need to add them.
+
+### `DETECT_SCREEN_CAPTURE` permission
+
+```xml
+<uses-permission android:name="android.permission.DETECT_SCREEN_CAPTURE" />
+```
+
+Screenshot detection on Android 14 (API 34) and later uses
+`Activity.registerScreenCaptureCallback`, which requires this permission. It's
+a *normal* permission: granted at install, with no prompt. Older Android
+versions ignore it.
+
+### `<queries>` package visibility
+
+Android 11 (API 30) and later hide other installed apps unless you declare
+which ones you look for. The plugin declares **31 specific packages**: 21
+root-management and root-cloaking apps (such as `com.topjohnwu.magisk` and
+`eu.chainfire.supersu`) and 10 fake-GPS apps. Without these entries, the
+"app installed" signals would never fire.
+
+The plugin deliberately doesn't use `QUERY_ALL_PACKAGES`, which Google Play
+restricts.
+
+<Aside type="caution" title="Removing merged entries">
+  You can remove any of these with `tools:node="remove"` in your own manifest,
+  but the matching signals then stop working without an error. Removing
+  `DETECT_SCREEN_CAPTURE` disables screenshot detection on API 34+.
+</Aside>
+
+## Location permission (for mock location)
+
+The plugin **doesn't declare or request** location permission. Without it,
+[mock-location detection](../../detection/mock-location/) can still flag
+installed fake-GPS apps and a selected mock-location app, but not a mocked
+location itself.
+
+To enable the location-based signals, declare and request the permission in
+your app:
+
+```xml title="android/app/src/main/AndroidManifest.xml"
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+```
+
+Request it at runtime with your usual permission flow. The result's
+`evidence['permissionGranted']` tells you whether the SDK could read a
+location.
+
+## Threading
+
+<Aside type="caution" title="Checks run on the main thread">
+  Android checks currently run on the platform main thread. Root detection
+  starts three short-lived processes and makes 21 package lookups, so
+  it can cause dropped frames. Run checks at quiet moments (for example after
+  your first frame), not on every rebuild. Moving this work to a background
+  thread is planned.
+</Aside>
+
+## Emulators and debug builds
+
+- Every Android emulator reports **rooted**: its system properties set
+  `ro.debuggable=1`, which fires `dangerous_system_props`.
+- Every debuggable build reports **debugger detected** at low confidence via
+  `debuggable_flag`, even with no debugger attached.
+
+Both are expected. Test your handling of *real* results on a release build on
+a physical device.

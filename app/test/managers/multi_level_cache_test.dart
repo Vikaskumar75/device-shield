@@ -1,5 +1,5 @@
-import 'package:flutter_shield/src/managers/memory_cache_level.dart';
-import 'package:flutter_shield/src/managers/multi_level_cache.dart';
+import 'package:device_shield/src/managers/memory_cache_level.dart';
+import 'package:device_shield/src/managers/multi_level_cache.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -81,29 +81,31 @@ void main() {
       expect(cache.contains('a'), isFalse);
     });
 
-    test('clearExpired proactively removes stale entries without a read',
-        () async {
-      // A directly-held level reference lets this test inspect storage
-      // state without going through cache.get(), which would itself lazily
-      // expire the entry and make it impossible to tell whether
-      // clearExpired actually did anything.
-      final level = MemoryCacheLevel<String, CacheEntry<int>>();
-      final cache = MultiLevelCache<String, int>(
-        ttl: const Duration(milliseconds: 10),
-        levels: [level],
-      );
-      cache.put('stale', 1);
+    test(
+      'clearExpired proactively removes stale entries without a read',
+      () async {
+        // A directly-held level reference lets this test inspect storage
+        // state without going through cache.get(), which would itself lazily
+        // expire the entry and make it impossible to tell whether
+        // clearExpired actually did anything.
+        final level = MemoryCacheLevel<String, CacheEntry<int>>();
+        final cache = MultiLevelCache<String, int>(
+          ttl: const Duration(milliseconds: 10),
+          levels: [level],
+        );
+        cache.put('stale', 1);
 
-      await Future<void>.delayed(const Duration(milliseconds: 30));
-      cache.put('fresh', 2);
-      expect(level.has('stale'), isTrue); // still physically present
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        cache.put('fresh', 2);
+        expect(level.has('stale'), isTrue); // still physically present
 
-      cache.clearExpired();
+        cache.clearExpired();
 
-      expect(level.has('stale'), isFalse); // proactively removed
-      expect(level.has('fresh'), isTrue);
-      expect(cache.get('fresh'), 2);
-    });
+        expect(level.has('stale'), isFalse); // proactively removed
+        expect(level.has('fresh'), isTrue);
+        expect(cache.get('fresh'), 2);
+      },
+    );
   });
 
   group('MultiLevelCache — capacity limits and LRU eviction', () {
@@ -158,10 +160,8 @@ void main() {
     });
   });
 
-  group('MultiLevelCache — pluggable levels (future-ready abstraction)',
-      () {
-    test('a custom CacheLevel can be supplied and is used for storage',
-        () {
+  group('MultiLevelCache — pluggable levels (future-ready abstraction)', () {
+    test('a custom CacheLevel can be supplied and is used for storage', () {
       final customLevel = MemoryCacheLevel<String, CacheEntry<int>>(
         maxCapacity: 5,
       );

@@ -21,7 +21,8 @@ class StatisticsScreen extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             const InfoBanner(
-              message: 'Local counters only, derived from observing this '
+              message:
+                  'Local counters only, derived from observing this '
                   'app\'s own SDK calls and event stream — not an SDK API.',
             ),
             SectionCard(
@@ -33,25 +34,37 @@ class StatisticsScreen extends StatelessWidget {
               ),
               children: [
                 StatusRow(
-                    label: 'SDK initialized count',
-                    value: '${stats.sdkInitializedCount}'),
+                  label: 'SDK initialized count',
+                  value: '${stats.sdkInitializedCount}',
+                ),
                 StatusRow(
-                    label: 'Screenshots detected',
-                    value: '${stats.screenshotsDetected}'),
+                  label: 'Screenshots detected',
+                  value: '${stats.screenshotsDetected}',
+                ),
                 StatusRow(
-                    label: 'Recording started', value: '${stats.recordingStarted}'),
+                  label: 'Recording started',
+                  value: '${stats.recordingStarted}',
+                ),
                 StatusRow(
-                    label: 'Recording stopped', value: '${stats.recordingStopped}'),
+                  label: 'Recording stopped',
+                  value: '${stats.recordingStopped}',
+                ),
                 StatusRow(
-                    label: 'Protection enabled count',
-                    value: '${stats.protectionEnabledCount}'),
+                  label: 'Protection enabled count',
+                  value: '${stats.protectionEnabledCount}',
+                ),
                 StatusRow(
-                    label: 'Protection disabled count',
-                    value: '${stats.protectionDisabledCount}'),
+                  label: 'Protection disabled count',
+                  value: '${stats.protectionDisabledCount}',
+                ),
                 StatusRow(
-                    label: 'Callbacks fired', value: '${stats.callbacksFired}'),
+                  label: 'Callbacks fired',
+                  value: '${stats.callbacksFired}',
+                ),
                 StatusRow(
-                    label: 'Events emitted', value: '${stats.eventsEmitted}'),
+                  label: 'Events emitted',
+                  value: '${stats.eventsEmitted}',
+                ),
                 StatusRow(label: 'Errors', value: '${stats.errors}'),
                 StatusRow(label: 'Warnings', value: '${stats.warnings}'),
               ],

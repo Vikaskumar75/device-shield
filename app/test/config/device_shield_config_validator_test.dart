@@ -1,105 +1,148 @@
-import 'package:flutter_shield/src/config/default_configuration_manager.dart';
-import 'package:flutter_shield/src/config/flutter_shield_config_validator.dart';
-import 'package:flutter_shield/src/models/flutter_shield_config.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
+import 'package:device_shield/src/config/default_configuration_manager.dart';
+import 'package:device_shield/src/config/device_shield_config_validator.dart';
+import 'package:device_shield/src/models/device_shield_config.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('FlutterShieldConfigValidator', () {
-    final validator = FlutterShieldConfigValidator();
+  group('DeviceShieldConfigValidator', () {
+    final validator = DeviceShieldConfigValidator();
 
     test('returns the config unchanged when every bound is satisfied', () {
-      const config = FlutterShieldConfig();
+      const config = DeviceShieldConfig();
       expect(validator.validate(config), same(config));
     });
 
     test('rejects periodicCheckInterval below 5000ms', () {
       expect(
         () => validator.validate(
-            const FlutterShieldConfig(periodicCheckInterval: 100)),
-        throwsA(isA<ConfigurationException>()
-            .having((e) => e.code, 'code', 'INVALID_INTERVAL')),
+          const DeviceShieldConfig(periodicCheckInterval: 100),
+        ),
+        throwsA(
+          isA<ConfigurationException>().having(
+            (e) => e.code,
+            'code',
+            'INVALID_INTERVAL',
+          ),
+        ),
       );
     });
 
     test('rejects maxRetryAttempts outside 0-10', () {
       expect(
-        () => validator
-            .validate(const FlutterShieldConfig(maxRetryAttempts: 11)),
-        throwsA(isA<ConfigurationException>()
-            .having((e) => e.code, 'code', 'INVALID_RETRY')),
+        () =>
+            validator.validate(const DeviceShieldConfig(maxRetryAttempts: 11)),
+        throwsA(
+          isA<ConfigurationException>().having(
+            (e) => e.code,
+            'code',
+            'INVALID_RETRY',
+          ),
+        ),
       );
     });
 
     test('rejects retryDelay outside 500-10000ms', () {
       expect(
-        () => validator.validate(const FlutterShieldConfig(retryDelay: 100)),
-        throwsA(isA<ConfigurationException>()
-            .having((e) => e.code, 'code', 'INVALID_RETRY_DELAY')),
+        () => validator.validate(const DeviceShieldConfig(retryDelay: 100)),
+        throwsA(
+          isA<ConfigurationException>().having(
+            (e) => e.code,
+            'code',
+            'INVALID_RETRY_DELAY',
+          ),
+        ),
       );
     });
 
     test('rejects checkTimeout outside 1000-30000ms', () {
       expect(
-        () =>
-            validator.validate(const FlutterShieldConfig(checkTimeout: 500)),
-        throwsA(isA<ConfigurationException>()
-            .having((e) => e.code, 'code', 'INVALID_TIMEOUT')),
+        () => validator.validate(const DeviceShieldConfig(checkTimeout: 500)),
+        throwsA(
+          isA<ConfigurationException>().having(
+            (e) => e.code,
+            'code',
+            'INVALID_TIMEOUT',
+          ),
+        ),
       );
     });
 
-    test('accepts screenshotRecordingRiskScoreWeight at the 0.0 lower bound',
-        () {
-      const config =
-          FlutterShieldConfig(screenshotRecordingRiskScoreWeight: 0.0);
-      expect(validator.validate(config), same(config));
-    });
+    test(
+      'accepts screenshotRecordingRiskScoreWeight at the 0.0 lower bound',
+      () {
+        const config = DeviceShieldConfig(
+          screenshotRecordingRiskScoreWeight: 0.0,
+        );
+        expect(validator.validate(config), same(config));
+      },
+    );
 
-    test('accepts screenshotRecordingRiskScoreWeight at the 1.0 upper bound',
-        () {
-      const config =
-          FlutterShieldConfig(screenshotRecordingRiskScoreWeight: 1.0);
-      expect(validator.validate(config), same(config));
-    });
+    test(
+      'accepts screenshotRecordingRiskScoreWeight at the 1.0 upper bound',
+      () {
+        const config = DeviceShieldConfig();
+        expect(validator.validate(config), same(config));
+      },
+    );
 
     test('rejects screenshotRecordingRiskScoreWeight below 0.0', () {
       expect(
-        () => validator.validate(const FlutterShieldConfig(
-            screenshotRecordingRiskScoreWeight: -0.1)),
-        throwsA(isA<ConfigurationException>()
-            .having((e) => e.code, 'code', 'INVALID_RISK_WEIGHT')),
+        () => validator.validate(
+          const DeviceShieldConfig(screenshotRecordingRiskScoreWeight: -0.1),
+        ),
+        throwsA(
+          isA<ConfigurationException>().having(
+            (e) => e.code,
+            'code',
+            'INVALID_RISK_WEIGHT',
+          ),
+        ),
       );
     });
 
     test('rejects screenshotRecordingRiskScoreWeight above 1.0', () {
       expect(
-        () => validator.validate(const FlutterShieldConfig(
-            screenshotRecordingRiskScoreWeight: 1.1)),
-        throwsA(isA<ConfigurationException>()
-            .having((e) => e.code, 'code', 'INVALID_RISK_WEIGHT')),
+        () => validator.validate(
+          const DeviceShieldConfig(screenshotRecordingRiskScoreWeight: 1.1),
+        ),
+        throwsA(
+          isA<ConfigurationException>().having(
+            (e) => e.code,
+            'code',
+            'INVALID_RISK_WEIGHT',
+          ),
+        ),
       );
     });
   });
 
-  group('Architecture Correction 2 — ConfigurationManager no longer validates', () {
-    test('DefaultConfigurationManager accepts an out-of-bounds config '
-        'without throwing — validation is not its job', () {
-      const outOfBounds = FlutterShieldConfig(periodicCheckInterval: 1);
+  group(
+    'Architecture Correction 2 — ConfigurationManager no longer validates',
+    () {
+      test('DefaultConfigurationManager accepts an out-of-bounds config '
+          'without throwing — validation is not its job', () {
+        const outOfBounds = DeviceShieldConfig(periodicCheckInterval: 1);
 
-      expect(() => DefaultConfigurationManager(outOfBounds),
-          returnsNormally);
-      final manager = DefaultConfigurationManager(outOfBounds);
-      expect(manager.current.periodicCheckInterval, 1);
-    });
+        expect(() => DefaultConfigurationManager(outOfBounds), returnsNormally);
+        final manager = DefaultConfigurationManager(outOfBounds);
+        expect(manager.current.periodicCheckInterval, 1);
+      });
 
-    test('updateConfig accepts an out-of-bounds config without throwing',
+      test(
+        'updateConfig accepts an out-of-bounds config without throwing',
         () async {
-      final manager = DefaultConfigurationManager(const FlutterShieldConfig());
+          final manager = DefaultConfigurationManager(
+            const DeviceShieldConfig(),
+          );
 
-      await manager.updateConfig(
-          const FlutterShieldConfig(periodicCheckInterval: 1));
+          await manager.updateConfig(
+            const DeviceShieldConfig(periodicCheckInterval: 1),
+          );
 
-      expect(manager.current.periodicCheckInterval, 1);
-    });
-  });
+          expect(manager.current.periodicCheckInterval, 1);
+        },
+      );
+    },
+  );
 }

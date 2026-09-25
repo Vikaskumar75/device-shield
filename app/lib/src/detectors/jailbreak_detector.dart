@@ -4,7 +4,7 @@ import '../models/detection_result.dart';
 import '../registry/detector.dart';
 
 /// FR-02 (SRS §5.2): jailbreak detection.
-/// docs/features/ROOT_JAILBREAK_DETECTION.md.
+/// doc/features/ROOT_JAILBREAK_DETECTION.md.
 ///
 /// Constructible on either platform, mirroring [RootDetector]'s own
 /// shape exactly (deliberately symmetric — see that class's doc comment

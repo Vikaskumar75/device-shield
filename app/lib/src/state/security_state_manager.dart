@@ -32,11 +32,7 @@ class DefaultSecurityStateManager implements Lifecycle {
       SDKState.failure,
       SDKState.destroyed,
     },
-    SDKState.paused: {
-      SDKState.running,
-      SDKState.stopped,
-      SDKState.destroyed,
-    },
+    SDKState.paused: {SDKState.running, SDKState.stopped, SDKState.destroyed},
     SDKState.stopped: {SDKState.running, SDKState.destroyed},
     SDKState.failure: {
       SDKState.initialized,

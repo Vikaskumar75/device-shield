@@ -1,7 +1,7 @@
 import 'dart:convert';
 
+import 'package:device_shield/device_shield.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_shield/flutter_shield.dart';
 
 import '../core/shield_scope.dart';
 import '../widgets/status_card.dart';
@@ -52,7 +52,8 @@ const _detectors = [
   _DetectorMeta(
     typeId: MockLocationDetector.typeId,
     label: 'Mock Location Detector',
-    platformSupport: 'Android & iOS — real signals on both; Android is '
+    platformSupport:
+        'Android & iOS — real signals on both; Android is '
         'strongest, and only if the host app already holds location '
         'permission (this SDK never requests it itself)',
   ),
@@ -77,7 +78,8 @@ class DetectorsScreen extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             const InfoBanner(
-              message: '"Run check now" calls Detector.check() directly on '
+              message:
+                  '"Run check now" calls Detector.check() directly on '
                   'the held instance — a read-only inspection tool, not '
                   'part of the real detection pipeline. It emits no '
                   'SecurityEvent of its own.',
@@ -123,7 +125,7 @@ class _DetectorCard extends StatelessWidget {
       trailing: OutlinedButton.icon(
         icon: const Icon(Icons.play_arrow, size: 18),
         label: const Text('Run check'),
-        onPressed: () => onRunCheck(),
+        onPressed: onRunCheck,
       ),
       children: [
         StatusRow(
@@ -139,16 +141,19 @@ class _DetectorCard extends StatelessWidget {
           )
         else ...[
           StatusRow(
-              label: 'Last result — detected',
-              value: result.detected ? 'Yes' : 'No',
-              valueColor: result.detected ? Colors.red : Colors.green),
+            label: 'Last result — detected',
+            value: result.detected ? 'Yes' : 'No',
+            valueColor: result.detected ? Colors.red : Colors.green,
+          ),
           StatusRow(
-              label: 'Confidence',
-              value: result.confidence.toStringAsFixed(2)),
+            label: 'Confidence',
+            value: result.confidence.toStringAsFixed(2),
+          ),
           StatusRow(label: 'Status', value: result.status.name),
           StatusRow(
-              label: 'Last execution',
-              value: result.timestamp.toIso8601String()),
+            label: 'Last execution',
+            value: result.timestamp.toIso8601String(),
+          ),
           const SizedBox(height: 8),
           Container(
             width: double.infinity,

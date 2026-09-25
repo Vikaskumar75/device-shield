@@ -1,17 +1,19 @@
 import 'dart:async';
 
-import 'package:flutter_shield/src/managers/concurrency_controller.dart';
+import 'package:device_shield/src/managers/concurrency_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ConcurrencyController — construction', () {
     test('rejects a maxConcurrent below 1', () {
-      expect(() => ConcurrencyController(maxConcurrent: 0), throwsArgumentError);
+      expect(
+        () => ConcurrencyController(maxConcurrent: 0),
+        throwsArgumentError,
+      );
     });
   });
 
-  group('ConcurrencyController — sequential execution (maxConcurrent: 1)',
-      () {
+  group('ConcurrencyController — sequential execution (maxConcurrent: 1)', () {
     test('runs one item at a time, in order, never overlapping', () async {
       final controller = ConcurrencyController(maxConcurrent: 1);
       var currentlyRunning = 0;
@@ -23,8 +25,9 @@ void main() {
         task: (item) async {
           startOrder.add(item);
           currentlyRunning++;
-          maxObserved =
-              currentlyRunning > maxObserved ? currentlyRunning : maxObserved;
+          maxObserved = currentlyRunning > maxObserved
+              ? currentlyRunning
+              : maxObserved;
           await Future<void>.delayed(const Duration(milliseconds: 5));
           currentlyRunning--;
           return item * 10;
@@ -49,16 +52,18 @@ void main() {
       final allStarted = Completer<void>();
       var startedCount = 0;
 
-      final results = await controller.run<int, int>(
-        items: [1, 2, 3],
-        task: (item) async {
-          startedCount++;
-          if (startedCount == 3) allStarted.complete();
-          await allStarted.future;
-          return item;
-        },
-        onError: (item, error, stackTrace) => null,
-      ).timeout(const Duration(seconds: 2));
+      final results = await controller
+          .run<int, int>(
+            items: [1, 2, 3],
+            task: (item) async {
+              startedCount++;
+              if (startedCount == 3) allStarted.complete();
+              await allStarted.future;
+              return item;
+            },
+            onError: (item, error, stackTrace) => null,
+          )
+          .timeout(const Duration(seconds: 2));
 
       expect(results, [1, 2, 3]);
     });
@@ -106,8 +111,9 @@ void main() {
         items: List.generate(8, (i) => i),
         task: (item) async {
           currentlyRunning++;
-          maxObserved =
-              currentlyRunning > maxObserved ? currentlyRunning : maxObserved;
+          maxObserved = currentlyRunning > maxObserved
+              ? currentlyRunning
+              : maxObserved;
           await Future<void>.delayed(const Duration(milliseconds: 10));
           currentlyRunning--;
           return item;
@@ -180,59 +186,63 @@ void main() {
   });
 
   group('ConcurrencyController — deterministic result ordering', () {
-    test('results are ordered by input position, not completion order',
-        () async {
-      final controller = ConcurrencyController(maxConcurrent: 3);
-      // Item 0 is the slowest, item 2 the fastest — completion order is
-      // the reverse of input order.
-      final delaysMs = [40, 20, 5];
+    test(
+      'results are ordered by input position, not completion order',
+      () async {
+        final controller = ConcurrencyController(maxConcurrent: 3);
+        // Item 0 is the slowest, item 2 the fastest — completion order is
+        // the reverse of input order.
+        final delaysMs = [40, 20, 5];
 
-      final results = await controller.run<int, int>(
-        items: [0, 1, 2],
-        task: (item) async {
-          await Future<void>.delayed(Duration(milliseconds: delaysMs[item]));
-          return item;
-        },
-        onError: (item, error, stackTrace) => null,
-      );
+        final results = await controller.run<int, int>(
+          items: [0, 1, 2],
+          task: (item) async {
+            await Future<void>.delayed(Duration(milliseconds: delaysMs[item]));
+            return item;
+          },
+          onError: (item, error, stackTrace) => null,
+        );
 
-      expect(results, [0, 1, 2]);
-    });
+        expect(results, [0, 1, 2]);
+      },
+    );
   });
 
   group('ConcurrencyController — cancellation during shutdown/dispose', () {
-    test('items already claimed before dispose still complete normally',
-        () async {
-      final controller = ConcurrencyController(maxConcurrent: 1);
-      final startedItem1 = Completer<void>();
-      final releaseItem1 = Completer<void>();
-      final ranItem2 = <int>[];
+    test(
+      'items already claimed before dispose still complete normally',
+      () async {
+        final controller = ConcurrencyController(maxConcurrent: 1);
+        final startedItem1 = Completer<void>();
+        final releaseItem1 = Completer<void>();
+        final ranItem2 = <int>[];
 
-      final future = controller.run<int, int>(
-        items: [1, 2],
-        task: (item) async {
-          if (item == 1) {
-            startedItem1.complete();
-            await releaseItem1.future;
-          } else {
-            ranItem2.add(item);
-          }
-          return item;
-        },
-        onError: (item, error, stackTrace) => null,
-      );
+        final future = controller.run<int, int>(
+          items: [1, 2],
+          task: (item) async {
+            if (item == 1) {
+              startedItem1.complete();
+              await releaseItem1.future;
+            } else {
+              ranItem2.add(item);
+            }
+            return item;
+          },
+          onError: (item, error, stackTrace) => null,
+        );
 
-      await startedItem1.future;
-      controller.dispose();
-      releaseItem1.complete();
-      final results = await future;
+        await startedItem1.future;
+        controller.dispose();
+        releaseItem1.complete();
+        final results = await future;
 
-      // Item 1 was already claimed/started, so it completes normally.
-      expect(results, contains(1));
-      // Item 2 was never claimed — dispose() stopped it from starting.
-      expect(ranItem2, isEmpty);
-      expect(results, isNot(contains(2)));
-    });
+        // Item 1 was already claimed/started, so it completes normally.
+        expect(results, contains(1));
+        // Item 2 was never claimed — dispose() stopped it from starting.
+        expect(ranItem2, isEmpty);
+        expect(results, isNot(contains(2)));
+      },
+    );
 
     test('run() called after dispose() invokes no task at all', () async {
       final controller = ConcurrencyController()..dispose();

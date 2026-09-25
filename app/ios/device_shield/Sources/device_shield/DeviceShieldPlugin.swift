@@ -2,9 +2,9 @@ import Flutter
 import UIKit
 
 /// Phase 7 (Platform Layer / Bridge): registers the two dedicated bridge
-/// channels — flutter_shield/native_bridge (FlutterMethodChannel) and
-/// flutter_shield/events (FlutterEventChannel) — alongside the
-/// pre-existing flutter_shield channel from Phase 1, kept unchanged for
+/// channels — device_shield/native_bridge (FlutterMethodChannel) and
+/// device_shield/events (FlutterEventChannel) — alongside the
+/// pre-existing device_shield channel from Phase 1, kept unchanged for
 /// backward compatibility with getPlatformVersion(). "checkEmulator" (M7,
 /// FR-03) and "checkDebugger" (M7, FR-04) are the first two real
 /// bridge-channel method handlers; every other bridge method still returns
@@ -15,17 +15,17 @@ import UIKit
 /// default_native_bridge.dart): a future detector/protection calls this
 /// with its own callback name and payload; this class only shapes and
 /// forwards it, with no interpretation of what either means. Functionally
-/// mirrors the Android (`FlutterShieldPlugin.kt`) implementation.
+/// mirrors the Android (`DeviceShieldPlugin.kt`) implementation.
 ///
 /// Screenshot & Screen Recording Protection (see
-/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md) adds
+/// doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md) adds
 /// `setScreenshotProtection`/`isScreenCaptureActive` and starts observing
 /// for screenshots/capture-state changes at registration time. Unlike
 /// Android, this needs no `ActivityAware`-equivalent lifecycle hook —
 /// `UIScreen`/`UIApplication`/`NotificationCenter` are all globally
 /// available the instant `register(with:)` runs, so observation can begin
 /// immediately rather than waiting for any attachment step.
-public class FlutterShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
+public class DeviceShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
   // Phase 7 bridge event sink.
   private var eventSink: FlutterEventSink?
 
@@ -35,22 +35,23 @@ public class FlutterShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
   private var eventChannel: FlutterEventChannel?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let instance = FlutterShieldPlugin()
+    let instance = DeviceShieldPlugin()
 
     // Phase 1 legacy channel — untouched, not merged or renamed.
-    let channel = FlutterMethodChannel(name: "flutter_shield", binaryMessenger: registrar.messenger())
+    let channel = FlutterMethodChannel(
+      name: "device_shield", binaryMessenger: registrar.messenger())
     registrar.addMethodCallDelegate(instance, channel: channel)
 
     // Phase 7 bridge channels.
     let bridgeChannel = FlutterMethodChannel(
-      name: "flutter_shield/native_bridge",
+      name: "device_shield/native_bridge",
       binaryMessenger: registrar.messenger()
     )
     registrar.addMethodCallDelegate(instance, channel: bridgeChannel)
     instance.bridgeChannel = bridgeChannel
 
     let eventChannel = FlutterEventChannel(
-      name: "flutter_shield/events",
+      name: "device_shield/events",
       binaryMessenger: registrar.messenger()
     )
     eventChannel.setStreamHandler(instance)
@@ -73,7 +74,7 @@ public class FlutterShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
     case "checkRoot":
       // "Root" is not an iOS concept — an honest not-applicable answer,
       // never a false "not rooted" (design doc:
-      // docs/features/ROOT_JAILBREAK_DETECTION.md).
+      // doc/features/ROOT_JAILBREAK_DETECTION.md).
       result([
         "detected": false,
         "confidence": 0.0,
@@ -143,7 +144,9 @@ public class FlutterShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler 
     }
   }
 
-  public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+  public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink)
+    -> FlutterError?
+  {
     self.eventSink = events
     return nil
   }

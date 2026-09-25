@@ -1,6 +1,6 @@
+import 'package:device_shield/src/state/default_lifecycle_manager.dart';
+import 'package:device_shield/src/state/lifecycle.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_shield/src/state/default_lifecycle_manager.dart';
-import 'package:flutter_shield/src/state/lifecycle.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _RecordingHandler implements SecurityLifecycleHandler {
@@ -20,8 +20,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('DefaultLifecycleManager', () {
-    test('forwards each AppLifecycleState to the correct handler callback',
-        () {
+    test('forwards each AppLifecycleState to the correct handler callback', () {
       final manager = DefaultLifecycleManager();
       final handler = _RecordingHandler();
       manager.attach(handler);

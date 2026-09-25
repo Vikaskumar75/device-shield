@@ -1,5 +1,5 @@
+import 'package:device_shield/src/bridge/event_channel_service.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_shield/src/bridge/event_channel_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -50,35 +50,35 @@ void main() {
       expect(received, ['just a string, not a map']);
     });
 
-    test('dispose cancels the subscription — no further events arrive',
-        () async {
-      var cancelled = false;
-      messenger.setMockStreamHandler(
-        channel,
-        MockStreamHandler.inline(
-          onListen: (args, events) {},
-          onCancel: (args) => cancelled = true,
-        ),
-      );
-      final service = EventChannelService(channel);
-      final received = <dynamic>[];
-      service.listen(received.add);
-      await Future<void>.delayed(Duration.zero);
+    test(
+      'dispose cancels the subscription — no further events arrive',
+      () async {
+        var cancelled = false;
+        messenger.setMockStreamHandler(
+          channel,
+          MockStreamHandler.inline(
+            onListen: (args, events) {},
+            onCancel: (args) => cancelled = true,
+          ),
+        );
+        final service = EventChannelService(channel);
+        final received = <dynamic>[];
+        service.listen(received.add);
+        await Future<void>.delayed(Duration.zero);
 
-      await service.dispose();
-      await Future<void>.delayed(Duration.zero);
+        await service.dispose();
+        await Future<void>.delayed(Duration.zero);
 
-      expect(cancelled, isTrue);
-    });
+        expect(cancelled, isTrue);
+      },
+    );
 
-    test('dispose is safe to call even if listen was never called',
-        () async {
+    test('dispose is safe to call even if listen was never called', () async {
       final service = EventChannelService(channel);
       await expectLater(service.dispose(), completes);
     });
 
-    test('calling listen twice replaces the previous subscription',
-        () async {
+    test('calling listen twice replaces the previous subscription', () async {
       late MockStreamHandlerEventSink sink;
       messenger.setMockStreamHandler(
         channel,

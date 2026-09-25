@@ -1,0 +1,51 @@
+---
+title: Signals reference
+description: Every signal device_shield reports, per platform, with guidance on how much to trust it.
+---
+
+Signals appear in `result.evidence['signals']`. "Guidance" is our assessment
+of how likely a signal is to fire on a device that isn't actually compromised.
+Validate it against your own users before blocking anyone.
+
+## Android
+
+| Detector | Signal | Guidance |
+|---|---|---|
+| root | `su_binary_path` | Strong |
+| root | `su_executable` | Strong |
+| root | `magisk_artifacts` | Strong |
+| root | `writable_system` | Strong |
+| root | `superuser_apps_installed` | Medium |
+| root | `root_cloaking_apps_installed` | Medium |
+| root | `busybox_present` | Weak |
+| root | `build_tags_test_keys` | Weak |
+| root | `dangerous_system_props` | Weak (every emulator) |
+| emulator | `fingerprint`, `model`, `manufacturer`, `hardware`, `product`, `brand_device`, `qemu_pipe` | Build heuristics. Reliable for stock emulators |
+| debugger | `debugger_connected` | Strong |
+| debugger | `waiting_for_debugger` | Strong |
+| debugger | `debuggable_flag` | Weak (every debug build) |
+| mock_location | `mock_provider_flag` | Strong |
+| mock_location | `mock_app_selected_for_this_app` | Strong |
+| mock_location | `impossible_velocity` | Medium |
+| mock_location | `fake_gps_app_installed` | Weak |
+| mock_location | `legacy_allow_mock_location_setting` | Medium (Android 5.x only) |
+
+## iOS
+
+| Detector | Signal | Guidance |
+|---|---|---|
+| jailbreak | `jailbreak_app_paths` | Strong |
+| jailbreak | `suspicious_system_paths` | Strong on devices, unreliable on the Simulator |
+| jailbreak | `writable_outside_sandbox` | Strong |
+| jailbreak | `process_spawn_check` | Strong on devices, unreliable on the Simulator |
+| jailbreak | `dyld_env_var` | Strong |
+| emulator | `simulator_target` | Exact |
+| debugger | `ptrace_flag` | Exact |
+| mock_location | `known_spoofing_tweak_artifact` | Strong |
+| mock_location | `invalid_location_accuracy` | Medium |
+| mock_location | `impossible_velocity` | Medium |
+
+## Event-only signals
+
+These appear in native screenshot payloads, not in `check()` results:
+`screen_capture_callback` (Android) and `screenshot_notification` (iOS).

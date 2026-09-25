@@ -1,28 +1,28 @@
+import 'package:device_shield/device_shield.dart';
+import 'package:device_shield/src/platform/device_shield_method_channel.dart';
+import 'package:device_shield/src/platform/device_shield_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_shield/flutter_shield.dart';
-import 'package:flutter_shield/src/platform/flutter_shield_platform_interface.dart';
-import 'package:flutter_shield/src/platform/flutter_shield_method_channel.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-class MockFlutterShieldPlatform
+class MockDeviceShieldPlatform
     with MockPlatformInterfaceMixin
-    implements FlutterShieldPlatform {
+    implements DeviceShieldPlatform {
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
 }
 
 void main() {
-  final FlutterShieldPlatform initialPlatform = FlutterShieldPlatform.instance;
+  final DeviceShieldPlatform initialPlatform = DeviceShieldPlatform.instance;
 
-  test('$MethodChannelFlutterShield is the default instance', () {
-    expect(initialPlatform, isInstanceOf<MethodChannelFlutterShield>());
+  test('$MethodChannelDeviceShield is the default instance', () {
+    expect(initialPlatform, isInstanceOf<MethodChannelDeviceShield>());
   });
 
   test('getPlatformVersion', () async {
-    FlutterShield flutterShieldPlugin = FlutterShield();
-    MockFlutterShieldPlatform fakePlatform = MockFlutterShieldPlatform();
-    FlutterShieldPlatform.instance = fakePlatform;
+    final DeviceShield deviceShieldPlugin = DeviceShield();
+    final MockDeviceShieldPlatform fakePlatform = MockDeviceShieldPlatform();
+    DeviceShieldPlatform.instance = fakePlatform;
 
-    expect(await flutterShieldPlugin.getPlatformVersion(), '42');
+    expect(await deviceShieldPlugin.getPlatformVersion(), '42');
   });
 }

@@ -1,11 +1,11 @@
 import UIKit
 
 /// App-Switcher / Background-Snapshot Protection — the iOS-only follow-on
-/// design doc §17 named as future work: docs/features/
+/// design doc §17 named as future work: doc/features/
 /// SCREENSHOT_SCREEN_RECORDING_PROTECTION.md. Android needs no equivalent
 /// of this file — it already gets Recents-thumbnail redaction for free as
 /// a side effect of `FLAG_SECURE`
-/// ([com.example.flutter_shield.protection.ScreenCaptureProtection]).
+/// ([com.geekyants.device_shield.protection.ScreenCaptureProtection]).
 /// iOS has no such free side effect, and — as with screenshot/recording
 /// blocking generally (§1.6) — no API to stop the OS from taking the
 /// app-switcher snapshot at all. What iOS *does* allow, entirely through

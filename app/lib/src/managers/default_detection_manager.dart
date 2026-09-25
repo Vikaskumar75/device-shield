@@ -2,7 +2,7 @@ import 'dart:async';
 
 import '../core/logger.dart';
 import '../models/detection_result.dart';
-import '../models/flutter_shield_exception.dart';
+import '../models/device_shield_exception.dart';
 import '../registry/detector.dart';
 import '../registry/detector_registry.dart';
 import 'concurrency_controller.dart';
@@ -30,8 +30,8 @@ import 'detection_manager.dart';
 /// the constructor (Phase 4's DI pattern, not read from
 /// `ConfigurationManager` directly — this class still holds no reference
 /// to it, matching the frozen dependency matrix exactly); the composition
-/// root (`FlutterShield._registerDefaultManagers`) is what reads
-/// `FlutterShieldConfig.checkTimeout` and passes the resulting primitive
+/// root (`DeviceShield._registerDefaultManagers`) is what reads
+/// `DeviceShieldConfig.checkTimeout` and passes the resulting primitive
 /// value down.
 ///
 /// Still holds no `NativeBridge` reference and no reference to
@@ -52,8 +52,7 @@ class DefaultDetectionManager implements DetectionManager {
     ConcurrencyController? concurrencyController,
     this.detectorTimeout = const Duration(milliseconds: 5000),
     this.detectionCache,
-  }) : concurrencyController =
-            concurrencyController ?? ConcurrencyController();
+  }) : concurrencyController = concurrencyController ?? ConcurrencyController();
 
   final Logger logger;
   final DetectorRegistry registry;
@@ -69,7 +68,7 @@ class DefaultDetectionManager implements DetectionManager {
   /// Ceiling applied to every individual detector's [Detector.check] call
   /// during [runAllChecks] — one hung/slow detector is bounded rather than
   /// stalling the whole batch indefinitely. Defaults to
-  /// `FlutterShieldConfig.checkTimeout`'s own default (5000ms) so behavior
+  /// `DeviceShieldConfig.checkTimeout`'s own default (5000ms) so behavior
   /// matches the config default even for callers that construct this
   /// class directly, without going through the composition root.
   final Duration detectorTimeout;
@@ -118,7 +117,7 @@ class DefaultDetectionManager implements DetectionManager {
   Future<List<DetectionResult>> _runAllChecks() {
     return concurrencyController.run<Detector, DetectionResult>(
       items: registry.getAll(),
-      task: (detector) => _checkWithCache(detector),
+      task: _checkWithCache,
       timeout: detectorTimeout,
       onError: (detector, error, stackTrace) {
         // A single detector's failure must never fail the whole batch —

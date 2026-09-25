@@ -20,14 +20,17 @@ class AboutScreen extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             SectionCard(
-              title: 'FlutterShield',
+              title: 'DeviceShield',
               children: [
                 const StatusRow(label: 'Package version', value: '0.0.1'),
                 StatusRow(
-                    label: 'Platform version',
-                    value: controller.platformVersion),
+                  label: 'Platform version',
+                  value: controller.platformVersion,
+                ),
                 StatusRow(
-                    label: 'Platform', value: Theme.of(context).platform.name),
+                  label: 'Platform',
+                  value: Theme.of(context).platform.name,
+                ),
               ],
             ),
             const SectionCard(
@@ -50,7 +53,8 @@ class AboutScreen extends StatelessWidget {
                 ),
                 _FeatureRow(
                   feature: 'Jailbreak detection',
-                  android: 'Not applicable (jailbreak is not an Android '
+                  android:
+                      'Not applicable (jailbreak is not an Android '
                       'concept)',
                   ios: 'Full support — 5-signal heuristic',
                 ),
@@ -67,7 +71,8 @@ class AboutScreen extends StatelessWidget {
                 _FeatureRow(
                   feature: 'Screenshot protection',
                   android: 'Full support (FLAG_SECURE), confirmed working',
-                  ios: 'Attempted via an undocumented UITextField '
+                  ios:
+                      'Attempted via an undocumented UITextField '
                       'secure-layer technique — not an Apple API. '
                       'UNCONFIRMED: live Simulator testing found the '
                       'screenshot still captured real content, not '
@@ -80,20 +85,23 @@ class AboutScreen extends StatelessWidget {
                 ),
                 _FeatureRow(
                   feature: 'Mock location detection',
-                  android: '5-signal heuristic — strongest signal needs '
+                  android:
+                      '5-signal heuristic — strongest signal needs '
                       'location permission the SDK never requests itself',
                   ios: '3-signal heuristic (no OS "mocked" flag exists)',
                 ),
               ],
             ),
-            SectionCard(
+            const SectionCard(
               title: 'Documented SDK limitations',
-              subtitle: 'Found while building this example app. Not worked '
+              subtitle:
+                  'Found while building this example app. Not worked '
                   'around silently — the SDK source was never modified.',
-              children: const [
+              children: [
                 _LimitationTile(
                   title: '1. No detector removal API',
-                  body: 'FlutterShield/DetectionManager expose '
+                  body:
+                      'DeviceShield/DetectionManager expose '
                       'registerDetector() but no unregisterDetector()/'
                       'removeDetector() counterpart. Disabling a detector '
                       'here only takes effect on the next Reinitialize, '
@@ -102,7 +110,8 @@ class AboutScreen extends StatelessWidget {
                 ),
                 _LimitationTile(
                   title: '2. No public Logger/LogSink access',
-                  body: 'FlutterShield never exposes the SDK\'s internal '
+                  body:
+                      'DeviceShield never exposes the SDK\'s internal '
                       'Logger/LogSink extension point. The Logs screen '
                       'shows this app\'s own SDK call history instead — the '
                       'closest faithful substitute reachable from host-app '
@@ -110,7 +119,8 @@ class AboutScreen extends StatelessWidget {
                 ),
                 _LimitationTile(
                   title: '3. SecurityEvent.data is limited',
-                  body: 'SecurityEvent.data — as constructed by '
+                  body:
+                      'SecurityEvent.data — as constructed by '
                       'DefaultSecurityManager.processResult() — only ever '
                       'carries {action, confidence}. The original '
                       'DetectionResult.evidence is not forwarded. Recording '
@@ -119,7 +129,8 @@ class AboutScreen extends StatelessWidget {
                 ),
                 _LimitationTile(
                   title: '4. Callback name collisions are undetected',
-                  body: 'NativeBridge.registerCallback is a last-write-wins '
+                  body:
+                      'NativeBridge.registerCallback is a last-write-wins '
                       'map with zero collision detection. Registering a '
                       'callback under "onScreenshotTaken" or '
                       '"onScreenCaptureStateChanged" silently overrides the '
@@ -129,10 +140,11 @@ class AboutScreen extends StatelessWidget {
                       'demonstrate the risk deliberately.',
                 ),
                 _LimitationTile(
-                  title: '5. Public library exports only FlutterShield',
-                  body: 'package:flutter_shield/flutter_shield.dart exports '
-                      'nothing but the FlutterShield facade — Detector, '
-                      'Rule, FlutterShieldConfig, SecurityEvent, and every '
+                  title: '5. Public library exports only DeviceShield',
+                  body:
+                      'package:device_shield/device_shield.dart exports '
+                      'nothing but the DeviceShield facade — Detector, '
+                      'Rule, DeviceShieldConfig, SecurityEvent, and every '
                       'concrete detector live under lib/src and are never '
                       're-exported. Any host app that registers a custom '
                       'Detector/Rule or constructs a config must import '
@@ -147,9 +159,11 @@ class AboutScreen extends StatelessWidget {
             const SectionCard(
               title: 'Credits',
               children: [
-                Text('FlutterShield reference example app.'),
-                Text('Built to demonstrate 100% of the public SDK surface '
-                    'without modifying any SDK source.'),
+                Text('DeviceShield reference example app.'),
+                Text(
+                  'Built to demonstrate 100% of the public SDK surface '
+                  'without modifying any SDK source.',
+                ),
               ],
             ),
           ],
@@ -178,8 +192,12 @@ class _FeatureRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(feature, style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600)),
+          Text(
+            feature,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 2),
           Text('Android: $android', style: theme.textTheme.bodySmall),
           Text('iOS: $ios', style: theme.textTheme.bodySmall),
@@ -205,13 +223,19 @@ class _LimitationTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.warning_amber_rounded,
-                  size: 18, color: Colors.orange),
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 18,
+                color: Colors.orange,
+              ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(title,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                child: Text(
+                  title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),

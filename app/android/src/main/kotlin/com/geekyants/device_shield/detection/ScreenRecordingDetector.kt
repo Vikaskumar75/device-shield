@@ -1,12 +1,12 @@
-package com.example.flutter_shield.detection
+package com.geekyants.device_shield.detection
 
 /**
  * Screenshot & Screen Recording Protection —
- * docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
+ * doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
  *
  * Android has no reliable discrete "recording started" signal a
  * third-party app can depend on — `FLAG_SECURE` (see
- * [com.example.flutter_shield.protection.ScreenCaptureProtection]) blocks
+ * [com.geekyants.device_shield.protection.ScreenCaptureProtection]) blocks
  * captured *content*, but that is a side effect, not an observable event,
  * and package-visibility restrictions since Android 11 already rule out
  * the older `ActivityManager.getRunningServices()`-style heuristics some

@@ -10,17 +10,17 @@ import Foundation
 enum EmulatorDetector {
   static func check() -> [String: Any] {
     #if targetEnvironment(simulator)
-    return [
-      "detected": true,
-      "confidence": 1.0,
-      "signals": ["simulator_target"],
-    ]
+      return [
+        "detected": true,
+        "confidence": 1.0,
+        "signals": ["simulator_target"],
+      ]
     #else
-    return [
-      "detected": false,
-      "confidence": 0.0,
-      "signals": [String](),
-    ]
+      return [
+        "detected": false,
+        "confidence": 0.0,
+        "signals": [String](),
+      ]
     #endif
   }
 }

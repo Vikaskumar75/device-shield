@@ -1,8 +1,8 @@
+import 'package:device_shield/src/bridge/default_native_bridge.dart';
+import 'package:device_shield/src/bridge/event_channel_service.dart';
+import 'package:device_shield/src/bridge/method_channel_service.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_shield/src/bridge/default_native_bridge.dart';
-import 'package:flutter_shield/src/bridge/event_channel_service.dart';
-import 'package:flutter_shield/src/bridge/method_channel_service.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -19,15 +19,13 @@ void main() {
   });
 
   DefaultNativeBridge buildBridge() => DefaultNativeBridge(
-        methodChannelService: MethodChannelService(methodChannel),
-        eventChannelService: EventChannelService(eventChannel),
-      );
+    methodChannelService: MethodChannelService(methodChannel),
+    eventChannelService: EventChannelService(eventChannel),
+  );
 
   group('DefaultNativeBridge — method call delegation', () {
-    test('invoke delegates to the underlying MethodChannelService',
-        () async {
-      messenger.setMockMethodCallHandler(
-          methodChannel, (call) async => 'pong');
+    test('invoke delegates to the underlying MethodChannelService', () async {
+      messenger.setMockMethodCallHandler(methodChannel, (call) async => 'pong');
       final bridge = buildBridge();
 
       final result = await bridge.invoke<String>(method: 'ping');
@@ -45,48 +43,53 @@ void main() {
 
       await expectLater(
         bridge.invoke<void>(method: 'check'),
-        throwsA(isA<NativeBridgeException>()
-            .having((e) => e.code, 'code', 'FAILED')),
+        throwsA(
+          isA<NativeBridgeException>().having((e) => e.code, 'code', 'FAILED'),
+        ),
       );
     });
   });
 
   group('DefaultNativeBridge — callback registration and routing', () {
-    test('a native event matching a registered callback name is routed to it',
-        () async {
-      late MockStreamHandlerEventSink sink;
-      messenger.setMockStreamHandler(
-        eventChannel,
-        MockStreamHandler.inline(onListen: (args, events) => sink = events),
-      );
-      final bridge = buildBridge();
-      dynamic received;
-      bridge.registerCallback('onSecurityEvent', (data) => received = data);
-      await Future<void>.delayed(Duration.zero);
+    test(
+      'a native event matching a registered callback name is routed to it',
+      () async {
+        late MockStreamHandlerEventSink sink;
+        messenger.setMockStreamHandler(
+          eventChannel,
+          MockStreamHandler.inline(onListen: (args, events) => sink = events),
+        );
+        final bridge = buildBridge();
+        dynamic received;
+        bridge.registerCallback('onSecurityEvent', (data) => received = data);
+        await Future<void>.delayed(Duration.zero);
 
-      sink.success({'callback': 'onSecurityEvent', 'data': 'root_detected'});
-      await Future<void>.delayed(Duration.zero);
+        sink.success({'callback': 'onSecurityEvent', 'data': 'root_detected'});
+        await Future<void>.delayed(Duration.zero);
 
-      expect(received, 'root_detected');
-    });
+        expect(received, 'root_detected');
+      },
+    );
 
-    test('an event naming an unregistered callback is silently dropped',
-        () async {
-      late MockStreamHandlerEventSink sink;
-      messenger.setMockStreamHandler(
-        eventChannel,
-        MockStreamHandler.inline(onListen: (args, events) => sink = events),
-      );
-      final bridge = buildBridge();
-      var called = false;
-      bridge.registerCallback('known', (_) => called = true);
-      await Future<void>.delayed(Duration.zero);
+    test(
+      'an event naming an unregistered callback is silently dropped',
+      () async {
+        late MockStreamHandlerEventSink sink;
+        messenger.setMockStreamHandler(
+          eventChannel,
+          MockStreamHandler.inline(onListen: (args, events) => sink = events),
+        );
+        final bridge = buildBridge();
+        var called = false;
+        bridge.registerCallback('known', (_) => called = true);
+        await Future<void>.delayed(Duration.zero);
 
-      sink.success({'callback': 'unknown', 'data': 'x'});
-      await Future<void>.delayed(Duration.zero);
+        sink.success({'callback': 'unknown', 'data': 'x'});
+        await Future<void>.delayed(Duration.zero);
 
-      expect(called, isFalse);
-    });
+        expect(called, isFalse);
+      },
+    );
 
     test('unregisterCallback stops routing to that name', () async {
       late MockStreamHandlerEventSink sink;
@@ -125,27 +128,29 @@ void main() {
       // No exception means the malformed events were safely ignored.
     });
 
-    test('multiple registered callbacks are each routed independently',
-        () async {
-      late MockStreamHandlerEventSink sink;
-      messenger.setMockStreamHandler(
-        eventChannel,
-        MockStreamHandler.inline(onListen: (args, events) => sink = events),
-      );
-      final bridge = buildBridge();
-      final aEvents = <dynamic>[];
-      final bEvents = <dynamic>[];
-      bridge.registerCallback('a', aEvents.add);
-      bridge.registerCallback('b', bEvents.add);
-      await Future<void>.delayed(Duration.zero);
+    test(
+      'multiple registered callbacks are each routed independently',
+      () async {
+        late MockStreamHandlerEventSink sink;
+        messenger.setMockStreamHandler(
+          eventChannel,
+          MockStreamHandler.inline(onListen: (args, events) => sink = events),
+        );
+        final bridge = buildBridge();
+        final aEvents = <dynamic>[];
+        final bEvents = <dynamic>[];
+        bridge.registerCallback('a', aEvents.add);
+        bridge.registerCallback('b', bEvents.add);
+        await Future<void>.delayed(Duration.zero);
 
-      sink.success({'callback': 'a', 'data': 1});
-      sink.success({'callback': 'b', 'data': 2});
-      await Future<void>.delayed(Duration.zero);
+        sink.success({'callback': 'a', 'data': 1});
+        sink.success({'callback': 'b', 'data': 2});
+        await Future<void>.delayed(Duration.zero);
 
-      expect(aEvents, [1]);
-      expect(bEvents, [2]);
-    });
+        expect(aEvents, [1]);
+        expect(bEvents, [2]);
+      },
+    );
   });
 
   group('DefaultNativeBridge — dispose', () {
@@ -167,5 +172,4 @@ void main() {
       expect(cancelled, isTrue);
     });
   });
-
 }

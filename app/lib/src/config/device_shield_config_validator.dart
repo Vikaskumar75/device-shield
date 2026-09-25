@@ -1,28 +1,28 @@
-import '../models/flutter_shield_config.dart';
-import '../models/flutter_shield_exception.dart';
+import '../models/device_shield_config.dart';
+import '../models/device_shield_exception.dart';
 
-/// Validates a [FlutterShieldConfig] before it ever reaches
+/// Validates a [DeviceShieldConfig] before it ever reaches
 /// [ConfigurationManager].
 ///
 /// Architecture Correction 2: a dedicated, single-purpose component so
 /// `ConfigurationManager` itself stays a pure store/expose/update service
 /// with no validation rules of its own. The flow is:
 ///
-/// `FlutterShield.initialize(config)` → `FlutterShieldConfigValidator`
+/// `DeviceShield.initialize(config)` → `DeviceShieldConfigValidator`
 /// → `ConfigurationManager` (store).
 ///
 /// Bounds match SRS §7.4 exactly — generic SDK-wide settings only, no
 /// detector-specific validation of any kind. The one exception is
-/// [FlutterShieldConfig.screenshotRecordingRiskScoreWeight]'s 0.0–1.0 bound,
-/// added per `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §4 —
+/// [DeviceShieldConfig.screenshotRecordingRiskScoreWeight]'s 0.0–1.0 bound,
+/// added per `doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §4 —
 /// not an SRS §7.4 rule, but the same confidence/risk-score convention
 /// already used everywhere else in this codebase.
 ///
 /// Public/Internal: internal.
-class FlutterShieldConfigValidator {
+class DeviceShieldConfigValidator {
   /// Returns [config] unchanged if every bound is satisfied. Throws
   /// [ConfigurationException] on the first violated bound.
-  FlutterShieldConfig validate(FlutterShieldConfig config) {
+  DeviceShieldConfig validate(DeviceShieldConfig config) {
     if (config.periodicCheckInterval < 5000) {
       throw const ConfigurationException(
         code: 'INVALID_INTERVAL',
@@ -51,7 +51,8 @@ class FlutterShieldConfigValidator {
         config.screenshotRecordingRiskScoreWeight > 1.0) {
       throw const ConfigurationException(
         code: 'INVALID_RISK_WEIGHT',
-        message: 'screenshotRecordingRiskScoreWeight must be between '
+        message:
+            'screenshotRecordingRiskScoreWeight must be between '
             '0.0 and 1.0',
       );
     }

@@ -1,12 +1,12 @@
-import 'package:flutter_shield/src/bridge/method_codes.dart';
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/core/console_logger.dart';
-import 'package:flutter_shield/src/detectors/jailbreak_detector.dart';
-import 'package:flutter_shield/src/detectors/root_detector.dart';
-import 'package:flutter_shield/src/managers/default_detection_manager.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/registry/default_detector_registry.dart';
-import 'package:flutter_shield/src/registry/detector_factory.dart';
+import 'package:device_shield/src/bridge/method_codes.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/core/console_logger.dart';
+import 'package:device_shield/src/detectors/jailbreak_detector.dart';
+import 'package:device_shield/src/detectors/root_detector.dart';
+import 'package:device_shield/src/managers/default_detection_manager.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/registry/default_detector_registry.dart';
+import 'package:device_shield/src/registry/detector_factory.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Mirrors `screenshot_recording_detector_integration_test.dart`'s own
@@ -129,14 +129,15 @@ void main() {
 
     expect(results, hasLength(2));
     final root = results.firstWhere((r) => r.type == RootDetector.typeId);
-    final jailbreak =
-        results.firstWhere((r) => r.type == JailbreakDetector.typeId);
+    final jailbreak = results.firstWhere(
+      (r) => r.type == JailbreakDetector.typeId,
+    );
     expect(root.confidence, 0.22);
     expect(jailbreak.confidence, 0.8);
     expect(root.evidence['signals'], ['build_tags_test_keys']);
-    expect(
-      jailbreak.evidence['signals'],
-      ['jailbreak_app_paths', 'suspicious_system_paths'],
-    );
+    expect(jailbreak.evidence['signals'], [
+      'jailbreak_app_paths',
+      'suspicious_system_paths',
+    ]);
   });
 }

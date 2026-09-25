@@ -5,10 +5,10 @@ import '../bridge/native_bridge.dart';
 import '../detectors/screen_recording_detector.dart';
 import '../detectors/screenshot_detector.dart';
 import '../models/detection_result.dart';
-import '../models/flutter_shield_config.dart';
+import '../models/device_shield_config.dart';
 
 /// Screenshot & Screen Recording Protection —
-/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §9.3/§8.3.
+/// doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §9.3/§8.3.
 ///
 /// The feature's real-time mechanism: owns the native push-listener
 /// registration and the imperative protection-toggle commands. Owned by
@@ -29,10 +29,7 @@ import '../models/flutter_shield_config.dart';
 /// (`SecurityLifecycleHandler`), just narrower still: a bare function
 /// type, not even an interface, since there is exactly one callback here.
 class ScreenCaptureController {
-  ScreenCaptureController({
-    required this.nativeBridge,
-    required this.onResult,
-  });
+  ScreenCaptureController({required this.nativeBridge, required this.onResult});
 
   final NativeBridge nativeBridge;
 
@@ -55,7 +52,7 @@ class ScreenCaptureController {
   /// **gated by [config]** — this is the fix for a real, confirmed bug:
   /// `enableScreenshotDetection`/`enableScreenRecordingDetection`/
   /// `enableScreenshotProtection`/`enableAppSwitcherProtection` were
-  /// previously validated and stored by `FlutterShieldConfig` but never
+  /// previously validated and stored by `DeviceShieldConfig` but never
   /// read anywhere at runtime — the push listeners registered
   /// unconditionally and protection was never auto-applied regardless of
   /// what the config said. See `default_security_manager_test.dart`'s
@@ -65,15 +62,12 @@ class ScreenCaptureController {
   /// in this codebase being safe to call at most meaningfully once per
   /// instance, and keeps a config-gated re-`initialize()` (e.g. after a
   /// `dispose()`/reinitialize cycle) from double-registering a callback.
-  Future<void> initialize(FlutterShieldConfig config) async {
+  Future<void> initialize(DeviceShieldConfig config) async {
     if (_registered) return;
     _registered = true;
 
     if (config.enableScreenshotDetection) {
-      nativeBridge.registerCallback(
-        _onScreenshotTaken,
-        _handleScreenshotTaken,
-      );
+      nativeBridge.registerCallback(_onScreenshotTaken, _handleScreenshotTaken);
     }
     if (config.enableScreenRecordingDetection) {
       nativeBridge.registerCallback(
@@ -113,13 +107,19 @@ class ScreenCaptureController {
   /// real hardware (design doc §18.5's own honest write-up). Reports
   /// `false` only if there's no root view yet to protect.
   Future<bool> enable() => _invokeProtection(
-      MethodCodes.setScreenshotProtection, true, (v) => _enabled = v);
+    MethodCodes.setScreenshotProtection,
+    true,
+    (v) => _enabled = v,
+  );
 
   /// The imperative disable — symmetric to [enable].
   Future<bool> disable() => _invokeProtection(
-      MethodCodes.setScreenshotProtection, false, (v) => _enabled = v);
+    MethodCodes.setScreenshotProtection,
+    false,
+    (v) => _enabled = v,
+  );
 
-  /// Last-known local state, mirroring `FlutterShield.status`'s own
+  /// Last-known local state, mirroring `DeviceShield.status`'s own
   /// synchronous, always-answerable read pattern (design doc §3) — not a
   /// fresh native round-trip.
   bool get isEnabled => _enabled;
@@ -133,15 +133,17 @@ class ScreenCaptureController {
   /// snapshot) — the first protection call on iOS that can honestly
   /// report `applied: true`.
   Future<bool> enableAppSwitcherProtection() => _invokeProtection(
-      MethodCodes.setAppSwitcherProtection,
-      true,
-      (v) => _appSwitcherEnabled = v);
+    MethodCodes.setAppSwitcherProtection,
+    true,
+    (v) => _appSwitcherEnabled = v,
+  );
 
   /// The imperative disable — symmetric to [enableAppSwitcherProtection].
   Future<bool> disableAppSwitcherProtection() => _invokeProtection(
-      MethodCodes.setAppSwitcherProtection,
-      false,
-      (v) => _appSwitcherEnabled = v);
+    MethodCodes.setAppSwitcherProtection,
+    false,
+    (v) => _appSwitcherEnabled = v,
+  );
 
   /// Last-known local state for app-switcher protection — same
   /// synchronous, cached-read shape as [isEnabled].
@@ -167,14 +169,18 @@ class ScreenCaptureController {
   /// keys default to "a screenshot was taken" rather than a false negative
   /// — receiving this callback at all means one occurred.
   void _handleScreenshotTaken(dynamic data) {
-    final map = data is Map ? data : const {};
-    unawaited(onResult(DetectionResult(
-      type: ScreenshotDetector.typeId,
-      detected: map['detected'] as bool? ?? true,
-      confidence: (map['confidence'] as num?)?.toDouble() ?? 1.0,
-      timestamp: DateTime.now(),
-      evidence: {'signals': map['signals'] ?? const <String>[]},
-    )));
+    final map = data is Map ? data : const <Object?, Object?>{};
+    unawaited(
+      onResult(
+        DetectionResult(
+          type: ScreenshotDetector.typeId,
+          detected: map['detected'] as bool? ?? true,
+          confidence: (map['confidence'] as num?)?.toDouble() ?? 1.0,
+          timestamp: DateTime.now(),
+          evidence: {'signals': map['signals'] ?? const <String>[]},
+        ),
+      ),
+    );
   }
 
   /// iOS sends `{'isCaptured': bool}` only — the notification itself
@@ -183,14 +189,18 @@ class ScreenCaptureController {
   /// exists), so this handler is iOS-authoritative in practice; nothing
   /// here assumes a platform, it simply reacts to whatever arrives.
   void _handleCaptureStateChanged(dynamic data) {
-    final map = data is Map ? data : const {};
+    final map = data is Map ? data : const <Object?, Object?>{};
     final isCaptured = map['isCaptured'] as bool? ?? false;
-    unawaited(onResult(DetectionResult(
-      type: ScreenRecordingDetector.typeId,
-      detected: isCaptured,
-      confidence: isCaptured ? 1.0 : 0.0,
-      timestamp: DateTime.now(),
-      evidence: {'isCaptured': isCaptured},
-    )));
+    unawaited(
+      onResult(
+        DetectionResult(
+          type: ScreenRecordingDetector.typeId,
+          detected: isCaptured,
+          confidence: isCaptured ? 1.0 : 0.0,
+          timestamp: DateTime.now(),
+          evidence: {'isCaptured': isCaptured},
+        ),
+      ),
+    );
   }
 }

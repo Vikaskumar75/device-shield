@@ -1,11 +1,19 @@
-name: flutter_shield
-description: "A new Flutter plugin project."
+name: device_shield
+description: >-
+  Runtime device-security checks for Flutter apps: root, jailbreak, emulator,
+  debugger and mock-location detection, plus screen capture protection.
 version: 0.0.1
-homepage:
+repository: https://github.com/Vikaskumar75/flutter-shield/tree/main/app
+issue_tracker: https://github.com/Vikaskumar75/flutter-shield/issues
+topics:
+  - security
+  - root-detection
+  - jailbreak-detection
 
 environment:
   sdk: ^3.12.2
-  flutter: '>=3.3.0'
+  # The Flutter release CI tests against (bundles Dart 3.12.2).
+  flutter: '>=3.44.8'
 
 dependencies:
   flutter:
@@ -35,10 +43,10 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.example.flutter_shield
-        pluginClass: FlutterShieldPlugin
+        package: com.geekyants.device_shield
+        pluginClass: DeviceShieldPlugin
       ios:
-        pluginClass: FlutterShieldPlugin
+        pluginClass: DeviceShieldPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

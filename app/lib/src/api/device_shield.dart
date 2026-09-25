@@ -7,11 +7,11 @@ import '../events/event_manager.dart';
 import '../managers/detection_manager.dart';
 import '../managers/policy_manager.dart';
 import '../managers/security_manager.dart';
-import '../models/flutter_shield_config.dart';
-import '../models/flutter_shield_exception.dart';
+import '../models/device_shield_config.dart';
+import '../models/device_shield_exception.dart';
 import '../models/sdk_state.dart';
 import '../models/security_event.dart';
-import '../platform/flutter_shield_platform_interface.dart';
+import '../platform/device_shield_platform_interface.dart';
 import '../registry/detector.dart';
 import '../registry/rule.dart';
 import '../state/lifecycle.dart';
@@ -25,10 +25,10 @@ import '../state/lifecycle.dart';
 /// new Phase 8 surface — static, per the frozen contract's own "static
 /// class, never instantiated" description of this component. Both shapes
 /// coexist deliberately: changing `getPlatformVersion` to static would
-/// break the existing test that constructs `FlutterShield()`.
-class FlutterShield {
+/// break the existing test that constructs `DeviceShield()`.
+class DeviceShield {
   Future<String?> getPlatformVersion() {
-    return FlutterShieldPlatform.instance.getPlatformVersion();
+    return DeviceShieldPlatform.instance.getPlatformVersion();
   }
 
   static ServiceContainer? _container;
@@ -39,7 +39,7 @@ class FlutterShield {
     if (container == null) {
       throw const InitializationException(
         code: 'NOT_INITIALIZED',
-        message: 'FlutterShield.initialize() must be called first',
+        message: 'DeviceShield.initialize() must be called first',
       );
     }
     return container;
@@ -54,7 +54,7 @@ class FlutterShield {
   /// caller hasn't already registered one — this class no longer holds
   /// any construction responsibility of its own.
   static Future<void> initialize({
-    FlutterShieldConfig config = const FlutterShieldConfig(),
+    DeviceShieldConfig config = const DeviceShieldConfig(),
   }) async {
     final container = _container ??= ServiceContainer();
     final initializer = _initializer ??= PluginInitializer(
@@ -96,9 +96,8 @@ class FlutterShield {
   /// [ServiceContainer] registration flow used by [initialize] — nothing
   /// disposed is ever revived.
   static Future<void> reinitialize({
-    FlutterShieldConfig config = const FlutterShieldConfig(),
-  }) =>
-      _initializer!.reinitialize(config);
+    DeviceShieldConfig config = const DeviceShieldConfig(),
+  }) => _initializer!.reinitialize(config);
 
   /// Full teardown: shuts down if still running, then clears every
   /// registration. Safe to call [initialize] again afterward — a fresh
@@ -131,11 +130,10 @@ class FlutterShield {
   static void registerCallback(
     String name,
     void Function(dynamic data) callback,
-  ) =>
-      _requireContainer.resolve<NativeBridge>().registerCallback(
-            name,
-            callback,
-          );
+  ) => _requireContainer.resolve<NativeBridge>().registerCallback(
+    name,
+    callback,
+  );
 
   static void unregisterCallback(String name) =>
       _requireContainer.resolve<NativeBridge>().unregisterCallback(name);
@@ -147,10 +145,10 @@ class FlutterShield {
   static StreamSubscription<SecurityEvent> subscribe(
     SecurityEventHandler handler, {
     SecurityEventFilter? filter,
-  }) =>
-      _requireContainer
-          .resolve<EventManager>()
-          .subscribe(handler, filter: filter);
+  }) => _requireContainer.resolve<EventManager>().subscribe(
+    handler,
+    filter: filter,
+  );
 
   /// Screenshot & Screen Recording Protection — the imperative, proactive
   /// protection command (design doc §11.1), independent of detection/
@@ -167,9 +165,8 @@ class FlutterShield {
   /// unconfirmed on real hardware (design doc §18.5;
   /// `ScreenCaptureProtection.swift`'s own warning). `false` only if
   /// called before any window exists yet.
-  static Future<bool> enableScreenshotProtection() => _requireContainer
-      .resolve<SecurityManager>()
-      .enableScreenshotProtection();
+  static Future<bool> enableScreenshotProtection() =>
+      _requireContainer.resolve<SecurityManager>().enableScreenshotProtection();
 
   /// The imperative disable — symmetric to [enableScreenshotProtection].
   static Future<bool> disableScreenshotProtection() => _requireContainer
@@ -202,8 +199,7 @@ class FlutterShield {
   /// (ARCHITECTURE_CONTRACTS.md Part 2).
   static StreamSubscription<SecurityEvent> onScreenshot(
     void Function(SecurityEvent event) handler,
-  ) =>
-      subscribe(handler, filter: (event) => event.type == 'screenshot');
+  ) => subscribe(handler, filter: (event) => event.type == 'screenshot');
 
   /// App-switcher/background-snapshot redaction (design doc §17) — the
   /// same imperative, pure-delegation shape as [enableScreenshotProtection].
@@ -231,9 +227,7 @@ class FlutterShield {
     if (container == null || !container.isRegistered<SecurityManager>()) {
       return false;
     }
-    return container
-        .resolve<SecurityManager>()
-        .isAppSwitcherProtectionEnabled;
+    return container.resolve<SecurityManager>().isAppSwitcherProtectionEnabled;
   }
 
   /// Subscribes [handler] to screen-recording-state-change events only —
@@ -242,6 +236,5 @@ class FlutterShield {
   /// `ScreenRecordingDetector.typeId`/`DetectionResult.type` exactly.
   static StreamSubscription<SecurityEvent> onScreenRecordingChanged(
     void Function(SecurityEvent event) handler,
-  ) =>
-      subscribe(handler, filter: (event) => event.type == 'screen_recording');
+  ) => subscribe(handler, filter: (event) => event.type == 'screen_recording');
 }

@@ -69,7 +69,9 @@ class _ManualTestScreenState extends State<ManualTestScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Text('$_passed passed / $_failed failed / ${_cases.length} total'),
+              Text(
+                '$_passed passed / $_failed failed / ${_cases.length} total',
+              ),
             ],
           ),
         ),
@@ -78,16 +80,19 @@ class _ManualTestScreenState extends State<ManualTestScreen> {
             children: [
               for (final entry in grouped.entries)
                 ExpansionTile(
-                  title: Text(entry.key,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  initiallyExpanded: false,
+                  title: Text(
+                    entry.key,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   children: [
-                    for (final c in entry.value) _TestCaseTile(
-                      testCase: c,
-                      onStatusChanged: (s) => _setStatus(c, s),
-                      onNotesChanged: (notes) => setState(() => c.notes = notes),
-                      onReset: () => setState(c.reset),
-                    ),
+                    for (final c in entry.value)
+                      _TestCaseTile(
+                        testCase: c,
+                        onStatusChanged: (s) => _setStatus(c, s),
+                        onNotesChanged: (notes) =>
+                            setState(() => c.notes = notes),
+                        onReset: () => setState(c.reset),
+                      ),
                   ],
                 ),
             ],
@@ -123,12 +128,16 @@ class _TestCaseTile extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(_statusIcons[testCase.status],
-                      color: _statusColors[testCase.status]),
+                  Icon(
+                    _statusIcons[testCase.status],
+                    color: _statusColors[testCase.status],
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(testCase.title,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    child: Text(
+                      testCase.title,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
                   IconButton(
                     tooltip: 'Reset',
@@ -138,8 +147,10 @@ class _TestCaseTile extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              Text(testCase.instructions,
-                  style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                testCase.instructions,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 6,
@@ -165,8 +176,10 @@ class _TestCaseTile extends StatelessWidget {
               if (testCase.lastRunAt != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text('Last run: ${testCase.lastRunAt}',
-                      style: Theme.of(context).textTheme.bodySmall),
+                  child: Text(
+                    'Last run: ${testCase.lastRunAt}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
             ],
           ),

@@ -1,10 +1,16 @@
-import 'package:flutter_shield/src/events/default_event_manager.dart';
-import 'package:flutter_shield/src/models/security_event.dart';
+import 'package:device_shield/src/events/default_event_manager.dart';
+import 'package:device_shield/src/models/security_event.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-SecurityEvent _event(String type, {EventSeverity severity = EventSeverity.info}) {
+SecurityEvent _event(
+  String type, {
+  EventSeverity severity = EventSeverity.info,
+}) {
   return SecurityEvent(
-      type: type, timestamp: DateTime.now(), severity: severity);
+    type: type,
+    timestamp: DateTime.now(),
+    severity: severity,
+  );
 }
 
 void main() {
@@ -24,10 +30,12 @@ void main() {
     test('a filtered subscription only receives matching events', () async {
       final manager = DefaultEventManager();
       final received = <SecurityEvent>[];
-      manager.subscribe(received.add,
-          filter: (e) => e.severity == EventSeverity.critical);
+      manager.subscribe(
+        received.add,
+        filter: (e) => e.severity == EventSeverity.critical,
+      );
 
-      await manager.emit(_event('low', severity: EventSeverity.info));
+      await manager.emit(_event('low'));
       await manager.emit(_event('high', severity: EventSeverity.critical));
       await Future<void>.delayed(Duration.zero);
 
@@ -88,22 +96,26 @@ void main() {
       await manager.dispose();
     });
 
-    test('a registered processor transforms the event before dispatch',
-        () async {
-      final manager = DefaultEventManager();
-      manager.addProcessor((event) async => SecurityEvent(
+    test(
+      'a registered processor transforms the event before dispatch',
+      () async {
+        final manager = DefaultEventManager();
+        manager.addProcessor(
+          (event) async => SecurityEvent(
             type: '${event.type}-processed',
             timestamp: event.timestamp,
             severity: event.severity,
-          ));
-      final received = <SecurityEvent>[];
-      manager.subscribe(received.add);
+          ),
+        );
+        final received = <SecurityEvent>[];
+        manager.subscribe(received.add);
 
-      await manager.emit(_event('a'));
-      await Future<void>.delayed(Duration.zero);
+        await manager.emit(_event('a'));
+        await Future<void>.delayed(Duration.zero);
 
-      expect(received.single.type, 'a-processed');
-      await manager.dispose();
-    });
+        expect(received.single.type, 'a-processed');
+        await manager.dispose();
+      },
+    );
   });
 }

@@ -13,13 +13,13 @@
 /// column for `NativeBridge`, `ConfigurationManager`, and
 /// `PermissionManager`. Detector-specific exception subtypes (e.g. a
 /// `RootDetectionException`) are out of scope until that detector exists.
-class FlutterShieldException implements Exception {
+class DeviceShieldException implements Exception {
   final String code;
   final String message;
   final dynamic details;
   final StackTrace? stackTrace;
 
-  const FlutterShieldException({
+  const DeviceShieldException({
     required this.code,
     required this.message,
     this.details,
@@ -27,13 +27,14 @@ class FlutterShieldException implements Exception {
   });
 
   @override
-  String toString() => 'FlutterShieldException($code): $message'
+  String toString() =>
+      'DeviceShieldException($code): $message'
       '${details != null ? '\nDetails: $details' : ''}';
 }
 
 /// Thrown by `ConfigurationManager` when a replacement config fails
 /// validation. The previous config is retained on this failure.
-class ConfigurationException extends FlutterShieldException {
+class ConfigurationException extends DeviceShieldException {
   const ConfigurationException({
     required super.code,
     required super.message,
@@ -43,7 +44,7 @@ class ConfigurationException extends FlutterShieldException {
 }
 
 /// Thrown by `PermissionManager` when a required permission is denied.
-class PermissionException extends FlutterShieldException {
+class PermissionException extends DeviceShieldException {
   final List<String> missingPermissions;
 
   const PermissionException({
@@ -57,7 +58,7 @@ class PermissionException extends FlutterShieldException {
 
 /// Thrown when SDK boot fails for a reason not covered by a more specific
 /// exception type below.
-class InitializationException extends FlutterShieldException {
+class InitializationException extends DeviceShieldException {
   const InitializationException({
     required super.code,
     required super.message,
@@ -68,7 +69,7 @@ class InitializationException extends FlutterShieldException {
 
 /// Thrown by `NativeBridge` when a native call is unreachable or exceeds
 /// its timeout.
-class NativeBridgeException extends FlutterShieldException {
+class NativeBridgeException extends DeviceShieldException {
   final String method;
   final dynamic nativeError;
 
@@ -83,7 +84,7 @@ class NativeBridgeException extends FlutterShieldException {
 
 /// Thrown by `PolicyManager` when action execution fails (e.g. no handler
 /// registered for the resolved `SecurityAction`).
-class PolicyException extends FlutterShieldException {
+class PolicyException extends DeviceShieldException {
   const PolicyException({
     required super.code,
     required super.message,
@@ -94,7 +95,7 @@ class PolicyException extends FlutterShieldException {
 
 /// Thrown by a `Detector` implementation for an unrecoverable failure.
 /// `type` mirrors `Detector.type`'s open identifier — never a closed enum.
-class DetectionException extends FlutterShieldException {
+class DetectionException extends DeviceShieldException {
   final String? type;
 
   const DetectionException({

@@ -5,7 +5,7 @@ import UIKit
 /// ⚠️ UNSUPPORTED TECHNIQUE, AND ITS EFFECT IS UNCONFIRMED — READ BEFORE
 /// TOUCHING THIS FILE. ⚠️
 ///
-/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §1.6/§7.2/§18.3
+/// doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §1.6/§7.2/§18.3
 /// investigated this exact mechanism and initially rejected it, for
 /// reasons that are all still true and are recorded here, not hidden,
 /// because a later engineer (including future us) needs them to make an
@@ -120,7 +120,8 @@ enum ScreenCaptureProtection {
   /// must treat that as an honest "not applied," not retry silently.
   static func currentRootView() -> UIView? {
     let scenes = UIApplication.shared.connectedScenes
-    let windowScene = (scenes.first { $0.activationState == .foregroundActive }
+    let windowScene =
+      (scenes.first { $0.activationState == .foregroundActive }
       ?? scenes.first) as? UIWindowScene
     let window = windowScene?.windows.first { $0.isKeyWindow } ?? windowScene?.windows.first
     return window?.rootViewController?.view

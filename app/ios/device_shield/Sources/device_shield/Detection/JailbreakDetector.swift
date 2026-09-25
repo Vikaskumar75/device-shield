@@ -5,7 +5,7 @@ import Foundation
 /// independent signal categories. Every signal is individually weak
 /// evidence; confidence is proportional to how many fire at once, the
 /// same signal-count model `EmulatorDetector`/`DebuggerDetector` already
-/// use. docs/features/ROOT_JAILBREAK_DETECTION.md.
+/// use. doc/features/ROOT_JAILBREAK_DETECTION.md.
 ///
 /// Deliberately does **not** perform a full `_dyld_image_count`/image-
 /// name scan for injected tweak dylibs — comprehensive runtime
@@ -15,13 +15,13 @@ import Foundation
 /// [dyldEnvVarSet] below is a cheap, narrow check (one specific
 /// environment variable), not that broader scan.
 enum JailbreakDetector {
-  private static let JAILBREAK_APP_PATHS = [
+  private static let jailbreakAppPaths = [
     "/Applications/Cydia.app",
     "/Applications/Sileo.app",
     "/Applications/Zebra.app",
   ]
 
-  private static let SUSPICIOUS_SYSTEM_PATHS = [
+  private static let suspiciousSystemPaths = [
     "/Library/MobileSubstrate/MobileSubstrate.dylib",
     "/bin/bash",
     "/usr/sbin/sshd",
@@ -33,12 +33,16 @@ enum JailbreakDetector {
     "/usr/bin/ssh",
   ]
 
-  private static let SIGNAL_CATEGORY_COUNT = 5.0
+  private static let signalCategoryCount = 5.0
 
   static func check() -> [String: Any] {
     return evaluate(
-      jailbreakAppPathExists: JAILBREAK_APP_PATHS.contains { FileManager.default.fileExists(atPath: $0) },
-      suspiciousSystemPathExists: SUSPICIOUS_SYSTEM_PATHS.contains { FileManager.default.fileExists(atPath: $0) },
+      jailbreakAppPathExists: jailbreakAppPaths.contains {
+        FileManager.default.fileExists(atPath: $0)
+      },
+      suspiciousSystemPathExists: suspiciousSystemPaths.contains {
+        FileManager.default.fileExists(atPath: $0)
+      },
       writableOutsideSandbox: canWriteOutsideSandbox(),
       dyldEnvVarSet: !(ProcessInfo.processInfo.environment["DYLD_INSERT_LIBRARIES"] ?? "").isEmpty,
       processSpawnSucceeded: canSpawnProcess()
@@ -64,7 +68,7 @@ enum JailbreakDetector {
     if dyldEnvVarSet { signals.append("dyld_env_var") }
     if processSpawnSucceeded { signals.append("process_spawn_check") }
 
-    let confidence = min(Double(signals.count) / SIGNAL_CATEGORY_COUNT, 1.0)
+    let confidence = min(Double(signals.count) / signalCategoryCount, 1.0)
     return [
       "detected": !signals.isEmpty,
       "confidence": confidence,
@@ -78,9 +82,9 @@ enum JailbreakDetector {
   /// non-jailbroken device; succeeding is real evidence the sandbox is
   /// not enforced.
   private static func canWriteOutsideSandbox() -> Bool {
-    let path = "/private/flutter_shield_jailbreak_test.txt"
+    let path = "/private/device_shield_jailbreak_test.txt"
     do {
-      try "flutter_shield".write(toFile: path, atomically: true, encoding: .utf8)
+      try "device_shield".write(toFile: path, atomically: true, encoding: .utf8)
       try FileManager.default.removeItem(atPath: path)
       return true
     } catch {
@@ -109,7 +113,7 @@ enum JailbreakDetector {
 
     var pid: pid_t = 0
     let argv: [UnsafeMutablePointer<CChar>?] = [strdup(path), nil]
-    defer { argv.forEach { free($0) } }
+    defer { for arg in argv { free(arg) } }
 
     let status = posix_spawn(&pid, path, nil, nil, argv, environ)
     guard status == 0 else { return false }

@@ -25,10 +25,7 @@ abstract class NativeBridge {
   });
 
   /// Sends [method] to native code without awaiting a response.
-  void invokeAsync({
-    required String method,
-    Map<String, dynamic>? arguments,
-  });
+  void invokeAsync({required String method, Map<String, dynamic>? arguments});
 
   /// Registers a handler for a native-originated callback identified by
   /// [name].

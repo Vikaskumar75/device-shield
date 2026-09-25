@@ -5,11 +5,11 @@ import 'method_channel_service.dart';
 import 'native_bridge.dart';
 
 /// Resolution 1 (this phase): the SDK's dedicated bridge channels — final,
-/// separate from the pre-existing `flutter_shield` channel (Phase 1's
+/// separate from the pre-existing `device_shield` channel (Phase 1's
 /// `getPlatformVersion`, kept unchanged for backward compatibility, never
 /// merged or renamed).
-const String kNativeBridgeMethodChannel = 'flutter_shield/native_bridge';
-const String kNativeBridgeEventChannel = 'flutter_shield/events';
+const String kNativeBridgeMethodChannel = 'device_shield/native_bridge';
+const String kNativeBridgeEventChannel = 'device_shield/events';
 
 /// Real implementation of [NativeBridge] — the sole path any Dart code
 /// takes to reach native code. See ARCHITECTURE_CONTRACTS.md Group F.
@@ -24,10 +24,12 @@ class DefaultNativeBridge implements NativeBridge {
   DefaultNativeBridge({
     MethodChannelService? methodChannelService,
     EventChannelService? eventChannelService,
-  })  : _methodChannelService = methodChannelService ??
-            MethodChannelService.withName(kNativeBridgeMethodChannel),
-        _eventChannelService = eventChannelService ??
-            EventChannelService.withName(kNativeBridgeEventChannel);
+  }) : _methodChannelService =
+           methodChannelService ??
+           MethodChannelService.withName(kNativeBridgeMethodChannel),
+       _eventChannelService =
+           eventChannelService ??
+           EventChannelService.withName(kNativeBridgeEventChannel);
 
   final MethodChannelService _methodChannelService;
   final EventChannelService _eventChannelService;
@@ -49,10 +51,7 @@ class DefaultNativeBridge implements NativeBridge {
   }
 
   @override
-  void invokeAsync({
-    required String method,
-    Map<String, dynamic>? arguments,
-  }) {
+  void invokeAsync({required String method, Map<String, dynamic>? arguments}) {
     _methodChannelService.invokeAsync(method: method, arguments: arguments);
   }
 

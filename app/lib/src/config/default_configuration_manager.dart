@@ -1,23 +1,22 @@
-import '../models/flutter_shield_config.dart';
+import '../models/device_shield_config.dart';
 import 'configuration_manager.dart';
 
 /// Real, complete implementation of [ConfigurationManager].
 ///
 /// Architecture Correction 2: this class performs no validation — it only
-/// stores, exposes, and updates whatever [FlutterShieldConfig] it is given.
-/// Validation is [FlutterShieldConfigValidator]'s responsibility, run
+/// stores, exposes, and updates whatever [DeviceShieldConfig] it is given.
+/// Validation is [DeviceShieldConfigValidator]'s responsibility, run
 /// *before* a config ever reaches this class (see
 /// `PluginInitializer`'s Configuration step). Passing an out-of-bounds
 /// config directly to this class's constructor or [updateConfig] will not
 /// throw — that's intentional; this class trusts its caller.
 class DefaultConfigurationManager implements ConfigurationManager {
-  DefaultConfigurationManager(FlutterShieldConfig initial)
-      : _current = initial;
+  DefaultConfigurationManager(DeviceShieldConfig initial) : _current = initial;
 
-  FlutterShieldConfig _current;
+  DeviceShieldConfig _current;
 
   @override
-  FlutterShieldConfig get current => _current;
+  DeviceShieldConfig get current => _current;
 
   @override
   Future<void> initialize() async {}
@@ -26,7 +25,7 @@ class DefaultConfigurationManager implements ConfigurationManager {
   Future<void> dispose() async {}
 
   @override
-  Future<void> updateConfig(FlutterShieldConfig config) async {
+  Future<void> updateConfig(DeviceShieldConfig config) async {
     _current = config;
   }
 }

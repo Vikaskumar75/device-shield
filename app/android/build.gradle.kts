@@ -1,4 +1,4 @@
-group = "com.example.flutter_shield"
+group = "com.geekyants.device_shield"
 version = "1.0-SNAPSHOT"
 
 buildscript {
@@ -26,7 +26,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.flutter_shield"
+    namespace = "com.geekyants.device_shield"
 
     compileSdk = 36
 

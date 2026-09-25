@@ -1,0 +1,45 @@
+---
+title: Platform support
+description: What device_shield supports on each platform, and what has actually been verified.
+---
+
+## Feature support
+
+| Feature | Android | iOS |
+|---|---|---|
+| Root detection | ✓ | Not applicable |
+| Jailbreak detection | Not applicable | ✓ |
+| Emulator / simulator detection | ✓ | ✓ |
+| Debugger detection | ✓ | ✓ |
+| Mock location detection | ✓ (location signals need permission) | Limited |
+| Screenshot detection | API 34+ | ✓ |
+| Screen recording detection | — | ✓ |
+| Screenshot protection | ✓ (`FLAG_SECURE`) | ✗ Doesn't work |
+| App-switcher protection | ✓ (shares `FLAG_SECURE`) | ✓ |
+
+## Verification status
+
+"Supported" means the code exists and its decision logic is unit-tested.
+Here is what has been observed running:
+
+| Feature | Android | iOS |
+|---|---|---|
+| Builds | ✓ Debug APK | ✓ Simulator build |
+| Native unit tests | ✓ 67 passing (JVM) | Not runnable yet |
+| Any runtime behaviour | ✗ Not run on a device or emulator | Simulator only (iOS 26.4) |
+| Emulator / simulator detection | Unverified | ✓ Simulator |
+| App-switcher protection | Unverified | ✓ Simulator |
+| Screenshot protection | Unverified | ✗ Tested, doesn't work |
+| Root / jailbreak on a compromised device | Unverified | Unverified |
+| Mock location with a spoofing app | Unverified | Unverified |
+| Physical devices | Not tested | Not tested |
+
+This table is updated as testing happens.
+
+## Minimum versions
+
+| | Minimum | Tested |
+|---|---|---|
+| Flutter | 3.44.8 | 3.44.8 |
+| Android | API 21 | Not run yet |
+| iOS | 15.0 | 26.4 (Simulator) |

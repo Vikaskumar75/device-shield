@@ -38,15 +38,19 @@ class _ShieldActionButtonState extends State<ShieldActionButton> {
     setState(() => _running = false);
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-      content: Text(success
-          ? (widget.successMessage ?? '${widget.label} succeeded')
-          : '${widget.label} failed — see Logs/Errors for detail'),
-      backgroundColor: success
-          ? Colors.green.shade700
-          : Theme.of(context).colorScheme.error,
-      duration: const Duration(seconds: 2),
-    ));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? (widget.successMessage ?? '${widget.label} succeeded')
+              : '${widget.label} failed — see Logs/Errors for detail',
+        ),
+        backgroundColor: success
+            ? Colors.green.shade700
+            : Theme.of(context).colorScheme.error,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override

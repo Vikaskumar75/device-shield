@@ -19,8 +19,10 @@ class ErrorScreen extends StatelessWidget {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(24),
-              child: Text('No errors captured — every SDK call so far has '
-                  'either succeeded or is not yet attempted.'),
+              child: Text(
+                'No errors captured — every SDK call so far has '
+                'either succeeded or is not yet attempted.',
+              ),
             ),
           );
         }
@@ -29,7 +31,8 @@ class ErrorScreen extends StatelessWidget {
           children: [
             const InfoBanner(
               icon: Icons.error_outline,
-              message: 'Every exception thrown by an SDK call in this app '
+              message:
+                  'Every exception thrown by an SDK call in this app '
                   'is caught here — never a crash. Try "Initialize" twice '
                   'in a row to see ALREADY_INITIALIZING captured live.',
             ),
@@ -39,29 +42,36 @@ class ErrorScreen extends StatelessWidget {
                 child: ExpansionTile(
                   leading: const Icon(Icons.error, color: Colors.red),
                   title: Text(error.operation),
-                  subtitle: Text(error.summary,
-                      maxLines: 2, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    error.summary,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Occurred: ${error.timestamp.toIso8601String()}'),
+                          Text(
+                            'Occurred: ${error.timestamp.toIso8601String()}',
+                          ),
                           const SizedBox(height: 8),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: SelectableText(
                               '${error.error}\n\n${error.stackTrace}',
                               style: const TextStyle(
-                                  fontFamily: 'monospace', fontSize: 11),
+                                fontFamily: 'monospace',
+                                fontSize: 11,
+                              ),
                             ),
                           ),
                         ],

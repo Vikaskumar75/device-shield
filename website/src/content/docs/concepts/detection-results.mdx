@@ -1,0 +1,74 @@
+---
+title: Detection results
+description: Every field of a DetectionResult, and how to interpret it.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Every detector's `check()` returns a `DetectionResult`:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `type` | `String` | Which detector produced it: `root`, `jailbreak`, `emulator`, `debugger`, `mock_location`, `screen_recording`, `screenshot` |
+| `detected` | `bool` | At least one signal fired |
+| `confidence` | `double` | Fraction of the detector's signals that fired, 0.0 to 1.0 |
+| `evidence` | `Map<String, dynamic>` | What the check found. See [Evidence](#evidence) |
+| `status` | `DetectionStatus` | `completed`, or `failed` if the check couldn't run |
+| `timestamp` | `DateTime` | When the result was produced |
+
+Two convenience getters: `riskScore` (`confidence` when detected, else 0) and
+`isCritical` (detected with confidence above 0.8).
+
+## `status`: did the check run?
+
+A check that times out, hits a platform error or gets a malformed response
+returns `status: DetectionStatus.failed` with `detected: false` and empty
+`evidence`. It never throws.
+
+<Aside type="caution">
+  A failed check isn't a clean result. Always check `status` before treating
+  `detected: false` as "safe".
+</Aside>
+
+## `detected` and `confidence`
+
+`detected` is `true` as soon as **any one** signal fires, whether it's strong
+or weak. `confidence` counts how many fired, but treats every signal as equal.
+
+So neither is a good decision on its own:
+
+- An emulator reports `root` detected because of one weak signal.
+- A rooted phone with Magisk hidden may fire only one strong signal, giving
+  low confidence.
+
+**Decide on the signals.** The [signals reference](../../reference/signals/)
+marks each as strong, medium or weak.
+
+## Evidence
+
+`evidence` depends on the detector:
+
+| Detector | Keys |
+|---|---|
+| `root`, `jailbreak` | `signals` (list of strings), `applicable` |
+| `emulator`, `debugger` | `signals` |
+| `mock_location` | `signals`, `applicable`, `permissionGranted`, `locationAvailable` |
+| `screen_recording` | `isCaptured`, `supported` |
+| any, when `failed` | empty |
+
+Reading signals safely:
+
+```dart
+final signals = (result.evidence['signals'] as List?)?.cast<String>() ?? const [];
+```
+
+## `applicable`: does the check exist on this platform?
+
+`RootDetector` on iOS and `JailbreakDetector` on Android return
+`detected: false` with `evidence['applicable'] == false`. The check didn't run
+because it doesn't exist on that platform, which is different from a clean
+result.
+
+```dart
+final applicable = result.evidence['applicable'] as bool? ?? true;
+```

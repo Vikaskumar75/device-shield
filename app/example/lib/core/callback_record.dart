@@ -1,4 +1,4 @@
-/// Tracks one `FlutterShield.registerCallback(name, ...)` registration —
+/// Tracks one `DeviceShield.registerCallback(name, ...)` registration —
 /// the Callbacks screen's own bookkeeping, not an SDK type.
 class CallbackRecord {
   CallbackRecord({required this.name});

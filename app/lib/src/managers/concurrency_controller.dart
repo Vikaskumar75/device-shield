@@ -67,8 +67,7 @@ class ConcurrencyController {
   Future<List<R>> run<T, R>({
     required List<T> items,
     required Future<R> Function(T item) task,
-    required R? Function(T item, Object error, StackTrace stackTrace)
-        onError,
+    required R? Function(T item, Object error, StackTrace stackTrace) onError,
     Duration? timeout,
   }) async {
     if (_disposed) {
@@ -97,16 +96,18 @@ class ConcurrencyController {
         final item = items[index];
         try {
           final future = task(item);
-          outcomes[index] =
-              await (timeout == null ? future : future.timeout(timeout));
+          outcomes[index] = await (timeout == null
+              ? future
+              : future.timeout(timeout));
         } catch (error, stackTrace) {
           outcomes[index] = onError(item, error, stackTrace);
         }
       }
     }
 
-    final workerCount =
-        maxConcurrent < items.length ? maxConcurrent : items.length;
+    final workerCount = maxConcurrent < items.length
+        ? maxConcurrent
+        : items.length;
     await Future.wait(List.generate(workerCount, (_) => worker()));
 
     return [for (final outcome in outcomes) ?outcome];

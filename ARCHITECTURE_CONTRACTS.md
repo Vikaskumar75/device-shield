@@ -1,8 +1,8 @@
-# FlutterShield — Architecture Contract Verification
+# DeviceShield — Architecture Contract Verification
 
 **Purpose of this document:** freeze every architecture component's contract before Phase 2 writes a single interface. Nothing here is implementation — no Dart classes, no method bodies. This is the specification implementation must not silently drift from. Once approved, Phase 2 implements exactly what's frozen here — no more, no less.
 
-**Scope:** all 20 components from `ARCHITECTURE.md` — the 15 you named plus `FlutterShieldWidget`, `PermissionManager`, `SecurityStateManager`, and the two contracts (`Detector`, `Rule`), since the goal is a complete freeze, not a partial one.
+**Scope:** all 20 components from `ARCHITECTURE.md` — the 15 you named plus `DeviceShieldWidget`, `PermissionManager`, `SecurityStateManager`, and the two contracts (`Detector`, `Rule`), since the goal is a complete freeze, not a partial one.
 
 **One correction identified during this verification** is called out inline where it occurs (§Circular Dependency Verification) — a real circular dependency was found between `SecurityManager` and `LifecycleManager` as previously described, and is resolved here before it reaches implementation.
 
@@ -12,7 +12,7 @@
 
 ### Group A — Public Surface
 
-#### `FlutterShield`
+#### `DeviceShield`
 | Attribute | Definition |
 |---|---|
 | Purpose | Single entry point — the only symbol a host app ever imports |
@@ -29,15 +29,15 @@
 | Failure behavior | Never catches — propagates exceptions to the caller's `try/catch` or the `onError` callback |
 | Extension point | No — but it's the surface *through which* extensions are registered (`registerDetector`, `addRule`) |
 
-#### `FlutterShieldWidget`
+#### `DeviceShieldWidget`
 | Attribute | Definition |
 |---|---|
 | Purpose | Declarative alternative to manual `initialize()`/`shutdown()` |
-| Responsibilities | Call `FlutterShield.initialize()` on mount; render loading/error/child by status; call `shutdown()` on unmount |
+| Responsibilities | Call `DeviceShield.initialize()` on mount; render loading/error/child by status; call `shutdown()` on unmount |
 | Owner (creates it) | Host app's widget tree |
 | Lifetime | Tied to Flutter widget lifecycle (mount → unmount) |
 | Pattern | Scoped (one instance per mount point) |
-| Dependencies | `FlutterShield` |
+| Dependencies | `DeviceShield` |
 | Dependents | Host application code |
 | Visibility | Public |
 | Thread ownership | Dart main isolate (UI thread) |
@@ -55,7 +55,7 @@
 |---|---|
 | Purpose | The only code path that constructs and wires every other service, in fixed order |
 | Responsibilities | Validate config; construct + register each service in order; start monitoring; emit `initialized`; unwind to `failure` on any step's exception |
-| Owner (creates it) | `FlutterShield.initialize()` |
+| Owner (creates it) | `DeviceShield.initialize()` |
 | Lifetime | Transient — exists only for the duration of one `initialize()` call |
 | Pattern | Factory-invoked, single-use — never a singleton, never reused |
 | Dependencies | `ServiceContainer` + every service it constructs (§Part 3, Init Matrix) |
@@ -130,7 +130,7 @@
 | Owner (creates it) | `PluginInitializer`, step 3 |
 | Lifetime | SDK lifetime |
 | Pattern | Singleton |
-| Dependencies | `FlutterShieldConfig` model, Validator, optional Persistence |
+| Dependencies | `DeviceShieldConfig` model, Validator, optional Persistence |
 | Dependents | Every manager (read `.current` at point of use) |
 | Visibility | Internal (the config *values* it holds surface publicly; the manager itself doesn't) |
 | Thread ownership | Dart main isolate |
@@ -152,8 +152,8 @@
 | Lifetime | SDK's entire running lifetime |
 | Pattern | Singleton |
 | Dependencies | `DetectionManager`, `PolicyManager`, `EventManager`, `NativeBridge`, `ConfigurationManager`, `PermissionManager`, `Logger`, `SecurityStateManager` |
-| Dependents | `FlutterShield`, `LifecycleManager` (via the inverted callback contract — see §Circular Dependency Verification) |
-| Visibility | Internal — fully wrapped by `FlutterShield` |
+| Dependents | `DeviceShield`, `LifecycleManager` (via the inverted callback contract — see §Circular Dependency Verification) |
+| Visibility | Internal — fully wrapped by `DeviceShield` |
 | Thread ownership | Dart main isolate for orchestration; dispatches detector batches to the bounded-concurrency pool |
 | Initialization order | Step 8 (last manager constructed) |
 | Disposal order | First — pauses monitoring before any dependency is torn down |
@@ -170,7 +170,7 @@
 | Pattern | Singleton |
 | Dependencies | `DetectorRegistry`, `Detector` contract, `NativeBridge`, `DetectionCache` |
 | Dependents | `SecurityManager` |
-| Visibility | Internal (`registerDetector` reachable publicly only via `FlutterShield` → `SecurityManager`) |
+| Visibility | Internal (`registerDetector` reachable publicly only via `DeviceShield` → `SecurityManager`) |
 | Thread ownership | Dart main isolate; launches bounded-concurrency `Future`s for detector batches |
 | Initialization order | Step 6 |
 | Disposal order | Third (after `SecurityManager` pauses, before `EventManager`) — disposes each registered detector, then itself |
@@ -204,7 +204,7 @@
 | Pattern | Singleton |
 | Dependencies | None structurally — leaf service |
 | Dependents | `SecurityManager`, `PolicyManager`, `EventChannelService` (native-pushed events reach it directly, not via `NativeBridge` → `DetectionManager`) |
-| Visibility | Internal emit path; `FlutterShield.events` is the public read-only view |
+| Visibility | Internal emit path; `DeviceShield.events` is the public read-only view |
 | Thread ownership | Dart main isolate; broadcast `StreamController`, sequential per-subscriber delivery |
 | Initialization order | Step 5 |
 | Disposal order | Second (after `DetectionManager`, before `NativeBridge`) — closes its `StreamController` |
@@ -270,7 +270,7 @@
 
 ### Group F — Bridge & Platform
 
-> **Correction (Phase 7 post-review, PlatformAdapter verification):** `PlatformAdapter` is removed from `NativeBridge`'s dependency chain below. `MethodChannelService`/`EventChannelService` construct their channels directly via Flutter's default binary messenger — the same pattern Phase 1's `MethodChannelFlutterShield` already used — rather than obtaining bindings through `FlutterShieldPlatform`. Full reasoning and the corrected dependency graph are in `ARCHITECTURE.md`'s Phase 7 correction note. `PlatformAdapter`'s entry is kept below, reclassified as legacy-only (§ below), rather than deleted, since `FlutterShieldPlatform`/`MethodChannelFlutterShield` still exist and still back the unrelated Phase 1 `getPlatformVersion()` path.
+> **Correction (Phase 7 post-review, PlatformAdapter verification):** `PlatformAdapter` is removed from `NativeBridge`'s dependency chain below. `MethodChannelService`/`EventChannelService` construct their channels directly via Flutter's default binary messenger — the same pattern Phase 1's `MethodChannelDeviceShield` already used — rather than obtaining bindings through `DeviceShieldPlatform`. Full reasoning and the corrected dependency graph are in `ARCHITECTURE.md`'s Phase 7 correction note. `PlatformAdapter`'s entry is kept below, reclassified as legacy-only (§ below), rather than deleted, since `DeviceShieldPlatform`/`MethodChannelDeviceShield` still exist and still back the unrelated Phase 1 `getPlatformVersion()` path.
 
 #### `NativeBridge`
 | Attribute | Definition |
@@ -327,12 +327,12 @@
 | Attribute | Definition |
 |---|---|
 | Purpose | Originally: the federated-plugin swap point `NativeBridge` would be built against. **As of the Phase 7 post-review, this purpose is obsolete** — see the correction note above and `ARCHITECTURE.md` for the full "why." Retained purpose today: backs the pre-existing, unrelated `getPlatformVersion()` call (Phase 1), kept unchanged for backward compatibility. |
-| Responsibilities | Expose `FlutterShieldPlatform`'s abstract surface; `MethodChannelFlutterShield` constructs the one legacy channel |
+| Responsibilities | Expose `DeviceShieldPlatform`'s abstract surface; `MethodChannelDeviceShield` constructs the one legacy channel |
 | Owner (creates it) | Package load time, or a platform package's `registerWith()` |
 | Lifetime | **Process lifetime** — the one component that outlives individual `initialize()`/`shutdown()` cycles |
 | Pattern | Singleton — but a *process* singleton, not an SDK-lifetime singleton like everything else in this table |
 | Dependencies | `plugin_platform_interface` package |
-| Dependents | **None within the Bridge architecture.** `MethodChannelService`/`EventChannelService` do not depend on it (corrected this pass). Its only remaining caller is the legacy `FlutterShield.getPlatformVersion()` path, outside this component graph. |
+| Dependents | **None within the Bridge architecture.** `MethodChannelService`/`EventChannelService` do not depend on it (corrected this pass). Its only remaining caller is the legacy `DeviceShield.getPlatformVersion()` path, outside this component graph. |
 | Visibility | Public — deliberately, so platform packages can register their own implementation, a capability that remains available even though nothing in the frozen architecture currently exercises it |
 | Thread ownership | Platform thread (binary messenger, channel construction) |
 | Initialization order | Not part of the numbered boot sequence |
@@ -354,7 +354,7 @@
 | Pattern | Singleton |
 | Dependencies | `SecurityStatus` enum, transition-guard rules |
 | Dependents | `SecurityManager` (owner), `LifecycleManager` (reads current state before acting), `RecoveryStrategy` (observes `failure`) |
-| Visibility | Write: internal only. Read: public via `FlutterShield.status` |
+| Visibility | Write: internal only. Read: public via `DeviceShield.status` |
 | Thread ownership | Dart main isolate; broadcast `StreamController` |
 | Initialization order | Effectively step 0b — alongside `ServiceContainer`, before `Logger` |
 | Disposal order | Closes its `StreamController` as part of `SecurityManager`'s teardown |
@@ -386,14 +386,14 @@
 
 | Component | Depends On | Used By | Allowed Dependencies | Forbidden Dependencies |
 |---|---|---|---|---|
-| `FlutterShield` | `PluginInitializer`, `SecurityManager` | Host app | `SecurityManager` only | Any manager's internals, any concrete `Detector`/`Rule` |
-| `FlutterShieldWidget` | `FlutterShield` | Host app | `FlutterShield` only | `SecurityManager` or below, directly |
-| `PluginInitializer` | `ServiceContainer` + every service it constructs | `FlutterShield` (call site only) | Every service, `ServiceContainer` | Nothing — it's the one component allowed to see everything, once |
+| `DeviceShield` | `PluginInitializer`, `SecurityManager` | Host app | `SecurityManager` only | Any manager's internals, any concrete `Detector`/`Rule` |
+| `DeviceShieldWidget` | `DeviceShield` | Host app | `DeviceShield` only | `SecurityManager` or below, directly |
+| `PluginInitializer` | `ServiceContainer` + every service it constructs | `DeviceShield` (call site only) | Every service, `ServiceContainer` | Nothing — it's the one component allowed to see everything, once |
 | `ServiceContainer` | Nothing | Every service | Nothing | Any service (would invert the lookup direction) |
 | `Logger` | None hard; soft optional read of `ConfigurationManager` | Every component | `ConfigurationManager` (read-only, optional) | Any manager, any detector/rule |
 | `PermissionManager` | `SecurityProfile`, platform permission APIs | `SecurityManager` | Platform permission APIs only | Any manager |
-| `ConfigurationManager` | `FlutterShieldConfig`, Validator, Persistence | Every manager | Its own model/validator/persistence only | Any manager (would invert config ownership) |
-| `SecurityManager` | `DetectionManager`, `PolicyManager`, `EventManager`, `NativeBridge`, `ConfigurationManager`, `PermissionManager`, `Logger`, `SecurityStateManager` | `FlutterShield` | The above only | Any concrete `Detector`/`Rule`, `DetectorRegistry` directly (must go through `DetectionManager`) |
+| `ConfigurationManager` | `DeviceShieldConfig`, Validator, Persistence | Every manager | Its own model/validator/persistence only | Any manager (would invert config ownership) |
+| `SecurityManager` | `DetectionManager`, `PolicyManager`, `EventManager`, `NativeBridge`, `ConfigurationManager`, `PermissionManager`, `Logger`, `SecurityStateManager` | `DeviceShield` | The above only | Any concrete `Detector`/`Rule`, `DetectorRegistry` directly (must go through `DetectionManager`) |
 | `DetectionManager` | `DetectorRegistry`, `Detector` contract, `NativeBridge`, `DetectionCache` | `SecurityManager` | `Detector` contract only, never a concrete detector type | `PolicyManager`, `EventManager` (must not reach past its own boundary) |
 | `PolicyManager` | `Rule` contract, `ActionHandler` registry, `EventManager` | `SecurityManager` | `Rule` contract only, never a concrete rule type | `DetectionManager`, any concrete `Detector` |
 | `EventManager` | Nothing structurally | `SecurityManager`, `PolicyManager`, `EventChannelService` | Its own `EventProcessor`/`SecurityEventFilter` collaborators | Any manager (must stay a leaf) |

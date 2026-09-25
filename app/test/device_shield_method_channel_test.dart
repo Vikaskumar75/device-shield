@@ -1,12 +1,12 @@
+import 'package:device_shield/src/platform/device_shield_method_channel.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_shield/src/platform/flutter_shield_method_channel.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  MethodChannelFlutterShield platform = MethodChannelFlutterShield();
-  const MethodChannel channel = MethodChannel('flutter_shield');
+  final MethodChannelDeviceShield platform = MethodChannelDeviceShield();
+  const MethodChannel channel = MethodChannel('device_shield');
 
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

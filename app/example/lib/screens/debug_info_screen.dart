@@ -33,14 +33,18 @@ class DebugInfoScreen extends StatelessWidget {
               title: 'Platform',
               children: [
                 StatusRow(
-                    label: 'Operating system', value: Platform.operatingSystem),
+                  label: 'Operating system',
+                  value: Platform.operatingSystem,
+                ),
                 StatusRow(
-                    label: 'OS version', value: Platform.operatingSystemVersion),
+                  label: 'OS version',
+                  value: Platform.operatingSystemVersion,
+                ),
                 StatusRow(
-                    label: 'Reported platform version',
-                    value: controller.platformVersion),
-                StatusRow(
-                    label: 'Locale', value: Platform.localeName),
+                  label: 'Reported platform version',
+                  value: controller.platformVersion,
+                ),
+                StatusRow(label: 'Locale', value: Platform.localeName),
               ],
             ),
             SectionCard(
@@ -49,19 +53,20 @@ class DebugInfoScreen extends StatelessWidget {
                 StatusRow(label: 'Dart version', value: Platform.version),
                 StatusRow(label: 'Build mode', value: _buildMode()),
                 StatusRow(
-                    label: 'Architecture (ABI)',
-                    value: Abi.current().toString()),
+                  label: 'Architecture (ABI)',
+                  value: Abi.current().toString(),
+                ),
                 StatusRow(
-                    label: 'Number of processors',
-                    value: '${Platform.numberOfProcessors}'),
+                  label: 'Number of processors',
+                  value: '${Platform.numberOfProcessors}',
+                ),
               ],
             ),
             SectionCard(
               title: 'SDK',
               children: [
                 StatusRow(label: 'SDK state', value: controller.status.name),
-                StatusRow(
-                    label: 'Package version', value: '0.0.1'),
+                const StatusRow(label: 'Package version', value: '0.0.1'),
               ],
             ),
           ],

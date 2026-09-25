@@ -1,4 +1,4 @@
-package com.example.flutter_shield
+package com.geekyants.device_shield
 
 import android.app.Activity
 import android.content.Context
@@ -30,9 +30,9 @@ import kotlin.test.assertTrue
  * you can run them directly from IDEs that support JUnit such as Android Studio.
  */
 
-internal class FlutterShieldPluginTest {
+internal class DeviceShieldPluginTest {
     /**
-     * Builds a plugin with [FlutterShieldPlugin.onAttachedToEngine] already
+     * Builds a plugin with [DeviceShieldPlugin.onAttachedToEngine] already
      * run against a mocked [FlutterPlugin.FlutterPluginBinding] whose
      * `applicationContext` is a mocked [Context] reporting [debuggable] via
      * its `applicationInfo.flags` — the dependency `checkDebugger`'s
@@ -43,8 +43,8 @@ internal class FlutterShieldPluginTest {
      * Mockito mock otherwise returns `null` for `packageManager` itself,
      * not a `PackageManager` that throws per-lookup.
      */
-    private fun attachedPlugin(debuggable: Boolean = false): FlutterShieldPlugin {
-        val plugin = FlutterShieldPlugin()
+    private fun attachedPlugin(debuggable: Boolean = false): DeviceShieldPlugin {
+        val plugin = DeviceShieldPlugin()
         val messenger: BinaryMessenger = mock(BinaryMessenger::class.java)
         val context: Context = mock(Context::class.java)
         val applicationInfo = ApplicationInfo().apply {
@@ -65,7 +65,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_getPlatformVersion_returnsExpectedValue() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
 
         val call = MethodCall("getPlatformVersion", null)
         val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
@@ -76,7 +76,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_checkEmulator_returnsAnEmulatorDetectionMap() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val call = MethodCall("checkEmulator", null)
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -149,7 +149,7 @@ internal class FlutterShieldPluginTest {
     fun onMethodCall_checkJailbreak_returnsTheHonestNotApplicableMap() {
         // "Jailbreak" is not an Android concept — never a false "not
         // jailbroken".
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val call = MethodCall("checkJailbreak", null)
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -198,7 +198,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_setScreenshotProtection_withNoActivityAttached_reportsNotApplied() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val call = MethodCall("setScreenshotProtection", mapOf("enabled" to true))
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -209,7 +209,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_setScreenshotProtection_enabled_setsFlagSecureAndReportsApplied() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val (binding, _, window) = activityBinding()
         plugin.onAttachedToActivity(binding)
         val call = MethodCall("setScreenshotProtection", mapOf("enabled" to true))
@@ -223,7 +223,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_setScreenshotProtection_disabled_clearsFlagSecureAndReportsApplied() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val (binding, _, window) = activityBinding()
         plugin.onAttachedToActivity(binding)
         val call = MethodCall("setScreenshotProtection", mapOf("enabled" to false))
@@ -237,7 +237,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_setScreenshotProtection_afterActivityDetached_reportsNotApplied() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val (binding, _, _) = activityBinding()
         plugin.onAttachedToActivity(binding)
         plugin.onDetachedFromActivity()
@@ -251,7 +251,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_setAppSwitcherProtection_withNoActivityAttached_reportsNotApplied() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val call = MethodCall("setAppSwitcherProtection", mapOf("enabled" to true))
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -262,12 +262,12 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_setAppSwitcherProtection_enabled_setsTheSameFlagSecureAsScreenshotProtection() {
-        // Documented alias on Android — see FlutterShieldPlugin.kt's own
+        // Documented alias on Android — see DeviceShieldPlugin.kt's own
         // comment on the setAppSwitcherProtection case: this is
         // intentionally the identical FLAG_SECURE mechanism, not a second
         // one, because Recents redaction is already that flag's side
         // effect (design doc §7.1/§18.1).
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val (binding, _, window) = activityBinding()
         plugin.onAttachedToActivity(binding)
         val call = MethodCall("setAppSwitcherProtection", mapOf("enabled" to true))
@@ -281,7 +281,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_setAppSwitcherProtection_disabled_clearsFlagSecureAndReportsApplied() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val (binding, _, window) = activityBinding()
         plugin.onAttachedToActivity(binding)
         val call = MethodCall("setAppSwitcherProtection", mapOf("enabled" to false))
@@ -295,7 +295,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_isScreenCaptureActive_returnsTheHonestUnsupportedMap() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val call = MethodCall("isScreenCaptureActive", null)
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -309,11 +309,11 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onDetachedFromEngine_alsoClearsAnyAttachedActivity() {
-        // Defensive cleanup — see FlutterShieldPlugin's own doc comment on
+        // Defensive cleanup — see DeviceShieldPlugin's own doc comment on
         // onDetachedFromEngine. Verified indirectly: setScreenshotProtection
         // reports not-applied after full engine detach, exactly as it
         // would after onDetachedFromActivity alone.
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val messenger: BinaryMessenger = mock(BinaryMessenger::class.java)
         val engineBinding: FlutterPlugin.FlutterPluginBinding =
             mock(FlutterPlugin.FlutterPluginBinding::class.java)
@@ -333,7 +333,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onMethodCall_unknownBridgeMethod_returnsNotImplemented() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val call = MethodCall("someFutureSecurityCheck", null)
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -344,7 +344,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun sendEvent_withActiveListener_deliversTheCallbackDataShape() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val sink: EventChannel.EventSink = mock(EventChannel.EventSink::class.java)
         plugin.onListen(null, sink)
 
@@ -355,7 +355,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun sendEvent_withNullData_forwardsNullDataUnchanged() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val sink: EventChannel.EventSink = mock(EventChannel.EventSink::class.java)
         plugin.onListen(null, sink)
 
@@ -366,7 +366,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun sendEvent_withNoActiveListener_isANoOpRatherThanThrowing() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
 
         // No listener has ever attached — this must simply not throw.
         plugin.sendEvent("onSecurityEvent", "root_detected")
@@ -374,7 +374,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onCancel_stopsRoutingToThePreviousSink() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val sink: EventChannel.EventSink = mock(EventChannel.EventSink::class.java)
         plugin.onListen(null, sink)
 
@@ -386,7 +386,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onListen_replacesAnyPreviouslyRegisteredSink() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val firstSink: EventChannel.EventSink = mock(EventChannel.EventSink::class.java)
         val secondSink: EventChannel.EventSink = mock(EventChannel.EventSink::class.java)
         plugin.onListen(null, firstSink)
@@ -400,7 +400,7 @@ internal class FlutterShieldPluginTest {
 
     @Test
     fun onDetachedFromEngine_removesBothChannelHandlersAndClearsTheEventSink() {
-        val plugin = FlutterShieldPlugin()
+        val plugin = DeviceShieldPlugin()
         val messenger: BinaryMessenger = mock(BinaryMessenger::class.java)
         val binding: FlutterPlugin.FlutterPluginBinding =
             mock(FlutterPlugin.FlutterPluginBinding::class.java)

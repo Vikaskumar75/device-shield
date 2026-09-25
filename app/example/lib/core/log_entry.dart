@@ -7,7 +7,7 @@ enum AppLogLevel { debug, info, warning, error }
 /// One entry in the example app's own action log.
 ///
 /// IMPORTANT, documented SDK limitation (see MANUAL_TEST_PLAN.md and the
-/// About screen): `FlutterShield` never exposes the SDK's internal
+/// About screen): `DeviceShield` never exposes the SDK's internal
 /// `Logger`/`LogSink` extension point publicly — there is no supported way
 /// for a host app to intercept the SDK's own `ConsoleLogger` output (it
 /// only ever reaches the system console via `print`). This log therefore

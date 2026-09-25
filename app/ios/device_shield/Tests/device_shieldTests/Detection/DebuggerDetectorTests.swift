@@ -1,5 +1,6 @@
 import XCTest
-@testable import flutter_shield
+
+@testable import device_shield
 
 /// `DebuggerDetector.evaluate()` (the pure decision logic, taking the
 /// `sysctl`-derived boolean as a parameter) is exercised with synthetic

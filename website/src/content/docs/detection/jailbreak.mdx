@@ -1,0 +1,42 @@
+---
+title: Jailbreak detection (iOS)
+description: How device_shield detects jailbroken iOS devices and what each signal means.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+```dart
+final result = await JailbreakDetector(nativeBridge: DefaultNativeBridge()).check();
+```
+
+iOS only. On Android the result is `detected: false` with
+`evidence['applicable'] == false`. Use [root detection](../root/) there.
+
+## Signals
+
+| Signal | What it checks | Guidance |
+|---|---|---|
+| `jailbreak_app_paths` | `/Applications/Cydia.app`, `Sileo.app` or `Zebra.app` exists | Strong |
+| `suspicious_system_paths` | One of 9 paths that stock iOS doesn't expose, such as `/Library/MobileSubstrate/MobileSubstrate.dylib`, `/bin/bash`, `/usr/sbin/sshd`, `/etc/apt` | Strong on devices |
+| `writable_outside_sandbox` | The app can write, then delete, a file under `/private/` | Strong |
+| `process_spawn_check` | `posix_spawn("/bin/ls")` succeeds, which the sandbox normally blocks | Strong on devices |
+| `dyld_env_var` | `DYLD_INSERT_LIBRARIES` is set, meaning libraries are being injected | Strong |
+
+## How the result is computed
+
+- `detected` is `true` if any signal fires.
+- `confidence` is the number of signals that fired divided by 5.
+
+## Limitations
+
+<Aside type="caution" title="Test on a physical device">
+  On the Simulator, paths from the host Mac may be visible, so jailbreak
+  signals can fire on a stock Simulator. None of these checks has been
+  verified on a physical jailbroken device yet.
+</Aside>
+
+- Rootless jailbreaks (Dopamine, palera1n rootless) install under
+  `/var/jb` and may not trigger the classic path checks.
+- Jailbreak-hiding tweaks can hook the file-system calls these checks use.
+- `posix_spawn` and writes to `/private/` may draw questions in App Store
+  review. See [iOS setup](../../platforms/ios/#app-store-review).

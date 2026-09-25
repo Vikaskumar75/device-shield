@@ -2,10 +2,10 @@ import Flutter
 import UIKit
 import XCTest
 
+@testable import device_shield
+
 // If your plugin has been explicitly set to "type: .dynamic" in the Package.swift,
 // you will need to add your plugin as a dependency of RunnerTests within Xcode.
-
-@testable import flutter_shield
 
 // This demonstrates a simple unit test of the Swift portion of this plugin's implementation.
 //
@@ -14,7 +14,7 @@ import XCTest
 class RunnerTests: XCTestCase {
 
   func testGetPlatformVersion() {
-    let plugin = FlutterShieldPlugin()
+    let plugin = DeviceShieldPlugin()
 
     let call = FlutterMethodCall(methodName: "getPlatformVersion", arguments: [])
 

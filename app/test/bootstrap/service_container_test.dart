@@ -1,5 +1,5 @@
-import 'package:flutter_shield/src/bootstrap/service_container.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
+import 'package:device_shield/src/bootstrap/service_container.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 abstract class _Greeter {
@@ -54,25 +54,33 @@ void main() {
   });
 
   group('ServiceContainer error contract', () {
-    test('resolve throws UNRESOLVED_DEPENDENCY when nothing is registered',
-        () {
+    test('resolve throws UNRESOLVED_DEPENDENCY when nothing is registered', () {
       final container = ServiceContainer();
       expect(
         () => container.resolve<_Greeter>(),
-        throwsA(isA<InitializationException>()
-            .having((e) => e.code, 'code', 'UNRESOLVED_DEPENDENCY')),
+        throwsA(
+          isA<InitializationException>().having(
+            (e) => e.code,
+            'code',
+            'UNRESOLVED_DEPENDENCY',
+          ),
+        ),
       );
     });
 
-    test('registering the same type twice throws DUPLICATE_REGISTRATION',
-        () {
+    test('registering the same type twice throws DUPLICATE_REGISTRATION', () {
       final container = ServiceContainer();
       container.registerSingleton<_Greeter>(_EnglishGreeter());
 
       expect(
         () => container.registerSingleton<_Greeter>(_EnglishGreeter()),
-        throwsA(isA<InitializationException>()
-            .having((e) => e.code, 'code', 'DUPLICATE_REGISTRATION')),
+        throwsA(
+          isA<InitializationException>().having(
+            (e) => e.code,
+            'code',
+            'DUPLICATE_REGISTRATION',
+          ),
+        ),
       );
     });
 
@@ -83,8 +91,13 @@ void main() {
 
       expect(
         () => container.resolve<_A>(),
-        throwsA(isA<InitializationException>()
-            .having((e) => e.code, 'code', 'CIRCULAR_DEPENDENCY')),
+        throwsA(
+          isA<InitializationException>().having(
+            (e) => e.code,
+            'code',
+            'CIRCULAR_DEPENDENCY',
+          ),
+        ),
       );
     });
   });
@@ -105,8 +118,7 @@ void main() {
       container.unregister<_Greeter>();
 
       expect(container.isRegistered<_Greeter>(), isFalse);
-      expect(
-          () => container.resolve<_Greeter>(), throwsA(isA<Exception>()));
+      expect(() => container.resolve<_Greeter>(), throwsA(isA<Exception>()));
     });
 
     test('reset clears every registration', () {
@@ -126,8 +138,9 @@ void main() {
       container.reset();
 
       expect(
-          () => container.registerSingleton<_Greeter>(_EnglishGreeter()),
-          returnsNormally);
+        () => container.registerSingleton<_Greeter>(_EnglishGreeter()),
+        returnsNormally,
+      );
     });
   });
 }

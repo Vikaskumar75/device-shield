@@ -11,7 +11,7 @@ import '../managers/manager.dart';
 ///
 /// M10's `SecurityProfile` is documented as this component's source for
 /// deriving a required-permission set, but nothing yet threads a profile
-/// through `FlutterShield.initialize()` — `SecurityProfile` exists only as
+/// through `DeviceShield.initialize()` — `SecurityProfile` exists only as
 /// a data shape today. Until that lands, the required set is whatever the
 /// caller supplies directly; an empty set (today's only reachable
 /// scenario through the public API) is always satisfied trivially. See

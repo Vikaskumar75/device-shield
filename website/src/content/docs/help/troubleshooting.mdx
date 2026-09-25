@@ -1,0 +1,55 @@
+---
+title: Troubleshooting
+description: Common problems with device_shield and how to fix them.
+---
+
+## iOS build: "unable to override package 'device_shield'"
+
+This only happens when building the plugin's own example app, not your app.
+See [Installation](../../installation/#ios-swift-package-manager-and-cocoapods).
+
+## Every emulator reports rooted
+
+Expected. Emulators set `ro.debuggable=1`, which fires the weak
+`dangerous_system_props` signal. Decide on strong signals instead of
+`detected`. See [Root detection](../../detection/root/).
+
+## Debug builds report a debugger
+
+Expected. Debug builds set `debuggable_flag`. Test on a release build.
+
+## Mock location never detects a location
+
+Check `result.evidence['permissionGranted']`. The SDK doesn't request location
+permission. Your app must. On iOS, location signals rarely fire today. See
+[Mock location](../../detection/mock-location/).
+
+## Screenshot events never arrive
+
+- Set `enableScreenshotDetection: true` in `DeviceShieldConfig`.
+- On Android, it needs Android 14 (API 34) or later.
+- Check you haven't removed the merged `DETECT_SCREEN_CAPTURE` permission.
+
+## Screenshots still work on iOS with protection enabled
+
+iOS screenshot protection doesn't work. See
+[Screenshot protection](../../protection/screenshot/).
+
+## Screenshot protection turned off unexpectedly on Android
+
+Disabling app-switcher protection also clears screenshot protection, because
+both use `FLAG_SECURE`. Enable and disable them together.
+
+## Dropped frames when a check runs
+
+Android checks currently run on the main thread. Run them at quiet moments,
+not during animations or scrolling.
+
+## `DetectionStatus.failed` results
+
+The native call timed out (5 s) or the platform has no handler.
+
+## `UNRESOLVED_DEPENDENCY` after `shutdown()`
+
+The SDK was stopped. Call `DeviceShield.reinitialize()`, then register your
+detectors and subscriptions again.

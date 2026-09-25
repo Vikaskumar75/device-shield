@@ -1,6 +1,7 @@
-import XCTest
 import UIKit
-@testable import flutter_shield
+import XCTest
+
+@testable import device_shield
 
 /// `AppSwitcherProtection`'s enable/disable/start/stop state machine,
 /// mirroring `ScreenRecordingDetectorTests`'/`ScreenshotDetectorTests`'

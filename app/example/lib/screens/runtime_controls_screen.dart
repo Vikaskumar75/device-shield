@@ -1,5 +1,5 @@
+import 'package:device_shield/device_shield.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_shield/flutter_shield.dart';
 
 import '../core/shield_scope.dart';
 import '../widgets/action_button.dart';
@@ -29,7 +29,8 @@ class RuntimeControlsScreen extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             const InfoBanner(
-              message: 'Every button here calls a real FlutterShield static '
+              message:
+                  'Every button here calls a real DeviceShield static '
                   'method. Failures surface as a red SnackBar, never a '
                   'crash — see Errors for the captured exception.',
             ),
@@ -83,7 +84,8 @@ class RuntimeControlsScreen extends StatelessWidget {
             ),
             SectionCard(
               title: 'Detectors',
-              subtitle: 'Toggling off cannot remove a live detector — see '
+              subtitle:
+                  'Toggling off cannot remove a live detector — see '
                   'the warning banner if you try while running.',
               children: [
                 for (final entry in controller.detectorEnabled.entries)
@@ -115,8 +117,9 @@ class RuntimeControlsScreen extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Demo rule active'),
                   subtitle: const Text(
-                      'A trivial custom Rule that never matches — proves '
-                      'addRule/removeRule mechanics.'),
+                    'A trivial custom Rule that never matches — proves '
+                    'addRule/removeRule mechanics.',
+                  ),
                   value: controller.demoRuleActive,
                   onChanged: controller.toggleDemoRule,
                 ),

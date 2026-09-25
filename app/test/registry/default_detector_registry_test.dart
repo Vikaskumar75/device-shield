@@ -1,6 +1,6 @@
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/registry/default_detector_registry.dart';
-import 'package:flutter_shield/src/registry/detector.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/registry/default_detector_registry.dart';
+import 'package:device_shield/src/registry/detector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeDetector implements Detector {
@@ -16,11 +16,11 @@ class _FakeDetector implements Detector {
   Future<void> dispose() async {}
   @override
   Future<DetectionResult> check() async => DetectionResult(
-        type: type,
-        detected: false,
-        confidence: 0.0,
-        timestamp: DateTime.now(),
-      );
+    type: type,
+    detected: false,
+    confidence: 0.0,
+    timestamp: DateTime.now(),
+  );
 }
 
 void main() {
@@ -44,8 +44,7 @@ void main() {
       );
     });
 
-    test('a duplicate registration attempt does not replace the original',
-        () {
+    test('a duplicate registration attempt does not replace the original', () {
       final registry = DefaultDetectorRegistry();
       final original = _FakeDetector('alpha');
       registry.register(original);
@@ -68,13 +67,14 @@ void main() {
       expect(registry.getById('alpha'), isNull);
     });
 
-    test('unregister with an entry that was never registered is a no-op',
-        () {
+    test('unregister with an entry that was never registered is a no-op', () {
       final registry = DefaultDetectorRegistry();
       registry.register(_FakeDetector('alpha'));
 
-      expect(() => registry.unregister(_FakeDetector('never-registered')),
-          returnsNormally);
+      expect(
+        () => registry.unregister(_FakeDetector('never-registered')),
+        returnsNormally,
+      );
       expect(registry.contains('alpha'), isTrue);
     });
 
@@ -137,17 +137,16 @@ void main() {
 
     test('equal priorities fall back to registration order', () {
       final registry = DefaultDetectorRegistry();
-      registry.register(_FakeDetector('first', priority: 0));
-      registry.register(_FakeDetector('second', priority: 0));
-      registry.register(_FakeDetector('third', priority: 0));
+      registry.register(_FakeDetector('first'));
+      registry.register(_FakeDetector('second'));
+      registry.register(_FakeDetector('third'));
 
       final ordered = registry.getAll().map((d) => d.type).toList();
 
       expect(ordered, ['first', 'second', 'third']);
     });
 
-    test('list() and getAll() return the same priority-ordered content',
-        () {
+    test('list() and getAll() return the same priority-ordered content', () {
       final registry = DefaultDetectorRegistry();
       registry.register(_FakeDetector('b', priority: 2));
       registry.register(_FakeDetector('a', priority: 1));
@@ -161,8 +160,8 @@ void main() {
     test('unregistering and re-registering resets a detector\'s position '
         'to the end', () {
       final registry = DefaultDetectorRegistry();
-      final a = _FakeDetector('a', priority: 0);
-      final b = _FakeDetector('b', priority: 0);
+      final a = _FakeDetector('a');
+      final b = _FakeDetector('b');
       registry.register(a);
       registry.register(b);
       registry.unregister(a);
@@ -186,8 +185,7 @@ void main() {
       expect(registry.contains('a'), isFalse);
     });
 
-    test('a type can be registered again after clear without throwing',
-        () {
+    test('a type can be registered again after clear without throwing', () {
       final registry = DefaultDetectorRegistry();
       registry.register(_FakeDetector('a'));
       registry.clear();
@@ -203,9 +201,8 @@ void main() {
 
       final result = registry.getAll();
 
-      expect(() => result.add(_FakeDetector('b')),
-          throwsUnsupportedError);
-      expect(() => result.clear(), throwsUnsupportedError);
+      expect(() => result.add(_FakeDetector('b')), throwsUnsupportedError);
+      expect(result.clear, throwsUnsupportedError);
     });
 
     test('mutating the returned list never affects the registry\'s own '
@@ -247,7 +244,7 @@ void main() {
       final registry = DefaultDetectorRegistry();
       registry.register(_FakeDetector('positive', priority: 5));
       registry.register(_FakeDetector('negative', priority: -5));
-      registry.register(_FakeDetector('zero', priority: 0));
+      registry.register(_FakeDetector('zero'));
 
       final ordered = registry.getAll().map((d) => d.type).toList();
 

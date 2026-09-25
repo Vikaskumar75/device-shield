@@ -5,7 +5,7 @@ import '../core/shield_scope.dart';
 import '../widgets/status_card.dart';
 
 /// The example app's own action log — see [AppLogEntry]'s doc comment for
-/// the documented SDK limitation this works around: `FlutterShield` never
+/// the documented SDK limitation this works around: `DeviceShield` never
 /// exposes the SDK's internal `Logger`/`LogSink` extension point, so this
 /// records every SDK call *this app* makes and its outcome, the closest
 /// faithful substitute reachable from host-app code today.
@@ -20,11 +20,11 @@ class _LogsScreenState extends State<LogsScreen> {
   AppLogLevel? _levelFilter;
 
   Color _colorFor(AppLogLevel level, ThemeData theme) => switch (level) {
-        AppLogLevel.debug => Colors.grey,
-        AppLogLevel.info => theme.colorScheme.primary,
-        AppLogLevel.warning => Colors.orange,
-        AppLogLevel.error => theme.colorScheme.error,
-      };
+    AppLogLevel.debug => Colors.grey,
+    AppLogLevel.info => theme.colorScheme.primary,
+    AppLogLevel.warning => Colors.orange,
+    AppLogLevel.error => theme.colorScheme.error,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,8 @@ class _LogsScreenState extends State<LogsScreen> {
         return Column(
           children: [
             const InfoBanner(
-              message: 'FlutterShield never exposes its internal Logger/'
+              message:
+                  'DeviceShield never exposes its internal Logger/'
                   'LogSink publicly — this log shows this app\'s own SDK '
                   'call history instead, the closest reachable substitute.',
             ),
@@ -56,7 +57,7 @@ class _LogsScreenState extends State<LogsScreen> {
                         border: OutlineInputBorder(),
                       ),
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('All')),
+                        const DropdownMenuItem(child: Text('All')),
                         for (final l in AppLogLevel.values)
                           DropdownMenuItem(value: l, child: Text(l.name)),
                       ],
@@ -80,11 +81,15 @@ class _LogsScreenState extends State<LogsScreen> {
                         final entry = logs[index];
                         return ListTile(
                           dense: true,
-                          leading: Icon(Icons.circle,
-                              size: 10, color: _colorFor(entry.level, theme)),
+                          leading: Icon(
+                            Icons.circle,
+                            size: 10,
+                            color: _colorFor(entry.level, theme),
+                          ),
                           title: Text(entry.message),
                           subtitle: Text(
-                              '${entry.tag} • ${entry.timestamp.toIso8601String()}'),
+                            '${entry.tag} • ${entry.timestamp.toIso8601String()}',
+                          ),
                         );
                       },
                     ),

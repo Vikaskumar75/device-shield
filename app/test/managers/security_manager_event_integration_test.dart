@@ -1,17 +1,17 @@
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/config/default_configuration_manager.dart';
-import 'package:flutter_shield/src/core/console_logger.dart';
-import 'package:flutter_shield/src/events/default_event_manager.dart';
-import 'package:flutter_shield/src/managers/default_detection_manager.dart';
-import 'package:flutter_shield/src/managers/default_policy_manager.dart';
-import 'package:flutter_shield/src/managers/default_security_manager.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/models/flutter_shield_config.dart';
-import 'package:flutter_shield/src/models/sdk_state.dart';
-import 'package:flutter_shield/src/models/security_event.dart';
-import 'package:flutter_shield/src/registry/default_detector_registry.dart';
-import 'package:flutter_shield/src/registry/detector.dart';
-import 'package:flutter_shield/src/state/security_state_manager.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/config/default_configuration_manager.dart';
+import 'package:device_shield/src/core/console_logger.dart';
+import 'package:device_shield/src/events/default_event_manager.dart';
+import 'package:device_shield/src/managers/default_detection_manager.dart';
+import 'package:device_shield/src/managers/default_policy_manager.dart';
+import 'package:device_shield/src/managers/default_security_manager.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/models/device_shield_config.dart';
+import 'package:device_shield/src/models/sdk_state.dart';
+import 'package:device_shield/src/models/security_event.dart';
+import 'package:device_shield/src/registry/default_detector_registry.dart';
+import 'package:device_shield/src/registry/detector.dart';
+import 'package:device_shield/src/state/security_state_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Step 9 (Event Integration) — the one genuinely new scenario Steps 7/8's
@@ -30,8 +30,7 @@ class _FakeNativeBridge implements NativeBridge {
     required String method,
     Map<String, dynamic>? arguments,
     Duration timeout = const Duration(seconds: 5),
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   @override
   void invokeAsync({required String method, Map<String, dynamic>? arguments}) {}
@@ -64,11 +63,11 @@ class _FakeDetector implements Detector {
   Future<void> dispose() async {}
   @override
   Future<DetectionResult> check() async => DetectionResult(
-        type: type,
-        detected: detected,
-        confidence: detected ? 0.9 : 0.0,
-        timestamp: DateTime.now(),
-      );
+    type: type,
+    detected: detected,
+    confidence: detected ? 0.9 : 0.0,
+    timestamp: DateTime.now(),
+  );
 }
 
 DefaultSecurityManager _buildManager({
@@ -88,11 +87,12 @@ DefaultSecurityManager _buildManager({
     // dedicated "config-gated initialize" group for the gating behavior
     // itself).
     configurationManager: DefaultConfigurationManager(
-        const FlutterShieldConfig(
-          periodicCheckInterval: 999999,
-          enableScreenshotDetection: true,
-          enableScreenRecordingDetection: true,
-        )),
+      const DeviceShieldConfig(
+        periodicCheckInterval: 999999,
+        enableScreenshotDetection: true,
+        enableScreenRecordingDetection: true,
+      ),
+    ),
     lifecycle: lifecycle,
     logger: ConsoleLogger(),
     nativeBridge: nativeBridge,
@@ -107,9 +107,12 @@ void main() {
         'two paths', () async {
       final nativeBridge = _FakeNativeBridge();
       final detectionManager = DefaultDetectionManager(
-          logger: ConsoleLogger(), registry: DefaultDetectorRegistry());
-      await detectionManager
-          .registerDetector(_FakeDetector('emulator', detected: true));
+        logger: ConsoleLogger(),
+        registry: DefaultDetectorRegistry(),
+      );
+      await detectionManager.registerDetector(
+        _FakeDetector('emulator', detected: true),
+      );
       final policyManager = DefaultPolicyManager(logger: ConsoleLogger());
       final eventManager = DefaultEventManager();
       final lifecycle = DefaultSecurityStateManager()
@@ -131,9 +134,11 @@ void main() {
       await manager.checkNow();
       await Future<void>.delayed(Duration.zero);
       // Push fires second, independently, via the real registered callback.
-      nativeBridge.callbacks['onScreenshotTaken']!(
-        {'detected': true, 'confidence': 1.0, 'signals': []},
-      );
+      nativeBridge.callbacks['onScreenshotTaken']!({
+        'detected': true,
+        'confidence': 1.0,
+        'signals': <String>[],
+      });
       await Future<void>.delayed(Duration.zero);
 
       expect(received, hasLength(2));
@@ -149,9 +154,12 @@ void main() {
         'first', () async {
       final nativeBridge = _FakeNativeBridge();
       final detectionManager = DefaultDetectionManager(
-          logger: ConsoleLogger(), registry: DefaultDetectorRegistry());
-      await detectionManager
-          .registerDetector(_FakeDetector('debugger', detected: true));
+        logger: ConsoleLogger(),
+        registry: DefaultDetectorRegistry(),
+      );
+      await detectionManager.registerDetector(
+        _FakeDetector('debugger', detected: true),
+      );
       final policyManager = DefaultPolicyManager(logger: ConsoleLogger());
       final eventManager = DefaultEventManager();
       final lifecycle = DefaultSecurityStateManager()
@@ -169,9 +177,9 @@ void main() {
       eventManager.subscribe(received.add);
       await manager.initialize();
 
-      nativeBridge.callbacks['onScreenCaptureStateChanged']!(
-        {'isCaptured': true},
-      );
+      nativeBridge.callbacks['onScreenCaptureStateChanged']!({
+        'isCaptured': true,
+      });
       await Future<void>.delayed(Duration.zero);
       await manager.checkNow();
       await Future<void>.delayed(Duration.zero);
@@ -184,51 +192,69 @@ void main() {
       lifecycle.dispose();
     });
 
-    test('multiple pushes for the same native event are never coalesced '
-        'or dropped — each is its own distinct SecurityEvent, per the '
-        'design doc\'s explicit "no built-in deduplication" decision',
-        () async {
-      final nativeBridge = _FakeNativeBridge();
-      final policyManager = DefaultPolicyManager(logger: ConsoleLogger());
-      final eventManager = DefaultEventManager();
-      final lifecycle = DefaultSecurityStateManager()
-        ..transitionTo(SDKState.initializing)
-        ..transitionTo(SDKState.initialized)
-        ..transitionTo(SDKState.running);
-      final manager = _buildManager(
-        detectionManager: DefaultDetectionManager(
-            logger: ConsoleLogger(), registry: DefaultDetectorRegistry()),
-        policyManager: policyManager,
-        eventManager: eventManager,
-        lifecycle: lifecycle,
-        nativeBridge: nativeBridge,
-      );
-      final received = <SecurityEvent>[];
-      eventManager.subscribe(received.add);
-      await manager.initialize();
+    test(
+      'multiple pushes for the same native event are never coalesced '
+      'or dropped — each is its own distinct SecurityEvent, per the '
+      'design doc\'s explicit "no built-in deduplication" decision',
+      () async {
+        final nativeBridge = _FakeNativeBridge();
+        final policyManager = DefaultPolicyManager(logger: ConsoleLogger());
+        final eventManager = DefaultEventManager();
+        final lifecycle = DefaultSecurityStateManager()
+          ..transitionTo(SDKState.initializing)
+          ..transitionTo(SDKState.initialized)
+          ..transitionTo(SDKState.running);
+        final manager = _buildManager(
+          detectionManager: DefaultDetectionManager(
+            logger: ConsoleLogger(),
+            registry: DefaultDetectorRegistry(),
+          ),
+          policyManager: policyManager,
+          eventManager: eventManager,
+          lifecycle: lifecycle,
+          nativeBridge: nativeBridge,
+        );
+        final received = <SecurityEvent>[];
+        eventManager.subscribe(received.add);
+        await manager.initialize();
 
-      final screenshotCallback = nativeBridge.callbacks['onScreenshotTaken']!;
-      screenshotCallback({'detected': true, 'confidence': 1.0, 'signals': []});
-      screenshotCallback({'detected': true, 'confidence': 1.0, 'signals': []});
-      screenshotCallback({'detected': true, 'confidence': 1.0, 'signals': []});
-      await Future<void>.delayed(Duration.zero);
+        final screenshotCallback = nativeBridge.callbacks['onScreenshotTaken']!;
+        screenshotCallback({
+          'detected': true,
+          'confidence': 1.0,
+          'signals': <String>[],
+        });
+        screenshotCallback({
+          'detected': true,
+          'confidence': 1.0,
+          'signals': <String>[],
+        });
+        screenshotCallback({
+          'detected': true,
+          'confidence': 1.0,
+          'signals': <String>[],
+        });
+        await Future<void>.delayed(Duration.zero);
 
-      expect(received, hasLength(3));
-      expect(received.every((e) => e.type == 'screenshot'), isTrue);
+        expect(received, hasLength(3));
+        expect(received.every((e) => e.type == 'screenshot'), isTrue);
 
-      await manager.dispose();
-      lifecycle.dispose();
-    });
+        await manager.dispose();
+        lifecycle.dispose();
+      },
+    );
 
     test('backward compatibility: a poll cycle with only pre-existing '
         'detector types (no screenshot/recording involved at all) '
         'behaves exactly as it did before this feature existed', () async {
       final detectionManager = DefaultDetectionManager(
-          logger: ConsoleLogger(), registry: DefaultDetectorRegistry());
-      await detectionManager
-          .registerDetector(_FakeDetector('emulator', detected: true));
-      await detectionManager
-          .registerDetector(_FakeDetector('debugger', detected: false));
+        logger: ConsoleLogger(),
+        registry: DefaultDetectorRegistry(),
+      );
+      await detectionManager.registerDetector(
+        _FakeDetector('emulator', detected: true),
+      );
+      await detectionManager.registerDetector(_FakeDetector('debugger'));
       final policyManager = DefaultPolicyManager(logger: ConsoleLogger());
       final eventManager = DefaultEventManager();
       final lifecycle = DefaultSecurityStateManager()

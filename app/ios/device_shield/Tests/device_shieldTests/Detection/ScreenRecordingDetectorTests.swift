@@ -1,6 +1,7 @@
-import XCTest
 import UIKit
-@testable import flutter_shield
+import XCTest
+
+@testable import device_shield
 
 /// `ScreenRecordingDetector.evaluate(isCaptured:)` (pure logic) is
 /// exercised with synthetic inputs, mirroring `DebuggerDetectorTests`'

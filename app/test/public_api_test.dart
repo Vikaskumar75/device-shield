@@ -1,7 +1,7 @@
 // Guards the package's public API surface.
 //
-// This file deliberately imports ONLY `package:flutter_shield/flutter_shield.dart`
-// — no `package:flutter_shield/src/...` anywhere — so it fails to compile the
+// This file deliberately imports ONLY `package:device_shield/device_shield.dart`
+// — no `package:device_shield/src/...` anywhere — so it fails to compile the
 // moment an export a host app depends on is dropped from the barrel. Every
 // other test in this suite reaches into `src/` directly (legal within the
 // package, invisible to consumers), so none of them would catch that.
@@ -9,7 +9,7 @@
 // It asserts reachability and wiring, not detector behavior; each detector's
 // own test file covers what it does.
 
-import 'package:flutter_shield/flutter_shield.dart';
+import 'package:device_shield/device_shield.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// A host-app detector written against nothing but the public [Detector]
@@ -26,12 +26,11 @@ class _HostDetector implements Detector {
   Future<void> dispose() async {}
   @override
   Future<DetectionResult> check() async => DetectionResult(
-        type: type,
-        detected: false,
-        confidence: 0.0,
-        timestamp: DateTime.now(),
-        status: DetectionStatus.completed,
-      );
+    type: type,
+    detected: false,
+    confidence: 0.0,
+    timestamp: DateTime.now(),
+  );
 }
 
 /// Same, for the public [Rule] contract.
@@ -50,10 +49,10 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('the facade, config and state types are exported', () {
-    expect(FlutterShield.status, SDKState.uninitialized);
-    expect(const FlutterShieldConfig().periodicCheckInterval, isPositive);
+    expect(DeviceShield.status, SDKState.uninitialized);
+    expect(const DeviceShieldConfig().periodicCheckInterval, isPositive);
     expect(
-      const FlutterShieldConfig(debugLogging: true).copyWith().debugLogging,
+      const DeviceShieldConfig(debugLogging: true).copyWith().debugLogging,
       isTrue,
     );
   });
@@ -90,21 +89,21 @@ void main() {
     final factory = DetectorFactory(nativeBridge: bridge);
     expect(factory.availableTypes, hasLength(7));
     expect(factory.create('root'), isA<Detector>());
-    expect(
-      () => factory.create('nope'),
-      throwsA(isA<DetectionException>()),
-    );
+    expect(() => factory.create('nope'), throwsA(isA<DetectionException>()));
   });
 
-  test('Detector and Rule are implementable from outside the package', () async {
-    final detector = _HostDetector();
-    final result = await detector.check();
+  test(
+    'Detector and Rule are implementable from outside the package',
+    () async {
+      final detector = _HostDetector();
+      final result = await detector.check();
 
-    expect(result.type, 'host_custom');
-    expect(result.status, DetectionStatus.completed);
-    expect(_HostRule().matches(result), isFalse);
-    expect(_HostRule().action, SecurityAction.report);
-  });
+      expect(result.type, 'host_custom');
+      expect(result.status, DetectionStatus.completed);
+      expect(_HostRule().matches(result), isFalse);
+      expect(_HostRule().action, SecurityAction.report);
+    },
+  );
 
   test('event types and subscribe() callback signatures are exported', () {
     final event = SecurityEvent(
@@ -114,7 +113,7 @@ void main() {
       source: 'test',
     );
 
-    // The exact shapes FlutterShield.subscribe(handler, filter:) expects.
+    // The exact shapes DeviceShield.subscribe(handler, filter:) expects.
     const SecurityEventHandler handler = _noopHandler;
     const SecurityEventFilter filter = _alwaysTrue;
 
@@ -138,15 +137,15 @@ void main() {
   test('the exception hierarchy hosts must catch is exported', () {
     expect(
       const InitializationException(code: 'X', message: 'm'),
-      isA<FlutterShieldException>(),
+      isA<DeviceShieldException>(),
     );
     expect(
       const ConfigurationException(code: 'X', message: 'm'),
-      isA<FlutterShieldException>(),
+      isA<DeviceShieldException>(),
     );
     expect(
       const DetectionException(type: 't', code: 'X', message: 'm'),
-      isA<FlutterShieldException>(),
+      isA<DeviceShieldException>(),
     );
     expect(
       const NativeBridgeException(
@@ -155,7 +154,7 @@ void main() {
         code: 'X',
         message: 'm',
       ),
-      isA<FlutterShieldException>(),
+      isA<DeviceShieldException>(),
     );
   });
 
@@ -169,7 +168,7 @@ void main() {
 
   test('calling the facade before initialize() throws, never crashes', () {
     expect(
-      () => FlutterShield.registerDetector(_HostDetector()),
+      () => DeviceShield.registerDetector(_HostDetector()),
       throwsA(isA<InitializationException>()),
     );
   });

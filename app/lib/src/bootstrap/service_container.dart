@@ -1,23 +1,23 @@
-import '../models/flutter_shield_exception.dart';
+import '../models/device_shield_exception.dart';
 import 'dependency_resolver.dart';
 
 enum _RegistrationKind { singleton, lazySingleton, factory }
 
 class _Registration {
   _Registration.singleton(Object instance)
-      : kind = _RegistrationKind.singleton,
-        _instance = instance,
-        _factory = null;
+    : kind = _RegistrationKind.singleton,
+      _instance = instance,
+      _factory = null;
 
   _Registration.lazySingleton(Object Function() factory)
-      : kind = _RegistrationKind.lazySingleton,
-        _instance = null,
-        _factory = factory;
+    : kind = _RegistrationKind.lazySingleton,
+      _instance = null,
+      _factory = factory;
 
   _Registration.factory(Object Function() factory)
-      : kind = _RegistrationKind.factory,
-        _instance = null,
-        _factory = factory;
+    : kind = _RegistrationKind.factory,
+      _instance = null,
+      _factory = factory;
 
   final _RegistrationKind kind;
   Object? _instance;

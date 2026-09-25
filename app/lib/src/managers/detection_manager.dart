@@ -15,7 +15,7 @@ import 'manager.dart';
 /// only the concrete implementation's internals did.
 ///
 /// Public/Internal: internal. `registerDetector` is reachable publicly only
-/// via `FlutterShield.registerDetector()` → `SecurityManager` → here.
+/// via `DeviceShield.registerDetector()` → `SecurityManager` → here.
 ///
 /// Extension point: no — the extension point is `Detector` +
 /// `DetectorRegistry`, not `DetectionManager` itself.

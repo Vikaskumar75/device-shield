@@ -31,29 +31,30 @@ class SecurityProfile {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'description': description,
-        'detectionConfigs': detectionConfigs.map((e) => e.toJson()).toList(),
-        'policyConfigs': policyConfigs.map((e) => e.toJson()).toList(),
-        'protectionConfigs':
-            protectionConfigs.map((e) => e.toJson()).toList(),
-      };
+    'name': name,
+    'description': description,
+    'detectionConfigs': detectionConfigs.map((e) => e.toJson()).toList(),
+    'policyConfigs': policyConfigs.map((e) => e.toJson()).toList(),
+    'protectionConfigs': protectionConfigs.map((e) => e.toJson()).toList(),
+  };
 
   factory SecurityProfile.fromJson(Map<String, dynamic> json) {
     return SecurityProfile(
       name: json['name'] as String,
       description: json['description'] as String,
       detectionConfigs: (json['detectionConfigs'] as List? ?? [])
-          .map((e) =>
-              DetectionConfig.fromJson((e as Map).cast<String, dynamic>()))
+          .map(
+            (e) => DetectionConfig.fromJson((e as Map).cast<String, dynamic>()),
+          )
           .toList(),
       policyConfigs: (json['policyConfigs'] as List? ?? [])
-          .map((e) =>
-              PolicyConfig.fromJson((e as Map).cast<String, dynamic>()))
+          .map((e) => PolicyConfig.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),
       protectionConfigs: (json['protectionConfigs'] as List? ?? [])
-          .map((e) =>
-              ProtectionConfig.fromJson((e as Map).cast<String, dynamic>()))
+          .map(
+            (e) =>
+                ProtectionConfig.fromJson((e as Map).cast<String, dynamic>()),
+          )
           .toList(),
     );
   }
@@ -71,7 +72,12 @@ class SecurityProfile {
 
   @override
   int get hashCode => Object.hash(
-      name, description, detectionConfigs, policyConfigs, protectionConfigs);
+    name,
+    description,
+    detectionConfigs,
+    policyConfigs,
+    protectionConfigs,
+  );
 
   @override
   String toString() => 'SecurityProfile(name: $name)';
@@ -90,10 +96,10 @@ class DetectionConfig {
   });
 
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'enabled': enabled,
-        'confidenceThreshold': confidenceThreshold,
-      };
+    'type': type,
+    'enabled': enabled,
+    'confidenceThreshold': confidenceThreshold,
+  };
 
   factory DetectionConfig.fromJson(Map<String, dynamic> json) =>
       DetectionConfig(
@@ -132,18 +138,18 @@ class PolicyConfig {
   });
 
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'action': action.name,
-        'threshold': threshold,
-        'priority': priority,
-      };
+    'type': type,
+    'action': action.name,
+    'threshold': threshold,
+    'priority': priority,
+  };
 
   factory PolicyConfig.fromJson(Map<String, dynamic> json) => PolicyConfig(
-        type: json['type'] as String,
-        action: SecurityAction.values.byName(json['action'] as String),
-        threshold: (json['threshold'] as num?)?.toDouble() ?? 0.8,
-        priority: json['priority'] as int? ?? 0,
-      );
+    type: json['type'] as String,
+    action: SecurityAction.values.byName(json['action'] as String),
+    threshold: (json['threshold'] as num?)?.toDouble() ?? 0.8,
+    priority: json['priority'] as int? ?? 0,
+  );
 
   @override
   bool operator ==(Object other) =>

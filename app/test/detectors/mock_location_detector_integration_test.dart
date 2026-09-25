@@ -1,11 +1,11 @@
-import 'package:flutter_shield/src/bridge/method_codes.dart';
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/core/console_logger.dart';
-import 'package:flutter_shield/src/detectors/mock_location_detector.dart';
-import 'package:flutter_shield/src/managers/default_detection_manager.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/registry/default_detector_registry.dart';
-import 'package:flutter_shield/src/registry/detector_factory.dart';
+import 'package:device_shield/src/bridge/method_codes.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/core/console_logger.dart';
+import 'package:device_shield/src/detectors/mock_location_detector.dart';
+import 'package:device_shield/src/managers/default_detection_manager.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/registry/default_detector_registry.dart';
+import 'package:device_shield/src/registry/detector_factory.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Mirrors `root_jailbreak_detector_integration_test.dart`'s own pattern
@@ -76,8 +76,7 @@ void main() {
   });
 
   test('a permission-denied response completes normally with the honest '
-      'capability gap carried through, never a failed/thrown result',
-      () async {
+      'capability gap carried through, never a failed/thrown result', () async {
     final bridge = _FakeNativeBridge({
       MethodCodes.checkMockLocation: {
         'detected': false,

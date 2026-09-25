@@ -12,7 +12,7 @@ import 'manager.dart';
 /// or action-execution logic is implemented here — Phase 5 owns it.
 ///
 /// Public/Internal: internal. `addRule`/`removeRule` are reachable publicly
-/// via `FlutterShield`.
+/// via `DeviceShield`.
 ///
 /// Extension point: yes — new [Rule] implementations (FR-17) and new action
 /// handlers registered against the reserved `SecurityAction.custom` slot.

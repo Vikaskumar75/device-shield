@@ -1,5 +1,5 @@
+import 'package:device_shield/device_shield.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_shield/flutter_shield.dart';
 
 import '../core/shield_scope.dart';
 import '../widgets/alert_demo.dart';
@@ -53,7 +53,8 @@ class _RecordingDemoScreenState extends State<RecordingDemoScreen> {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             const InfoBanner(
-              message: 'iOS only, via UIScreen.isCaptured / '
+              message:
+                  'iOS only, via UIScreen.isCaptured / '
                   'capturedDidChangeNotification. On Android the detector '
                   'registers successfully but always reports "unsupported '
                   'on this platform" — never a fabricated result.',
@@ -63,8 +64,9 @@ class _RecordingDemoScreenState extends State<RecordingDemoScreen> {
               children: [
                 StatusRow(
                   label: 'Detector registered',
-                  value: controller
-                              .detectorEnabled[ScreenRecordingDetector.typeId] ==
+                  value:
+                      controller.detectorEnabled[ScreenRecordingDetector
+                              .typeId] ==
                           true
                       ? 'Yes'
                       : 'No — enable it in Runtime Controls',
@@ -82,7 +84,8 @@ class _RecordingDemoScreenState extends State<RecordingDemoScreen> {
             ),
             const InfoBanner(
               icon: Icons.warning_amber_rounded,
-              message: 'Documented SDK limitation: SecurityEvent.data only '
+              message:
+                  'Documented SDK limitation: SecurityEvent.data only '
                   'ever carries {action, confidence} — the state above is '
                   'inferred from confidence == 1.0, not a direct field.',
             ),
@@ -119,10 +122,13 @@ class _RecordingDemoScreenState extends State<RecordingDemoScreen> {
               children: [
                 Text('1. Runtime Controls → Initialize SDK.'),
                 Text(
-                    '2. Runtime Controls → enable the Screen Recording Detector.'),
+                  '2. Runtime Controls → enable the Screen Recording Detector.',
+                ),
                 Text('3. On iOS, start a Control Center screen recording.'),
-                Text('4. The alert above fires automatically, and the '
-                    'event appears on the Events screen.'),
+                Text(
+                  '4. The alert above fires automatically, and the '
+                  'event appears on the Events screen.',
+                ),
               ],
             ),
           ],

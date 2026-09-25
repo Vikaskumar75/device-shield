@@ -1,8 +1,8 @@
-import 'package:flutter_shield/src/bridge/method_codes.dart';
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/detectors/mock_location_detector.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
+import 'package:device_shield/src/bridge/method_codes.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/detectors/mock_location_detector.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeNativeBridge implements NativeBridge {
@@ -54,14 +54,16 @@ void main() {
 
   group('MockLocationDetector — check() success path', () {
     test('calls the bridge with MethodCodes.checkMockLocation', () async {
-      final bridge = _FakeNativeBridge((_) async => {
-            'detected': false,
-            'confidence': 0.0,
-            'signals': <String>[],
-            'applicable': true,
-            'permissionGranted': false,
-            'locationAvailable': false,
-          });
+      final bridge = _FakeNativeBridge(
+        (_) async => {
+          'detected': false,
+          'confidence': 0.0,
+          'signals': <String>[],
+          'applicable': true,
+          'permissionGranted': false,
+          'locationAvailable': false,
+        },
+      );
       final detector = MockLocationDetector(nativeBridge: bridge);
 
       await detector.check();
@@ -71,14 +73,16 @@ void main() {
 
     test('maps a detected=true native response to a matching '
         'DetectionResult', () async {
-      final bridge = _FakeNativeBridge((_) async => {
-            'detected': true,
-            'confidence': 0.4,
-            'signals': ['mock_provider_flag', 'fake_gps_app_installed'],
-            'applicable': true,
-            'permissionGranted': true,
-            'locationAvailable': true,
-          });
+      final bridge = _FakeNativeBridge(
+        (_) async => {
+          'detected': true,
+          'confidence': 0.4,
+          'signals': ['mock_provider_flag', 'fake_gps_app_installed'],
+          'applicable': true,
+          'permissionGranted': true,
+          'locationAvailable': true,
+        },
+      );
       final detector = MockLocationDetector(nativeBridge: bridge);
 
       final result = await detector.check();
@@ -87,10 +91,10 @@ void main() {
       expect(result.detected, isTrue);
       expect(result.confidence, 0.4);
       expect(result.status, DetectionStatus.completed);
-      expect(
-        result.evidence['signals'],
-        ['mock_provider_flag', 'fake_gps_app_installed'],
-      );
+      expect(result.evidence['signals'], [
+        'mock_provider_flag',
+        'fake_gps_app_installed',
+      ]);
       expect(result.evidence['applicable'], isTrue);
       expect(result.evidence['permissionGranted'], isTrue);
       expect(result.evidence['locationAvailable'], isTrue);
@@ -98,14 +102,16 @@ void main() {
 
     test('maps a detected=false native response to a matching '
         'DetectionResult', () async {
-      final bridge = _FakeNativeBridge((_) async => {
-            'detected': false,
-            'confidence': 0.0,
-            'signals': <String>[],
-            'applicable': true,
-            'permissionGranted': true,
-            'locationAvailable': true,
-          });
+      final bridge = _FakeNativeBridge(
+        (_) async => {
+          'detected': false,
+          'confidence': 0.0,
+          'signals': <String>[],
+          'applicable': true,
+          'permissionGranted': true,
+          'locationAvailable': true,
+        },
+      );
       final detector = MockLocationDetector(nativeBridge: bridge);
 
       final result = await detector.check();
@@ -116,14 +122,16 @@ void main() {
 
     test('a permission-denied response is carried into evidence — an '
         'honest capability gap, not a confident "not detected"', () async {
-      final bridge = _FakeNativeBridge((_) async => {
-            'detected': false,
-            'confidence': 0.0,
-            'signals': <String>[],
-            'applicable': true,
-            'permissionGranted': false,
-            'locationAvailable': false,
-          });
+      final bridge = _FakeNativeBridge(
+        (_) async => {
+          'detected': false,
+          'confidence': 0.0,
+          'signals': <String>[],
+          'applicable': true,
+          'permissionGranted': false,
+          'locationAvailable': false,
+        },
+      );
       final detector = MockLocationDetector(nativeBridge: bridge);
 
       final result = await detector.check();
@@ -154,14 +162,15 @@ void main() {
 
   group('MockLocationDetector — check() failure path (per the frozen '
       'Detector contract: reported as failed, never thrown)', () {
-    test('a NativeBridgeException results in DetectionStatus.failed',
-        () async {
-      final bridge = _FakeNativeBridge((_) async => throw NativeBridgeException(
-            method: MethodCodes.checkMockLocation,
-            nativeError: 'boom',
-            code: 'BRIDGE_UNAVAILABLE',
-            message: 'no native handler',
-          ));
+    test('a NativeBridgeException results in DetectionStatus.failed', () async {
+      final bridge = _FakeNativeBridge(
+        (_) async => throw const NativeBridgeException(
+          method: MethodCodes.checkMockLocation,
+          nativeError: 'boom',
+          code: 'BRIDGE_UNAVAILABLE',
+          message: 'no native handler',
+        ),
+      );
       final detector = MockLocationDetector(nativeBridge: bridge);
 
       final result = await detector.check();

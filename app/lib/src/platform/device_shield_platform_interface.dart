@@ -1,6 +1,6 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import 'flutter_shield_method_channel.dart';
+import 'device_shield_method_channel.dart';
 
 /// This class is `ARCHITECTURE_CONTRACTS.md`'s `PlatformAdapter` entry —
 /// **legacy as of the Phase 7 post-review**. It no longer sits in
@@ -12,23 +12,23 @@ import 'flutter_shield_method_channel.dart';
 /// point is now `NativeBridge` itself, swapped via `ServiceContainer`; see
 /// `ARCHITECTURE.md`'s dependency-graph correction note for the full
 /// reasoning.
-abstract class FlutterShieldPlatform extends PlatformInterface {
-  /// Constructs a FlutterShieldPlatform.
-  FlutterShieldPlatform() : super(token: _token);
+abstract class DeviceShieldPlatform extends PlatformInterface {
+  /// Constructs a DeviceShieldPlatform.
+  DeviceShieldPlatform() : super(token: _token);
 
   static final Object _token = Object();
 
-  static FlutterShieldPlatform _instance = MethodChannelFlutterShield();
+  static DeviceShieldPlatform _instance = MethodChannelDeviceShield();
 
-  /// The default instance of [FlutterShieldPlatform] to use.
+  /// The default instance of [DeviceShieldPlatform] to use.
   ///
-  /// Defaults to [MethodChannelFlutterShield].
-  static FlutterShieldPlatform get instance => _instance;
+  /// Defaults to [MethodChannelDeviceShield].
+  static DeviceShieldPlatform get instance => _instance;
 
   /// Platform-specific implementations should set this with their own
-  /// platform-specific class that extends [FlutterShieldPlatform] when
+  /// platform-specific class that extends [DeviceShieldPlatform] when
   /// they register themselves.
-  static set instance(FlutterShieldPlatform instance) {
+  static set instance(DeviceShieldPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
   }

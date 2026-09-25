@@ -1,21 +1,21 @@
 import 'dart:async';
 
-import 'package:flutter_shield/src/bootstrap/plugin_initializer.dart';
-import 'package:flutter_shield/src/bootstrap/service_container.dart';
-import 'package:flutter_shield/src/bridge/native_bridge.dart';
-import 'package:flutter_shield/src/config/configuration_manager.dart';
-import 'package:flutter_shield/src/core/logger.dart';
-import 'package:flutter_shield/src/events/event_manager.dart';
-import 'package:flutter_shield/src/managers/detection_manager.dart';
-import 'package:flutter_shield/src/managers/policy_manager.dart';
-import 'package:flutter_shield/src/managers/security_manager.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/models/flutter_shield_config.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
-import 'package:flutter_shield/src/models/sdk_state.dart';
-import 'package:flutter_shield/src/models/security_event.dart';
-import 'package:flutter_shield/src/permission/permission_manager.dart';
-import 'package:flutter_shield/src/state/lifecycle.dart';
+import 'package:device_shield/src/bootstrap/plugin_initializer.dart';
+import 'package:device_shield/src/bootstrap/service_container.dart';
+import 'package:device_shield/src/bridge/native_bridge.dart';
+import 'package:device_shield/src/config/configuration_manager.dart';
+import 'package:device_shield/src/core/logger.dart';
+import 'package:device_shield/src/events/event_manager.dart';
+import 'package:device_shield/src/managers/detection_manager.dart';
+import 'package:device_shield/src/managers/policy_manager.dart';
+import 'package:device_shield/src/managers/security_manager.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/models/device_shield_config.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
+import 'package:device_shield/src/models/sdk_state.dart';
+import 'package:device_shield/src/models/security_event.dart';
+import 'package:device_shield/src/permission/permission_manager.dart';
+import 'package:device_shield/src/state/lifecycle.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Test-only fakes proving the bootstrap sequence works end-to-end once
@@ -30,8 +30,7 @@ class _FakeNativeBridge implements NativeBridge {
     required String method,
     Map<String, dynamic>? arguments,
     Duration timeout = const Duration(seconds: 5),
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   @override
   void invokeAsync({required String method, Map<String, dynamic>? arguments}) {}
@@ -64,8 +63,7 @@ class _FakeEventManager implements EventManager {
   StreamSubscription<SecurityEvent> subscribe(
     SecurityEventHandler handler, {
     SecurityEventFilter? filter,
-  }) =>
-      const Stream<SecurityEvent>.empty().listen(handler);
+  }) => const Stream<SecurityEvent>.empty().listen(handler);
 
   @override
   List<SecurityEvent> getRecentEvents({int limit = 20}) => emitted;
@@ -83,7 +81,8 @@ class _FakeEventManager implements EventManager {
   void addProcessor(EventProcessor processor) {}
 }
 
-class _FakeSecurityManager implements SecurityManager, SecurityLifecycleHandler {
+class _FakeSecurityManager
+    implements SecurityManager, SecurityLifecycleHandler {
   bool initialized = false;
   bool disposed = false;
 
@@ -212,7 +211,7 @@ void main() {
       _registerFullDependencySet(container);
       final initializer = PluginInitializer(container: container);
 
-      await initializer.initialize(const FlutterShieldConfig());
+      await initializer.initialize(const DeviceShieldConfig());
 
       final stateManager = container.resolve<Lifecycle>();
       expect(stateManager.current, SDKState.running);
@@ -232,52 +231,56 @@ void main() {
       expect(lifecycleManager.attached, isNotNull);
     });
 
-    test('defaults Logger, Configuration, and the state machine when absent',
-        () async {
-      final container = ServiceContainer();
-      _registerFullDependencySet(container);
-      // Deliberately not registering Logger/ConfigurationManager/Lifecycle —
-      // PluginInitializer must construct sensible defaults for these three.
-      final initializer = PluginInitializer(container: container);
+    test(
+      'defaults Logger, Configuration, and the state machine when absent',
+      () async {
+        final container = ServiceContainer();
+        _registerFullDependencySet(container);
+        // Deliberately not registering Logger/ConfigurationManager/Lifecycle —
+        // PluginInitializer must construct sensible defaults for these three.
+        final initializer = PluginInitializer(container: container);
 
-      await initializer.initialize(const FlutterShieldConfig());
+        await initializer.initialize(const DeviceShieldConfig());
 
-      expect(container.isRegistered<Lifecycle>(), isTrue);
-      expect(container.isRegistered<Logger>(), isTrue);
-      expect(container.isRegistered<ConfigurationManager>(), isTrue);
-      expect(container.resolve<ConfigurationManager>().current.debugLogging,
-          isFalse);
-    });
+        expect(container.isRegistered<Lifecycle>(), isTrue);
+        expect(container.isRegistered<Logger>(), isTrue);
+        expect(container.isRegistered<ConfigurationManager>(), isTrue);
+        expect(
+          container.resolve<ConfigurationManager>().current.debugLogging,
+          isFalse,
+        );
+      },
+    );
 
     test(
-        'boots to running from an entirely empty container — '
-        'PluginInitializer now constructs every service itself, including '
-        'DetectionManager/PolicyManager/SecurityManager/LifecycleManager',
-        () async {
-      final container = ServiceContainer();
-      // Nothing pre-registered at all — every one of the nine steps must
-      // default on its own, proving PluginInitializer fully owns service
-      // creation rather than requiring a caller to compose the manager
-      // layer beforehand.
-      final initializer = PluginInitializer(container: container);
+      'boots to running from an entirely empty container — '
+      'PluginInitializer now constructs every service itself, including '
+      'DetectionManager/PolicyManager/SecurityManager/LifecycleManager',
+      () async {
+        final container = ServiceContainer();
+        // Nothing pre-registered at all — every one of the nine steps must
+        // default on its own, proving PluginInitializer fully owns service
+        // creation rather than requiring a caller to compose the manager
+        // layer beforehand.
+        final initializer = PluginInitializer(container: container);
 
-      await initializer.initialize(const FlutterShieldConfig());
+        await initializer.initialize(const DeviceShieldConfig());
 
-      expect(container.resolve<Lifecycle>().current, SDKState.running);
-      expect(container.isRegistered<PermissionManager>(), isTrue);
-      expect(container.isRegistered<DetectionManager>(), isTrue);
-      expect(container.isRegistered<PolicyManager>(), isTrue);
-      expect(container.isRegistered<SecurityManager>(), isTrue);
-      expect(container.isRegistered<LifecycleManager>(), isTrue);
-      expect(container.resolve<SecurityManager>().status, SDKState.running);
+        expect(container.resolve<Lifecycle>().current, SDKState.running);
+        expect(container.isRegistered<PermissionManager>(), isTrue);
+        expect(container.isRegistered<DetectionManager>(), isTrue);
+        expect(container.isRegistered<PolicyManager>(), isTrue);
+        expect(container.isRegistered<SecurityManager>(), isTrue);
+        expect(container.isRegistered<LifecycleManager>(), isTrue);
+        expect(container.resolve<SecurityManager>().status, SDKState.running);
 
-      await initializer.dispose();
-    });
+        await initializer.dispose();
+      },
+    );
   });
 
   group('PluginInitializer — failure and rollback', () {
-    test(
-        'rolls back to failure when a pre-registered SecurityManager '
+    test('rolls back to failure when a pre-registered SecurityManager '
         'factory throws mid-boot', () async {
       final container = ServiceContainer();
       container.registerSingleton<NativeBridge>(_FakeNativeBridge());
@@ -293,15 +296,18 @@ void main() {
       final initializer = PluginInitializer(container: container);
 
       await expectLater(
-        initializer.initialize(const FlutterShieldConfig()),
+        initializer.initialize(const DeviceShieldConfig()),
         throwsA(isA<Exception>()),
       );
 
       final stateManager = container.resolve<Lifecycle>();
       expect(stateManager.current, SDKState.failure);
       expect(eventManager.initialized, isTrue);
-      expect(eventManager.disposed, isTrue,
-          reason: 'a completed step must be torn down on later failure');
+      expect(
+        eventManager.disposed,
+        isTrue,
+        reason: 'a completed step must be torn down on later failure',
+      );
     });
 
     test('invalid config throws before any step runs', () async {
@@ -311,7 +317,8 @@ void main() {
 
       await expectLater(
         initializer.initialize(
-            const FlutterShieldConfig(periodicCheckInterval: 100)),
+          const DeviceShieldConfig(periodicCheckInterval: 100),
+        ),
         throwsA(isA<ConfigurationException>()),
       );
     });
@@ -320,24 +327,28 @@ void main() {
       final container = ServiceContainer();
       _registerFullDependencySet(container);
       final initializer = PluginInitializer(container: container);
-      await initializer.initialize(const FlutterShieldConfig());
+      await initializer.initialize(const DeviceShieldConfig());
 
       await expectLater(
-        initializer.initialize(const FlutterShieldConfig()),
-        throwsA(isA<InitializationException>()
-            .having((e) => e.code, 'code', 'ALREADY_INITIALIZING')),
+        initializer.initialize(const DeviceShieldConfig()),
+        throwsA(
+          isA<InitializationException>().having(
+            (e) => e.code,
+            'code',
+            'ALREADY_INITIALIZING',
+          ),
+        ),
       );
     });
   });
 
   group('PluginInitializer — shutdown, dispose, reinitialize', () {
     test('shutdown disposes and unregisters SecurityManager/EventManager/'
-        'NativeBridge — a disposed service is never left resolvable',
-        () async {
+        'NativeBridge — a disposed service is never left resolvable', () async {
       final container = ServiceContainer();
       _registerFullDependencySet(container);
       final initializer = PluginInitializer(container: container);
-      await initializer.initialize(const FlutterShieldConfig());
+      await initializer.initialize(const DeviceShieldConfig());
       // Captured before shutdown — resolving after shutdown must throw,
       // per Correction 4 (disposed services are unregistered, never
       // reused).
@@ -373,14 +384,14 @@ void main() {
       final container = ServiceContainer();
       _registerFullDependencySet(container);
       final initializer = PluginInitializer(container: container);
-      await initializer.initialize(const FlutterShieldConfig());
+      await initializer.initialize(const DeviceShieldConfig());
       await initializer.shutdown();
 
       // SecurityManager was unregistered by shutdown() — re-register a
       // fresh one, exactly as a real caller composing the SDK would.
       container.registerSingleton<SecurityManager>(_FakeSecurityManager());
 
-      await initializer.reinitialize(const FlutterShieldConfig());
+      await initializer.reinitialize(const DeviceShieldConfig());
 
       final stateManager = container.resolve<Lifecycle>();
       expect(stateManager.current, SDKState.running);
@@ -397,23 +408,25 @@ void main() {
       final container = ServiceContainer();
       _registerFullDependencySet(container);
       final initializer = PluginInitializer(container: container);
-      await initializer.initialize(
-          const FlutterShieldConfig(periodicCheckInterval: 30000));
-      final configManagerBeforeShutdown =
-          container.resolve<ConfigurationManager>();
+      await initializer.initialize(const DeviceShieldConfig());
+      final configManagerBeforeShutdown = container
+          .resolve<ConfigurationManager>();
       await initializer.shutdown();
       container.registerSingleton<SecurityManager>(_FakeSecurityManager());
 
       await initializer.reinitialize(
-          const FlutterShieldConfig(periodicCheckInterval: 60000));
+        const DeviceShieldConfig(periodicCheckInterval: 60000),
+      );
 
-      final configManagerAfterReinit =
-          container.resolve<ConfigurationManager>();
+      final configManagerAfterReinit = container
+          .resolve<ConfigurationManager>();
       // Same instance — not recreated, per Correction 3's explicit "do
       // not recreate ConfigurationManager solely for configuration
       // changes."
-      expect(identical(configManagerAfterReinit, configManagerBeforeShutdown),
-          isTrue);
+      expect(
+        identical(configManagerAfterReinit, configManagerBeforeShutdown),
+        isTrue,
+      );
       // But its value reflects the new config — proving updateConfig()
       // was actually called, not silently skipped.
       expect(configManagerAfterReinit.current.periodicCheckInterval, 60000);
@@ -423,7 +436,7 @@ void main() {
       final container = ServiceContainer();
       _registerFullDependencySet(container);
       final initializer = PluginInitializer(container: container);
-      await initializer.initialize(const FlutterShieldConfig());
+      await initializer.initialize(const DeviceShieldConfig());
 
       await initializer.dispose();
 
@@ -431,17 +444,24 @@ void main() {
       expect(container.isRegistered<NativeBridge>(), isFalse);
     });
 
-    test('shutdown without a prior initialize throws NOT_INITIALIZED',
-        () async {
-      final container = ServiceContainer();
-      final initializer = PluginInitializer(container: container);
+    test(
+      'shutdown without a prior initialize throws NOT_INITIALIZED',
+      () async {
+        final container = ServiceContainer();
+        final initializer = PluginInitializer(container: container);
 
-      await expectLater(
-        initializer.shutdown(),
-        throwsA(isA<InitializationException>()
-            .having((e) => e.code, 'code', 'NOT_INITIALIZED')),
-      );
-    });
+        await expectLater(
+          initializer.shutdown(),
+          throwsA(
+            isA<InitializationException>().having(
+              (e) => e.code,
+              'code',
+              'NOT_INITIALIZED',
+            ),
+          ),
+        );
+      },
+    );
   });
 
   group('PluginInitializer — PermissionManager step', () {
@@ -453,40 +473,43 @@ void main() {
       container.registerSingleton<PermissionManager>(permissionManager);
       final initializer = PluginInitializer(container: container);
 
-      await initializer.initialize(const FlutterShieldConfig());
+      await initializer.initialize(const DeviceShieldConfig());
 
       expect(permissionManager.initialized, isTrue);
-      expect(identical(container.resolve<PermissionManager>(),
-          permissionManager), isTrue);
+      expect(
+        identical(container.resolve<PermissionManager>(), permissionManager),
+        isTrue,
+      );
     });
 
-    test('defaults a real PermissionManager when none is registered',
-        () async {
+    test('defaults a real PermissionManager when none is registered', () async {
       final container = ServiceContainer();
       _registerFullDependencySet(container);
       final initializer = PluginInitializer(container: container);
 
-      await initializer.initialize(const FlutterShieldConfig());
+      await initializer.initialize(const DeviceShieldConfig());
 
       expect(container.isRegistered<PermissionManager>(), isTrue);
     });
 
-    test('a throwing PermissionManager rolls the boot back to failure',
-        () async {
-      final container = ServiceContainer();
-      _registerFullDependencySet(container);
-      container.registerSingleton<PermissionManager>(
-        _ThrowingPermissionManager(),
-      );
-      final initializer = PluginInitializer(container: container);
+    test(
+      'a throwing PermissionManager rolls the boot back to failure',
+      () async {
+        final container = ServiceContainer();
+        _registerFullDependencySet(container);
+        container.registerSingleton<PermissionManager>(
+          _ThrowingPermissionManager(),
+        );
+        final initializer = PluginInitializer(container: container);
 
-      await expectLater(
-        initializer.initialize(const FlutterShieldConfig()),
-        throwsA(isA<StateError>()),
-      );
+        await expectLater(
+          initializer.initialize(const DeviceShieldConfig()),
+          throwsA(isA<StateError>()),
+        );
 
-      expect(container.resolve<Lifecycle>().current, SDKState.failure);
-    });
+        expect(container.resolve<Lifecycle>().current, SDKState.failure);
+      },
+    );
   });
 
   group('Architecture Correction 1 — ServiceContainer has an independent '
@@ -496,7 +519,7 @@ void main() {
       final container = ServiceContainer();
       _registerFullDependencySet(container);
       final first = PluginInitializer(container: container);
-      await first.initialize(const FlutterShieldConfig());
+      await first.initialize(const DeviceShieldConfig());
       await first.dispose();
 
       // The container object itself is untouched by dispose() — only its
@@ -507,7 +530,7 @@ void main() {
       _registerFullDependencySet(container);
       final second = PluginInitializer(container: container);
 
-      await second.initialize(const FlutterShieldConfig());
+      await second.initialize(const DeviceShieldConfig());
 
       expect(container.resolve<Lifecycle>().current, SDKState.running);
     });

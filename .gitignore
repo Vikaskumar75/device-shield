@@ -1,0 +1,5 @@
+# Repository-wide. Package- and site-specific rules live in app/.gitignore
+# and website/.gitignore.
+.DS_Store
+.idea/
+*.iml

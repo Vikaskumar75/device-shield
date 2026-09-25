@@ -1,5 +1,5 @@
+import 'package:device_shield/device_shield.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_shield/flutter_shield.dart';
 
 import '../core/shield_scope.dart';
 import '../widgets/alert_demo.dart';
@@ -48,7 +48,8 @@ class _ScreenshotDemoScreenState extends State<ScreenshotDemoScreen> {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             const InfoBanner(
-              message: 'Android requires API 34+ and no extra permissions '
+              message:
+                  'Android requires API 34+ and no extra permissions '
                   '(Activity.registerScreenCaptureCallback). iOS works on '
                   'any version via UIApplication.userDidTakeScreenshot'
                   'Notification — not ReplayKit.',
@@ -58,7 +59,8 @@ class _ScreenshotDemoScreenState extends State<ScreenshotDemoScreen> {
               children: [
                 StatusRow(
                   label: 'Detector registered',
-                  value: controller.detectorEnabled[ScreenshotDetector.typeId] ==
+                  value:
+                      controller.detectorEnabled[ScreenshotDetector.typeId] ==
                           true
                       ? 'Yes'
                       : 'No — enable it in Runtime Controls',
@@ -69,7 +71,8 @@ class _ScreenshotDemoScreenState extends State<ScreenshotDemoScreen> {
                 ),
                 StatusRow(
                   label: 'Last screenshot',
-                  value: controller.lastScreenshotAt?.toIso8601String() ??
+                  value:
+                      controller.lastScreenshotAt?.toIso8601String() ??
                       'None yet',
                 ),
               ],
@@ -108,8 +111,10 @@ class _ScreenshotDemoScreenState extends State<ScreenshotDemoScreen> {
                 Text('1. Runtime Controls → Initialize SDK.'),
                 Text('2. Runtime Controls → enable the Screenshot Detector.'),
                 Text('3. Take a real screenshot of this device.'),
-                Text('4. The alert above fires automatically within ~1s, '
-                    'and the event appears on the Events screen.'),
+                Text(
+                  '4. The alert above fires automatically within ~1s, '
+                  'and the event appears on the Events screen.',
+                ),
               ],
             ),
           ],

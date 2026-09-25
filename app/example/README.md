@@ -1,6 +1,6 @@
-# flutter_shield_example
+# device_shield_example
 
-Demonstrates how to use the flutter_shield plugin.
+Demonstrates how to use the device_shield plugin.
 
 ## Getting Started
 

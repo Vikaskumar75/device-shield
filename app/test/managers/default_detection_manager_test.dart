@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:flutter_shield/src/core/console_logger.dart';
-import 'package:flutter_shield/src/managers/concurrency_controller.dart';
-import 'package:flutter_shield/src/managers/default_detection_manager.dart';
-import 'package:flutter_shield/src/managers/detection_cache.dart';
-import 'package:flutter_shield/src/models/detection_result.dart';
-import 'package:flutter_shield/src/models/flutter_shield_exception.dart';
-import 'package:flutter_shield/src/registry/default_detector_registry.dart';
-import 'package:flutter_shield/src/registry/detector.dart';
+import 'package:device_shield/src/core/console_logger.dart';
+import 'package:device_shield/src/managers/concurrency_controller.dart';
+import 'package:device_shield/src/managers/default_detection_manager.dart';
+import 'package:device_shield/src/managers/detection_cache.dart';
+import 'package:device_shield/src/models/detection_result.dart';
+import 'package:device_shield/src/models/device_shield_exception.dart';
+import 'package:device_shield/src/registry/default_detector_registry.dart';
+import 'package:device_shield/src/registry/detector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeDetector implements Detector {
@@ -70,24 +70,23 @@ class _ControllableDetector implements Detector {
 }
 
 DetectionResult _resultFor(String type) => DetectionResult(
-      type: type,
-      detected: false,
-      confidence: 0.0,
-      timestamp: DateTime.now(),
-    );
+  type: type,
+  detected: false,
+  confidence: 0.0,
+  timestamp: DateTime.now(),
+);
 
 DefaultDetectionManager _buildManager({
   ConcurrencyController? concurrencyController,
   Duration? detectorTimeout,
   DetectionCache? detectionCache,
-}) =>
-    DefaultDetectionManager(
-      logger: ConsoleLogger(),
-      registry: DefaultDetectorRegistry(),
-      concurrencyController: concurrencyController,
-      detectorTimeout: detectorTimeout ?? const Duration(milliseconds: 5000),
-      detectionCache: detectionCache,
-    );
+}) => DefaultDetectionManager(
+  logger: ConsoleLogger(),
+  registry: DefaultDetectorRegistry(),
+  concurrencyController: concurrencyController,
+  detectorTimeout: detectorTimeout ?? const Duration(milliseconds: 5000),
+  detectionCache: detectionCache,
+);
 
 void main() {
   group('DefaultDetectionManager — coordination only, delegates storage '
@@ -112,8 +111,7 @@ void main() {
       );
     });
 
-    test('runAllChecks calls check() on every registered detector',
-        () async {
+    test('runAllChecks calls check() on every registered detector', () async {
       final manager = _buildManager();
       final a = _FakeDetector('alpha');
       final b = _FakeDetector('beta');
@@ -127,8 +125,7 @@ void main() {
       expect(results, hasLength(2));
     });
 
-    test('runAllChecks respects the registry\'s priority ordering',
-        () async {
+    test('runAllChecks respects the registry\'s priority ordering', () async {
       final manager = _buildManager();
       final low = _FakeDetector('low', priority: 10);
       final high = _FakeDetector('high', priority: 1);
@@ -143,18 +140,21 @@ void main() {
       expect(results.map((r) => r.type), ['high', 'low']);
     });
 
-    test('a failing detector is excluded but does not fail the batch',
-        () async {
-      final manager = _buildManager();
-      await manager.registerDetector(_FakeDetector('good'));
-      await manager.registerDetector(
-          _FakeDetector('bad', throwsOnCheck: true));
+    test(
+      'a failing detector is excluded but does not fail the batch',
+      () async {
+        final manager = _buildManager();
+        await manager.registerDetector(_FakeDetector('good'));
+        await manager.registerDetector(
+          _FakeDetector('bad', throwsOnCheck: true),
+        );
 
-      final results = await manager.runAllChecks();
+        final results = await manager.runAllChecks();
 
-      expect(results, hasLength(1));
-      expect(results.single.type, 'good');
-    });
+        expect(results, hasLength(1));
+        expect(results.single.type, 'good');
+      },
+    );
 
     test('runCheck runs only the named detector', () async {
       final manager = _buildManager();
@@ -169,14 +169,18 @@ void main() {
       expect(b.checkCount, 0);
     });
 
-    test('runCheck throws DETECTOR_UNAVAILABLE for an unknown type',
-        () async {
+    test('runCheck throws DETECTOR_UNAVAILABLE for an unknown type', () async {
       final manager = _buildManager();
 
       expect(
         () => manager.runCheck('nonexistent'),
-        throwsA(isA<DetectionException>()
-            .having((e) => e.code, 'code', 'DETECTOR_UNAVAILABLE')),
+        throwsA(
+          isA<DetectionException>().having(
+            (e) => e.code,
+            'code',
+            'DETECTOR_UNAVAILABLE',
+          ),
+        ),
       );
     });
 
@@ -202,19 +206,22 @@ void main() {
       final allStarted = Completer<void>();
       var startedCount = 0;
       for (final type in ['a', 'b', 'c']) {
-        await manager.registerDetector(_ControllableDetector(type, () async {
-          startedCount++;
-          if (startedCount == 3) allStarted.complete();
-          // Every detector blocks until all 3 have started — only
-          // possible if the manager actually dispatched them
-          // concurrently rather than one at a time.
-          await allStarted.future;
-          return _resultFor(type);
-        }));
+        await manager.registerDetector(
+          _ControllableDetector(type, () async {
+            startedCount++;
+            if (startedCount == 3) allStarted.complete();
+            // Every detector blocks until all 3 have started — only
+            // possible if the manager actually dispatched them
+            // concurrently rather than one at a time.
+            await allStarted.future;
+            return _resultFor(type);
+          }),
+        );
       }
 
-      final results =
-          await manager.runAllChecks().timeout(const Duration(seconds: 2));
+      final results = await manager.runAllChecks().timeout(
+        const Duration(seconds: 2),
+      );
 
       expect(results.map((r) => r.type).toSet(), {'a', 'b', 'c'});
     });
@@ -225,14 +232,18 @@ void main() {
         detectorTimeout: const Duration(milliseconds: 20),
       );
       await manager.registerDetector(
-        _ControllableDetector('slow', () => Completer<DetectionResult>().future),
+        _ControllableDetector(
+          'slow',
+          () => Completer<DetectionResult>().future,
+        ),
       );
       await manager.registerDetector(
         _ControllableDetector('fast', () async => _resultFor('fast')),
       );
 
-      final results =
-          await manager.runAllChecks().timeout(const Duration(seconds: 2));
+      final results = await manager.runAllChecks().timeout(
+        const Duration(seconds: 2),
+      );
 
       expect(results.map((r) => r.type), ['fast']);
     });
@@ -243,11 +254,13 @@ void main() {
       final manager = _buildManager();
       final release = Completer<void>();
       var checkCount = 0;
-      await manager.registerDetector(_ControllableDetector('alpha', () async {
-        checkCount++;
-        await release.future;
-        return _resultFor('alpha');
-      }));
+      await manager.registerDetector(
+        _ControllableDetector('alpha', () async {
+          checkCount++;
+          await release.future;
+          return _resultFor('alpha');
+        }),
+      );
 
       final first = manager.runAllChecks();
       final second = manager.runAllChecks();
@@ -275,37 +288,39 @@ void main() {
       expect(detector.checkCount, 2);
     });
 
-    test('dispose cancels not-yet-started detectors in an in-flight batch',
-        () async {
-      final manager = _buildManager(
-        concurrencyController: ConcurrencyController(maxConcurrent: 1),
-      );
-      final startedFirst = Completer<void>();
-      final releaseFirst = Completer<void>();
-      var secondCheckCount = 0;
-      await manager.registerDetector(
-        _ControllableDetector('first', () async {
-          startedFirst.complete();
-          await releaseFirst.future;
-          return _resultFor('first');
-        }, priority: 0),
-      );
-      await manager.registerDetector(
-        _ControllableDetector('second', () async {
-          secondCheckCount++;
-          return _resultFor('second');
-        }, priority: 1),
-      );
+    test(
+      'dispose cancels not-yet-started detectors in an in-flight batch',
+      () async {
+        final manager = _buildManager(
+          concurrencyController: ConcurrencyController(maxConcurrent: 1),
+        );
+        final startedFirst = Completer<void>();
+        final releaseFirst = Completer<void>();
+        var secondCheckCount = 0;
+        await manager.registerDetector(
+          _ControllableDetector('first', () async {
+            startedFirst.complete();
+            await releaseFirst.future;
+            return _resultFor('first');
+          }),
+        );
+        await manager.registerDetector(
+          _ControllableDetector('second', () async {
+            secondCheckCount++;
+            return _resultFor('second');
+          }, priority: 1),
+        );
 
-      final batch = manager.runAllChecks();
-      await startedFirst.future;
-      await manager.dispose();
-      releaseFirst.complete();
-      final results = await batch;
+        final batch = manager.runAllChecks();
+        await startedFirst.future;
+        await manager.dispose();
+        releaseFirst.complete();
+        final results = await batch;
 
-      expect(results.map((r) => r.type), ['first']);
-      expect(secondCheckCount, 0);
-    });
+        expect(results.map((r) => r.type), ['first']);
+        expect(secondCheckCount, 0);
+      },
+    );
   });
 
   group('DefaultDetectionManager — DetectionCache integration', () {
@@ -323,7 +338,7 @@ void main() {
 
     test('a cache hit reuses the cached result instead of calling check() '
         'again', () async {
-      final cache = DetectionCache(ttl: const Duration(seconds: 30));
+      final cache = DetectionCache();
       final manager = _buildManager(detectionCache: cache);
       final detector = _FakeDetector('alpha');
       await manager.registerDetector(detector);
@@ -352,7 +367,7 @@ void main() {
 
     test('partial cache reuse: a cached detector is skipped while an '
         'uncached one still runs, in the same batch', () async {
-      final cache = DetectionCache(ttl: const Duration(seconds: 30));
+      final cache = DetectionCache();
       cache.put('cached', _resultFor('cached'));
       final manager = _buildManager(detectionCache: cache);
       final cachedDetector = _FakeDetector('cached');
@@ -384,7 +399,7 @@ void main() {
 
     test('concurrent detector execution still applies the cache '
         'correctly, per detector', () async {
-      final cache = DetectionCache(ttl: const Duration(seconds: 30));
+      final cache = DetectionCache();
       cache.put('cached', _resultFor('cached'));
       final manager = _buildManager(
         concurrencyController: ConcurrencyController(maxConcurrent: 3),
@@ -393,28 +408,32 @@ void main() {
       final allFreshStarted = Completer<void>();
       var freshStartedCount = 0;
       for (final type in ['fresh-a', 'fresh-b']) {
-        await manager.registerDetector(_ControllableDetector(type, () async {
-          freshStartedCount++;
-          if (freshStartedCount == 2) allFreshStarted.complete();
-          await allFreshStarted.future;
-          return _resultFor(type);
-        }));
+        await manager.registerDetector(
+          _ControllableDetector(type, () async {
+            freshStartedCount++;
+            if (freshStartedCount == 2) allFreshStarted.complete();
+            await allFreshStarted.future;
+            return _resultFor(type);
+          }),
+        );
       }
       await manager.registerDetector(_FakeDetector('cached'));
 
-      final results =
-          await manager.runAllChecks().timeout(const Duration(seconds: 2));
+      final results = await manager.runAllChecks().timeout(
+        const Duration(seconds: 2),
+      );
 
-      expect(results.map((r) => r.type).toSet(),
-          {'cached', 'fresh-a', 'fresh-b'});
+      expect(results.map((r) => r.type).toSet(), {
+        'cached',
+        'fresh-a',
+        'fresh-b',
+      });
     });
 
     test('a failing detector is never cached', () async {
       final cache = DetectionCache();
       final manager = _buildManager(detectionCache: cache);
-      await manager.registerDetector(
-        _FakeDetector('bad', throwsOnCheck: true),
-      );
+      await manager.registerDetector(_FakeDetector('bad', throwsOnCheck: true));
 
       final results = await manager.runAllChecks();
 
@@ -429,11 +448,15 @@ void main() {
         detectionCache: cache,
       );
       await manager.registerDetector(
-        _ControllableDetector('slow', () => Completer<DetectionResult>().future),
+        _ControllableDetector(
+          'slow',
+          () => Completer<DetectionResult>().future,
+        ),
       );
 
-      final results =
-          await manager.runAllChecks().timeout(const Duration(seconds: 2));
+      final results = await manager.runAllChecks().timeout(
+        const Duration(seconds: 2),
+      );
 
       expect(results, isEmpty);
       expect(cache.contains('slow'), isFalse);
@@ -454,7 +477,7 @@ void main() {
 
     test('deterministic ordering is preserved with a mix of cache hits '
         'and misses', () async {
-      final cache = DetectionCache(ttl: const Duration(seconds: 30));
+      final cache = DetectionCache();
       cache.put('high', _resultFor('high'));
       final manager = _buildManager(detectionCache: cache);
       await manager.registerDetector(_FakeDetector('low', priority: 10));

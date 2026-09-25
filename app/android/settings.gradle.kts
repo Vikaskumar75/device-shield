@@ -1,1 +1,1 @@
-rootProject.name = "flutter_shield"
+rootProject.name = "device_shield"

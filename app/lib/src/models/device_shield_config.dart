@@ -20,13 +20,13 @@
 /// [allowRecordingDetectionInDebug] are exactly the fields this class's own
 /// doc comment above predicted — the first detector/protection-adjacent
 /// fields added since that prediction was written. See
-/// `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §4 for the
+/// `doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §4 for the
 /// full design and §4.4 for why these live here rather than on
 /// `SecurityProfile`/`ProtectionConfig` (not yet threaded through
 /// `initialize()`). All five default to the least-invasive option, matching
 /// every existing field's own default philosophy — no existing detector is
 /// auto-registered at boot without the host app opting in either.
-class FlutterShieldConfig {
+class DeviceShieldConfig {
   final bool debugLogging;
   final bool runOnUIThread;
   final int periodicCheckInterval;
@@ -49,7 +49,7 @@ class FlutterShieldConfig {
   /// forcing every screen to block screenshots by default would be a
   /// surprising, breaking, opinionated default inconsistent with every
   /// other field above. Most host apps will instead call
-  /// `FlutterShield.enableScreenshotProtection()` imperatively for one
+  /// `DeviceShield.enableScreenshotProtection()` imperatively for one
   /// specific sensitive screen.
   final bool enableScreenshotProtection;
 
@@ -77,7 +77,7 @@ class FlutterShieldConfig {
   /// which special-case debug builds; see design doc §4.1.
   final bool allowRecordingDetectionInDebug;
 
-  const FlutterShieldConfig({
+  const DeviceShieldConfig({
     this.debugLogging = false,
     this.runOnUIThread = false,
     this.periodicCheckInterval = 30000,
@@ -92,7 +92,7 @@ class FlutterShieldConfig {
     this.allowRecordingDetectionInDebug = true,
   });
 
-  FlutterShieldConfig copyWith({
+  DeviceShieldConfig copyWith({
     bool? debugLogging,
     bool? runOnUIThread,
     int? periodicCheckInterval,
@@ -106,7 +106,7 @@ class FlutterShieldConfig {
     double? screenshotRecordingRiskScoreWeight,
     bool? allowRecordingDetectionInDebug,
   }) {
-    return FlutterShieldConfig(
+    return DeviceShieldConfig(
       debugLogging: debugLogging ?? this.debugLogging,
       runOnUIThread: runOnUIThread ?? this.runOnUIThread,
       periodicCheckInterval:
@@ -116,37 +116,37 @@ class FlutterShieldConfig {
       checkTimeout: checkTimeout ?? this.checkTimeout,
       enableScreenshotDetection:
           enableScreenshotDetection ?? this.enableScreenshotDetection,
-      enableScreenRecordingDetection: enableScreenRecordingDetection ??
-          this.enableScreenRecordingDetection,
+      enableScreenRecordingDetection:
+          enableScreenRecordingDetection ?? this.enableScreenRecordingDetection,
       enableScreenshotProtection:
           enableScreenshotProtection ?? this.enableScreenshotProtection,
       enableAppSwitcherProtection:
           enableAppSwitcherProtection ?? this.enableAppSwitcherProtection,
-      screenshotRecordingRiskScoreWeight: screenshotRecordingRiskScoreWeight ??
+      screenshotRecordingRiskScoreWeight:
+          screenshotRecordingRiskScoreWeight ??
           this.screenshotRecordingRiskScoreWeight,
-      allowRecordingDetectionInDebug: allowRecordingDetectionInDebug ??
-          this.allowRecordingDetectionInDebug,
+      allowRecordingDetectionInDebug:
+          allowRecordingDetectionInDebug ?? this.allowRecordingDetectionInDebug,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'debugLogging': debugLogging,
-        'runOnUIThread': runOnUIThread,
-        'periodicCheckInterval': periodicCheckInterval,
-        'maxRetryAttempts': maxRetryAttempts,
-        'retryDelay': retryDelay,
-        'checkTimeout': checkTimeout,
-        'enableScreenshotDetection': enableScreenshotDetection,
-        'enableScreenRecordingDetection': enableScreenRecordingDetection,
-        'enableScreenshotProtection': enableScreenshotProtection,
-        'enableAppSwitcherProtection': enableAppSwitcherProtection,
-        'screenshotRecordingRiskScoreWeight':
-            screenshotRecordingRiskScoreWeight,
-        'allowRecordingDetectionInDebug': allowRecordingDetectionInDebug,
-      };
+    'debugLogging': debugLogging,
+    'runOnUIThread': runOnUIThread,
+    'periodicCheckInterval': periodicCheckInterval,
+    'maxRetryAttempts': maxRetryAttempts,
+    'retryDelay': retryDelay,
+    'checkTimeout': checkTimeout,
+    'enableScreenshotDetection': enableScreenshotDetection,
+    'enableScreenRecordingDetection': enableScreenRecordingDetection,
+    'enableScreenshotProtection': enableScreenshotProtection,
+    'enableAppSwitcherProtection': enableAppSwitcherProtection,
+    'screenshotRecordingRiskScoreWeight': screenshotRecordingRiskScoreWeight,
+    'allowRecordingDetectionInDebug': allowRecordingDetectionInDebug,
+  };
 
-  factory FlutterShieldConfig.fromJson(Map<String, dynamic> json) {
-    return FlutterShieldConfig(
+  factory DeviceShieldConfig.fromJson(Map<String, dynamic> json) {
+    return DeviceShieldConfig(
       debugLogging: json['debugLogging'] as bool? ?? false,
       runOnUIThread: json['runOnUIThread'] as bool? ?? false,
       periodicCheckInterval: json['periodicCheckInterval'] as int? ?? 30000,
@@ -163,7 +163,7 @@ class FlutterShieldConfig {
           json['enableAppSwitcherProtection'] as bool? ?? false,
       screenshotRecordingRiskScoreWeight:
           (json['screenshotRecordingRiskScoreWeight'] as num?)?.toDouble() ??
-              1.0,
+          1.0,
       allowRecordingDetectionInDebug:
           json['allowRecordingDetectionInDebug'] as bool? ?? true,
     );
@@ -172,7 +172,7 @@ class FlutterShieldConfig {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is FlutterShieldConfig &&
+      other is DeviceShieldConfig &&
           runtimeType == other.runtimeType &&
           debugLogging == other.debugLogging &&
           runOnUIThread == other.runOnUIThread &&
@@ -192,21 +192,22 @@ class FlutterShieldConfig {
 
   @override
   int get hashCode => Object.hash(
-        debugLogging,
-        runOnUIThread,
-        periodicCheckInterval,
-        maxRetryAttempts,
-        retryDelay,
-        checkTimeout,
-        enableScreenshotDetection,
-        enableScreenRecordingDetection,
-        enableScreenshotProtection,
-        enableAppSwitcherProtection,
-        screenshotRecordingRiskScoreWeight,
-        allowRecordingDetectionInDebug,
-      );
+    debugLogging,
+    runOnUIThread,
+    periodicCheckInterval,
+    maxRetryAttempts,
+    retryDelay,
+    checkTimeout,
+    enableScreenshotDetection,
+    enableScreenRecordingDetection,
+    enableScreenshotProtection,
+    enableAppSwitcherProtection,
+    screenshotRecordingRiskScoreWeight,
+    allowRecordingDetectionInDebug,
+  );
 
   @override
-  String toString() => 'FlutterShieldConfig(periodicCheckInterval: '
+  String toString() =>
+      'DeviceShieldConfig(periodicCheckInterval: '
       '$periodicCheckInterval, maxRetryAttempts: $maxRetryAttempts)';
 }

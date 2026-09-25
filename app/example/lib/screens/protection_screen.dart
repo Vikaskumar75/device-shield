@@ -4,7 +4,7 @@ import '../core/shield_scope.dart';
 import '../widgets/action_button.dart';
 import '../widgets/status_card.dart';
 
-/// Demonstrates `FlutterShield.enableScreenshotProtection()` /
+/// Demonstrates `DeviceShield.enableScreenshotProtection()` /
 /// `disableScreenshotProtection()` / `isScreenshotProtectionEnabled` —
 /// imperative, proactive blocking, independent of detection entirely.
 /// States the platform truth plainly: Android applies `FLAG_SECURE`,
@@ -30,7 +30,8 @@ class ProtectionScreen extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             const InfoBanner(
-              message: 'Android: FLAG_SECURE is applied SDK-wide — every '
+              message:
+                  'Android: FLAG_SECURE is applied SDK-wide — every '
                   'screen blocks screenshots and shows a black rectangle in '
                   'the recent-apps switcher, and "applied" is true. This is '
                   'confirmed working. iOS: attempts the same effect via an '
@@ -48,8 +49,9 @@ class ProtectionScreen extends StatelessWidget {
                 StatusRow(
                   label: 'Screenshot protection enabled',
                   value: controller.protectionEnabled ? 'Yes' : 'No',
-                  valueColor:
-                      controller.protectionEnabled ? Colors.green : null,
+                  valueColor: controller.protectionEnabled
+                      ? Colors.green
+                      : null,
                 ),
               ],
             ),
@@ -80,20 +82,27 @@ class ProtectionScreen extends StatelessWidget {
               children: [
                 Text('1. Runtime Controls → Initialize SDK.'),
                 Text('2. Tap "Enable protection" above.'),
-                Text('3. Android: try to take a screenshot — it will be '
-                    'blocked (black image) and the recent-apps thumbnail '
-                    'goes blank.'),
-                Text('4. iOS: try to take a screenshot (Cmd+S in '
-                    'Simulator, or the side/volume-up chord on a real '
-                    'device). On Simulator this is expected to still '
-                    'show real content — unconfirmed whether it comes '
-                    'back black on physical hardware (design doc §18.5).'),
-                Text('5. Tap "Disable protection" and confirm normal '
-                    'screenshot behavior returns on both platforms.'),
+                Text(
+                  '3. Android: try to take a screenshot — it will be '
+                  'blocked (black image) and the recent-apps thumbnail '
+                  'goes blank.',
+                ),
+                Text(
+                  '4. iOS: try to take a screenshot (Cmd+S in '
+                  'Simulator, or the side/volume-up chord on a real '
+                  'device). On Simulator this is expected to still '
+                  'show real content — unconfirmed whether it comes '
+                  'back black on physical hardware (design doc §18.5).',
+                ),
+                Text(
+                  '5. Tap "Disable protection" and confirm normal '
+                  'screenshot behavior returns on both platforms.',
+                ),
               ],
             ),
             const InfoBanner(
-              message: 'App-switcher protection: Android is a documented '
+              message:
+                  'App-switcher protection: Android is a documented '
                   'alias for the same FLAG_SECURE flag above. iOS is a '
                   'real, independent mechanism — a blur overlay covers '
                   'the app the instant it resigns active, before the OS '
@@ -138,11 +147,15 @@ class ProtectionScreen extends StatelessWidget {
               title: 'How to test (app-switcher)',
               children: [
                 Text('1. Tap "Enable app-switcher protection" above.'),
-                Text('2. iOS: swipe up to the App Switcher (or press Home) '
-                    '— the app content is blurred instead of showing raw '
-                    'content.'),
-                Text('3. Android: same as screenshot protection above — '
-                    'Recents already shows a blank thumbnail.'),
+                Text(
+                  '2. iOS: swipe up to the App Switcher (or press Home) '
+                  '— the app content is blurred instead of showing raw '
+                  'content.',
+                ),
+                Text(
+                  '3. Android: same as screenshot protection above — '
+                  'Recents already shows a blank thumbnail.',
+                ),
               ],
             ),
           ],

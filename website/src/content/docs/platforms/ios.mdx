@@ -1,0 +1,60 @@
+---
+title: iOS setup
+description: Deployment target, privacy manifest, and optional location configuration for device_shield on iOS.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Minimum: **iOS 15.0**. Set it in Xcode (*Runner → General → Minimum
+Deployments*) or in your `Podfile`:
+
+```ruby title="ios/Podfile"
+platform :ios, '15.0'
+```
+
+<Aside type="caution">
+  iOS behaviour has been checked on the Simulator only (iOS 26.4). Versions
+  15 to 17 and physical devices haven't been tested.
+</Aside>
+
+## Privacy manifest
+
+The plugin ships a `PrivacyInfo.xcprivacy` declaring **no tracking, no
+collected data and no required-reason APIs**. Xcode includes it in your app's
+privacy report automatically. You don't need to change your own manifest.
+
+## Location (for mock location)
+
+The plugin never asks for location access. To enable the location-based
+[mock-location](../../detection/mock-location/) signals:
+
+1. Add a usage description to `ios/Runner/Info.plist`:
+
+   ```xml
+   <key>NSLocationWhenInUseUsageDescription</key>
+   <string>Used to verify your location isn't being spoofed.</string>
+   ```
+
+2. Request authorisation with your usual location plugin.
+
+Without authorisation, only the jailbreak-tweak signal can fire, and
+`evidence['permissionGranted']` is `false`.
+
+<Aside type="note" title="Current limitation">
+  Even with authorisation, iOS location signals rarely fire today, because the
+  SDK reads the last known location without starting location updates.
+</Aside>
+
+## App Store review
+
+Jailbreak detection tries to spawn `/bin/ls` and to write a file under
+`/private/`, both of which only succeed outside the app sandbox. These are
+common jailbreak heuristics, but they use APIs App Review may ask about.
+Mention jailbreak detection in your review notes if your app is questioned.
+
+## Simulator behaviour
+
+- The Simulator always reports **emulator detected** (`simulator_target`).
+- Jailbreak detection may report signals on the Simulator, because the host
+  Mac's file system is partly visible. Test jailbreak handling on a physical
+  device.

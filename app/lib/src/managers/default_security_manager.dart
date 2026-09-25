@@ -23,7 +23,7 @@ import 'security_manager.dart';
 /// itself has no legitimate use for one (all native communication happens
 /// inside `DetectionManager`, via the detectors it hosts, and now inside
 /// [screenCaptureController], the one collaborator that genuinely needs
-/// direct native access — see docs/features/
+/// direct native access — see doc/features/
 /// SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §8.3). A `NativeBridge` is
 /// accepted as a constructor *parameter* solely to hand off to
 /// [screenCaptureController]'s own construction; it is never stored as a
@@ -36,7 +36,8 @@ import 'security_manager.dart';
 /// transition belongs to `PluginInitializer`/`ShutdownSequence`, per the
 /// same frozen table, so this class only stops its own periodic timer
 /// and leaves the state machine alone.
-class DefaultSecurityManager implements SecurityManager, SecurityLifecycleHandler {
+class DefaultSecurityManager
+    implements SecurityManager, SecurityLifecycleHandler {
   DefaultSecurityManager({
     required this.detectionManager,
     required this.policyManager,
@@ -167,24 +168,27 @@ class DefaultSecurityManager implements SecurityManager, SecurityLifecycleHandle
   Future<void> processResult(DetectionResult result) async {
     final action = await policyManager.evaluate(result);
     await policyManager.executeAction(action, result);
-    await eventManager.emit(SecurityEvent(
-      type: result.type,
-      timestamp: DateTime.now(),
-      // Deliberately constant — assigning severity based on the result
-      // would be a policy-adjacent decision; that content is out of
-      // scope for this phase, same as PolicyManager's placeholder
-      // action resolution.
-      severity: EventSeverity.info,
-      source: 'SecurityManager',
-      data: {'action': action.name, 'confidence': result.confidence},
-    ));
+    await eventManager.emit(
+      SecurityEvent(
+        type: result.type,
+        timestamp: DateTime.now(),
+        // Deliberately constant — assigning severity based on the result
+        // would be a policy-adjacent decision; that content is out of
+        // scope for this phase, same as PolicyManager's placeholder
+        // action resolution.
+        severity: EventSeverity.info,
+        source: 'SecurityManager',
+        data: {'action': action.name, 'confidence': result.confidence},
+      ),
+    );
   }
 
   @override
   Future<bool> enableScreenshotProtection() => screenCaptureController.enable();
 
   @override
-  Future<bool> disableScreenshotProtection() => screenCaptureController.disable();
+  Future<bool> disableScreenshotProtection() =>
+      screenCaptureController.disable();
 
   @override
   bool get isScreenshotProtectionEnabled => screenCaptureController.isEnabled;
@@ -222,8 +226,9 @@ class DefaultSecurityManager implements SecurityManager, SecurityLifecycleHandle
 
   void _startPeriodicChecks() {
     _stopPeriodicChecks();
-    final interval =
-        Duration(milliseconds: configurationManager.current.periodicCheckInterval);
+    final interval = Duration(
+      milliseconds: configurationManager.current.periodicCheckInterval,
+    );
     _timer = Timer.periodic(interval, (_) => checkNow());
   }
 
