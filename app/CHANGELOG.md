@@ -5,7 +5,7 @@ All notable changes to this package are documented here. The format follows
 follows [Semantic Versioning](https://semver.org/). Until 1.0.0, minor
 versions may contain breaking changes.
 
-## Unreleased
+## 0.0.1 (unreleased)
 
 Not yet published.
 

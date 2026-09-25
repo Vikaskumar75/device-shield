@@ -15,6 +15,11 @@ object EmulatorDetector {
     private val KNOWN_QEMU_PIPES = listOf("/dev/socket/qemud", "/dev/qemu_pipe")
     private const val SIGNAL_CATEGORY_COUNT = 7.0
 
+    private val GENERIC_PREFIXES = listOf("generic", "unknown")
+    private val EMULATOR_MODEL_MARKERS = listOf("google_sdk", "Emulator", "Android SDK built for")
+    private val EMULATOR_HARDWARE_MARKERS = listOf("goldfish", "ranchu", "vbox")
+    private val EMULATOR_PRODUCT_MARKERS = listOf("sdk", "vbox86p", "emulator")
+
     fun check(): Map<String, Any> {
         // Build's fields are Java platform types (nullable from Kotlin's
         // perspective) even though real devices always populate them —
@@ -52,28 +57,19 @@ object EmulatorDetector {
     ): Map<String, Any> {
         val signals = mutableListOf<String>()
 
-        if (fingerprint.startsWith("generic") || fingerprint.startsWith("unknown")) {
+        if (GENERIC_PREFIXES.any { fingerprint.startsWith(it) }) {
             signals.add("fingerprint")
         }
-        if (model.contains("google_sdk") ||
-            model.contains("Emulator") ||
-            model.contains("Android SDK built for")
-        ) {
+        if (EMULATOR_MODEL_MARKERS.any { model.contains(it) }) {
             signals.add("model")
         }
         if (manufacturer.contains("Genymotion")) {
             signals.add("manufacturer")
         }
-        if (hardware.contains("goldfish") ||
-            hardware.contains("ranchu") ||
-            hardware.contains("vbox")
-        ) {
+        if (EMULATOR_HARDWARE_MARKERS.any { hardware.contains(it) }) {
             signals.add("hardware")
         }
-        if (product.contains("sdk") ||
-            product.contains("vbox86p") ||
-            product.contains("emulator")
-        ) {
+        if (EMULATOR_PRODUCT_MARKERS.any { product.contains(it) }) {
             signals.add("product")
         }
         if (brand.startsWith("generic") && device.startsWith("generic")) {

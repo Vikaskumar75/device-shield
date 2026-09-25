@@ -85,7 +85,7 @@ stop and report.
 
 ## 7. Changelog
 
-If users would notice the change, add a line under `## Unreleased` →
+If users would notice the change, add a line under the top `## <version> (unreleased)` →
 `### Fixed` in `app/CHANGELOG.md`, ending with `(#$ARGUMENTS)`.
 
 ## 8. Confirm, then publish

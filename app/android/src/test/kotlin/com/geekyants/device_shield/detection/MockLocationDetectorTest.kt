@@ -25,8 +25,13 @@ internal class MockLocationDetectorTest {
         legacyAllowMockLocationSetting: Boolean = false,
         impossibleVelocity: Boolean = false
     ) = MockLocationDetector.evaluate(
-        permissionGranted, locationAvailable, mockProviderFlag, fakeGpsAppInstalled,
-        mockAppSelectedForThisApp, legacyAllowMockLocationSetting, impossibleVelocity
+        permissionGranted,
+        locationAvailable,
+        mockProviderFlag,
+        fakeGpsAppInstalled,
+        mockAppSelectedForThisApp,
+        legacyAllowMockLocationSetting,
+        impossibleVelocity
     )
 
     @Test

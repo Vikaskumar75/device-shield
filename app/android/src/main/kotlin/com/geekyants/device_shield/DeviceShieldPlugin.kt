@@ -90,15 +90,16 @@ class DeviceShieldPlugin :
         eventChannel.setStreamHandler(this)
     }
 
-    override fun onMethodCall(
-        call: MethodCall,
-        result: Result
-    ) {
+    override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
+
             "checkEmulator" -> result.success(EmulatorDetector.check())
+
             "checkDebugger" -> result.success(DebuggerDetector.check(applicationContext))
+
             "checkRoot" -> result.success(RootDetector.check(applicationContext))
+
             // "Jailbreak" is not an Android concept — an honest
             // not-applicable answer, never a false "not jailbroken"
             // (design doc: docs/features/ROOT_JAILBREAK_DETECTION.md).
@@ -107,15 +108,19 @@ class DeviceShieldPlugin :
                     "detected" to false,
                     "confidence" to 0.0,
                     "signals" to emptyList<String>(),
-                    "applicable" to false,
+                    "applicable" to false
                 )
             )
+
             // FR-06: real signal evaluation on both platforms — mock
             // location is a real concept on Android and iOS alike, unlike
             // checkRoot/checkJailbreak's platform-exclusive concepts.
             "checkMockLocation" -> result.success(MockLocationDetector.check(applicationContext))
+
             "setScreenshotProtection" -> applyFlagSecure(call, result)
+
             "isScreenCaptureActive" -> result.success(ScreenRecordingDetector.check())
+
             // On Android this is intentionally the exact same FLAG_SECURE
             // mechanism as setScreenshotProtection above — not a second,
             // independent control. Recents-thumbnail redaction is already
@@ -125,6 +130,7 @@ class DeviceShieldPlugin :
             // API symmetry with iOS (AppSwitcherProtection.swift), where
             // it genuinely is a separate, new mechanism.
             "setAppSwitcherProtection" -> applyFlagSecure(call, result)
+
             else -> {
                 // Bridge transport is registered; most detector/security
                 // method handlers don't exist yet — that is out of scope
@@ -134,10 +140,10 @@ class DeviceShieldPlugin :
         }
     }
 
-    /// Shared by `setScreenshotProtection` and `setAppSwitcherProtection`
-    /// — both are, on Android, literally the same `FLAG_SECURE` toggle
-    /// (see the call-site comment on `setAppSwitcherProtection` above for
-    /// why that's intentional, not a bug).
+    // / Shared by `setScreenshotProtection` and `setAppSwitcherProtection`
+    // / — both are, on Android, literally the same `FLAG_SECURE` toggle
+    // / (see the call-site comment on `setAppSwitcherProtection` above for
+    // / why that's intentional, not a bug).
     private fun applyFlagSecure(call: MethodCall, result: Result) {
         val enabled = call.argument<Boolean>("enabled") ?: false
         val currentActivity = activity
@@ -180,8 +186,8 @@ class DeviceShieldPlugin :
                 mapOf(
                     "detected" to true,
                     "confidence" to 1.0,
-                    "signals" to listOf("screen_capture_callback"),
-                ),
+                    "signals" to listOf("screen_capture_callback")
+                )
             )
         }
     }

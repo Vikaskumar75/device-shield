@@ -57,7 +57,7 @@ argue with them in review.
   in `app/test/public_api_test.dart`, which fails to compile if an export is
   dropped.
 - Until 1.0.0, a breaking change is allowed but must be listed under
-  `## Unreleased` in `app/CHANGELOG.md`.
+  the top `## <version> (unreleased)` heading in `app/CHANGELOG.md`.
 
 ### Detection and protection
 
@@ -118,6 +118,8 @@ argue with them in review.
 - One logical change per pull request. CI must be green before merge.
 - Commit subjects are imperative and ≤ 72 characters ("Fix Android 14+
   crash on attach"), with the reason in the body.
-- User-visible changes get a line under `## Unreleased` in `app/CHANGELOG.md`.
+- User-visible changes get a line under the top `## <version> (unreleased)`
+  heading in `app/CHANGELOG.md`. pub.dev requires that heading to name the
+  version in `pubspec.yaml`.
 - Naming and identifiers: Android package `com.geekyants.device_shield`,
   iOS example bundle ID `com.geekyants.deviceShieldExample`.

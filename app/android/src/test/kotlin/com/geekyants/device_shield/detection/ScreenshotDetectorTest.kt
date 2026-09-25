@@ -1,11 +1,11 @@
 package com.geekyants.device_shield.detection
 
 import android.app.Activity
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verifyNoInteractions
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.verifyNoInteractions
 
 /*
  * Exercises ScreenshotDetector.isSupported(sdkInt) (the pure version-check

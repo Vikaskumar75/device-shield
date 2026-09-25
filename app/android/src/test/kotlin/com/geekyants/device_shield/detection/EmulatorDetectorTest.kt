@@ -22,7 +22,14 @@ internal class EmulatorDetectorTest {
         device: String = "beyond2",
         anyQemuPipeExists: Boolean = false
     ) = EmulatorDetector.evaluate(
-        fingerprint, model, manufacturer, hardware, product, brand, device, anyQemuPipeExists
+        fingerprint,
+        model,
+        manufacturer,
+        hardware,
+        product,
+        brand,
+        device,
+        anyQemuPipeExists
     )
 
     @Test

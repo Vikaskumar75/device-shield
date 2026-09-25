@@ -3,10 +3,10 @@ package com.geekyants.device_shield.protection
 import android.app.Activity
 import android.view.Window
 import android.view.WindowManager
+import kotlin.test.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import kotlin.test.Test
 
 internal class ScreenCaptureProtectionTest {
     private fun activityWithMockWindow(): Pair<Activity, Window> {

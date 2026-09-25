@@ -25,6 +25,6 @@ object ScreenRecordingDetector {
     fun check(): Map<String, Any> = mapOf(
         "supported" to false,
         "isCaptured" to false,
-        "reason" to "No reliable screen-recording signal exists on Android.",
+        "reason" to "No reliable screen-recording signal exists on Android."
     )
 }

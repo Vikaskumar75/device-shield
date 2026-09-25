@@ -15,13 +15,11 @@ import android.os.Debug
 object DebuggerDetector {
     private const val SIGNAL_CATEGORY_COUNT = 3.0
 
-    fun check(context: Context): Map<String, Any> {
-        return evaluate(
-            debuggerConnected = Debug.isDebuggerConnected(),
-            waitingForDebugger = Debug.waitingForDebugger(),
-            debuggableFlag = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        )
-    }
+    fun check(context: Context): Map<String, Any> = evaluate(
+        debuggerConnected = Debug.isDebuggerConnected(),
+        waitingForDebugger = Debug.waitingForDebugger(),
+        debuggableFlag = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    )
 
     /**
      * Pure decision logic, separated from the actual `android.os.Debug`

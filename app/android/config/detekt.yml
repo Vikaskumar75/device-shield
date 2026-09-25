@@ -4,6 +4,21 @@
 build:
   maxIssues: 0
 
+complexity:
+  LongParameterList:
+    # Each detector's evaluate(...) takes one named flag per signal so it stays
+    # a pure, unit-testable function; its tests' fixture builders mirror it.
+    functionThreshold: 10
+  TooManyFunctions:
+    # The plugin class is mostly required Flutter lifecycle overrides.
+    ignoreOverridden: true
+
+style:
+  ReturnCount:
+    # Early-return guards are idiomatic Kotlin and read better than nesting.
+    max: 4
+    excludeGuardClauses: true
+
 naming:
   PackageNaming:
     # Allows the underscore in com.geekyants.device_shield, which matches

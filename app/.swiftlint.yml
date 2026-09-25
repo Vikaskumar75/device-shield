@@ -24,4 +24,9 @@ opt_in_rules:
   - implicitly_unwrapped_optional
   - unowned_variable_capture
 
+# A method-channel dispatcher is one `case` per method; counting each case as
+# a branch penalises the most readable shape for it.
+cyclomatic_complexity:
+  ignores_case_statements: true
+
 strict: true

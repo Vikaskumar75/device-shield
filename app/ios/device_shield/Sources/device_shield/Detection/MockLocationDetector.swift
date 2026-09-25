@@ -41,7 +41,13 @@ enum MockLocationDetector {
   // "expected false-negative" framing RootDetector.kt documents for
   // systemless Magisk). Guarded by a private queue since `check()` could
   // in principle be invoked from more than one thread.
-  private static var lastFix: (lat: Double, lon: Double, timestamp: TimeInterval)?
+  private struct Fix {
+    let lat: Double
+    let lon: Double
+    let timestamp: TimeInterval
+  }
+
+  private static var lastFix: Fix?
   private static let stateQueue = DispatchQueue(
     label: "device_shield.mock_location_detector.state")
 
@@ -119,7 +125,7 @@ enum MockLocationDetector {
   /// `RootDetector.kt` documents for `build_tags_test_keys`.
   private static func evaluateVelocity(lat: Double, lon: Double, timestamp: TimeInterval) -> Bool {
     stateQueue.sync {
-      defer { lastFix = (lat, lon, timestamp) }
+      defer { lastFix = Fix(lat: lat, lon: lon, timestamp: timestamp) }
       guard let previous = lastFix else { return false }
 
       let elapsedSeconds = timestamp - previous.timestamp
@@ -139,10 +145,10 @@ enum MockLocationDetector {
     let earthRadiusMeters = 6_371_000.0
     let dLat = (lat2 - lat1) * .pi / 180
     let dLon = (lon2 - lon1) * .pi / 180
-    let a =
+    let haversine =
       sin(dLat / 2) * sin(dLat / 2) + cos(lat1 * .pi / 180) * cos(lat2 * .pi / 180) * sin(dLon / 2)
       * sin(dLon / 2)
-    let c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    return earthRadiusMeters * c
+    let centralAngle = 2 * atan2(sqrt(haversine), sqrt(1 - haversine))
+    return earthRadiusMeters * centralAngle
   }
 }

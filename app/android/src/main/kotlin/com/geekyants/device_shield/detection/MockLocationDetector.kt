@@ -62,7 +62,7 @@ object MockLocationDetector {
         "com.fakegps.mock",
         "com.theappninjas.fakegpsjoystick",
         "com.jinseiapp.fakegps",
-        "ru.gavrikov.mocklocations",
+        "ru.gavrikov.mocklocations"
     )
 
     private const val OPSTR_MOCK_LOCATION = "android:mock_location"
@@ -83,6 +83,8 @@ object MockLocationDetector {
     // rather than risk a false positive from jitter.
     private const val MIN_DISTANCE_METERS = 10.0
     private const val MIN_TIME_SECONDS = 3.0
+    private const val MILLIS_PER_SECOND = 1000.0
+    private const val EARTH_RADIUS_METERS = 6_371_000.0
 
     // In-memory only, per process — reset on app restart, expected (same
     // "expected false-negative" framing RootDetector documents for
@@ -106,7 +108,7 @@ object MockLocationDetector {
             fakeGpsAppInstalled = anyPackageInstalled(context, FAKE_GPS_PACKAGES),
             mockAppSelectedForThisApp = isThisAppSelectedAsMockLocationApp(context),
             legacyAllowMockLocationSetting = isLegacyMockLocationSettingEnabled(context),
-            impossibleVelocity = velocityResult,
+            impossibleVelocity = velocityResult
         )
     }
 
@@ -124,7 +126,7 @@ object MockLocationDetector {
         fakeGpsAppInstalled: Boolean,
         mockAppSelectedForThisApp: Boolean,
         legacyAllowMockLocationSetting: Boolean,
-        impossibleVelocity: Boolean,
+        impossibleVelocity: Boolean
     ): Map<String, Any> {
         val signals = mutableListOf<String>()
 
@@ -141,7 +143,7 @@ object MockLocationDetector {
             "signals" to signals,
             "applicable" to true,
             "permissionGranted" to permissionGranted,
-            "locationAvailable" to locationAvailable,
+            "locationAvailable" to locationAvailable
         )
     }
 
@@ -151,12 +153,12 @@ object MockLocationDetector {
         val fine = context.checkPermission(
             android.Manifest.permission.ACCESS_FINE_LOCATION,
             pid,
-            uid,
+            uid
         ) == PackageManager.PERMISSION_GRANTED
         val coarse = context.checkPermission(
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
             pid,
-            uid,
+            uid
         ) == PackageManager.PERMISSION_GRANTED
         return fine || coarse
     }
@@ -179,18 +181,18 @@ object MockLocationDetector {
         val providers = listOf(
             LocationManager.GPS_PROVIDER,
             LocationManager.NETWORK_PROVIDER,
-            LocationManager.PASSIVE_PROVIDER,
+            LocationManager.PASSIVE_PROVIDER
         )
 
         return providers.mapNotNull { provider ->
             try {
                 locationManager.getLastKnownLocation(provider)
-            } catch (e: SecurityException) {
+            } catch (ignored: SecurityException) {
                 // Permission revoked between the checkSelfPermission call
                 // above and this read (a real, if narrow, TOCTOU window) —
                 // treat exactly like "no fix available", never crash.
                 null
-            } catch (e: IllegalArgumentException) {
+            } catch (ignored: IllegalArgumentException) {
                 // Provider not present on this device (e.g. no GPS
                 // hardware) — same honest "no fix from this provider".
                 null
@@ -210,7 +212,7 @@ object MockLocationDetector {
             try {
                 packageManager.getPackageInfo(packageName, 0)
                 true
-            } catch (e: PackageManager.NameNotFoundException) {
+            } catch (ignored: PackageManager.NameNotFoundException) {
                 false
             }
         }
@@ -233,9 +235,9 @@ object MockLocationDetector {
             appOps.checkOpNoThrow(
                 OPSTR_MOCK_LOCATION,
                 Process.myUid(),
-                context.packageName,
+                context.packageName
             ) == AppOpsManager.MODE_ALLOWED
-        } catch (e: Exception) {
+        } catch (ignored: Exception) {
             false
         }
     }
@@ -250,9 +252,9 @@ object MockLocationDetector {
         return try {
             Settings.Secure.getString(
                 context.contentResolver,
-                Settings.Secure.ALLOW_MOCK_LOCATION,
+                Settings.Secure.ALLOW_MOCK_LOCATION
             ) == "1"
-        } catch (e: Exception) {
+        } catch (ignored: Exception) {
             false
         }
     }
@@ -276,7 +278,7 @@ object MockLocationDetector {
         if (previous == null) return false
         val (prevLat, prevLon, prevTimeMs) = previous
 
-        val elapsedSeconds = (timeMs - prevTimeMs) / 1000.0
+        val elapsedSeconds = (timeMs - prevTimeMs) / MILLIS_PER_SECOND
         if (elapsedSeconds < MIN_TIME_SECONDS) return false
 
         val distanceMeters = haversineMeters(prevLat, prevLon, lat, lon)
@@ -287,13 +289,12 @@ object MockLocationDetector {
     }
 
     private fun haversineMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val earthRadiusMeters = 6_371_000.0
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
         val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2)
         val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        return earthRadiusMeters * c
+        return EARTH_RADIUS_METERS * c
     }
 }

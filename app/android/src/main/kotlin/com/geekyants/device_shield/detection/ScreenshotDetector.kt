@@ -64,7 +64,7 @@ object ScreenshotDetector {
         val newCallback = Activity.ScreenCaptureCallback { onScreenshotTaken() }
         try {
             activity.registerScreenCaptureCallback(activity.mainExecutor, newCallback)
-        } catch (e: SecurityException) {
+        } catch (ignored: SecurityException) {
             // DETECT_SCREEN_CAPTURE is declared in this plugin's own
             // manifest and merges into the host app automatically, so the
             // normal path never lands here. A host app can still strip it
@@ -74,7 +74,7 @@ object ScreenshotDetector {
             // callback — the same "never crash the host, never fabricate a
             // signal" rule the rest of this feature follows.
             return
-        } catch (e: IllegalStateException) {
+        } catch (ignored: IllegalStateException) {
             // Activity already destroyed / not in a registerable state.
             return
         }
@@ -90,11 +90,11 @@ object ScreenshotDetector {
         callback = null
         try {
             activity.unregisterScreenCaptureCallback(existing)
-        } catch (e: SecurityException) {
+        } catch (ignored: SecurityException) {
             // Symmetric with start(): never throw out of a lifecycle
             // callback. The field is already cleared above, so this
             // detector is left consistently "not observing" either way.
-        } catch (e: IllegalStateException) {
+        } catch (ignored: IllegalStateException) {
         }
     }
 }

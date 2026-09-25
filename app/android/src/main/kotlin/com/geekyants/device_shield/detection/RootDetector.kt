@@ -35,19 +35,19 @@ object RootDetector {
         "/system/bin/failsafe/su",
         "/data/local/xbin/su",
         "/data/local/bin/su",
-        "/data/local/su",
+        "/data/local/su"
     )
 
     private val MAGISK_PATHS = listOf(
         "/sbin/.magisk",
         "/cache/.magisk",
         "/data/adb/magisk",
-        "/data/adb/modules",
+        "/data/adb/modules"
     )
 
     private val BUSYBOX_PATHS = listOf(
         "/system/xbin/busybox",
-        "/system/bin/busybox",
+        "/system/bin/busybox"
     )
 
     // Known root-manager app packages — separate from ROOT_CLOAKING_PACKAGES
@@ -67,7 +67,7 @@ object RootDetector {
         "com.smedialink.oneclickroot",
         "com.zhiqupk.root.global",
         "me.phh.superuser",
-        "com.ramdroid.appquarantine",
+        "com.ramdroid.appquarantine"
     )
 
     private val ROOT_CLOAKING_PACKAGES = listOf(
@@ -78,24 +78,22 @@ object RootDetector {
         "com.zachspong.temprootremovejb",
         "com.devadvance.rootcloak",
         "com.devadvance.rootcloakplus",
-        "com.saurik.substrate",
+        "com.saurik.substrate"
     )
 
     private const val SIGNAL_CATEGORY_COUNT = 9.0
 
-    fun check(context: Context): Map<String, Any> {
-        return evaluate(
-            suBinaryPathExists = SU_PATHS.any { File(it).exists() },
-            suExecutableOnPath = isExecutableOnPath("su"),
-            superuserAppInstalled = anyPackageInstalled(context, SUPERUSER_PACKAGES),
-            magiskArtifactsExist = MAGISK_PATHS.any { File(it).exists() },
-            systemWritable = isPathWritable("/system") || isPathWritable("/system/bin"),
-            busyBoxExists = BUSYBOX_PATHS.any { File(it).exists() },
-            buildTagsTestKeys = (Build.TAGS ?: "").contains("test-keys"),
-            dangerousPropsSet = isDangerousPropSet(),
-            rootCloakingAppInstalled = anyPackageInstalled(context, ROOT_CLOAKING_PACKAGES),
-        )
-    }
+    fun check(context: Context): Map<String, Any> = evaluate(
+        suBinaryPathExists = SU_PATHS.any { File(it).exists() },
+        suExecutableOnPath = isExecutableOnPath("su"),
+        superuserAppInstalled = anyPackageInstalled(context, SUPERUSER_PACKAGES),
+        magiskArtifactsExist = MAGISK_PATHS.any { File(it).exists() },
+        systemWritable = isPathWritable("/system") || isPathWritable("/system/bin"),
+        busyBoxExists = BUSYBOX_PATHS.any { File(it).exists() },
+        buildTagsTestKeys = (Build.TAGS ?: "").contains("test-keys"),
+        dangerousPropsSet = isDangerousPropSet(),
+        rootCloakingAppInstalled = anyPackageInstalled(context, ROOT_CLOAKING_PACKAGES)
+    )
 
     /**
      * Pure decision logic, separated from the real filesystem/process/
@@ -113,7 +111,7 @@ object RootDetector {
         busyBoxExists: Boolean,
         buildTagsTestKeys: Boolean,
         dangerousPropsSet: Boolean,
-        rootCloakingAppInstalled: Boolean,
+        rootCloakingAppInstalled: Boolean
     ): Map<String, Any> {
         val signals = mutableListOf<String>()
 
@@ -132,7 +130,7 @@ object RootDetector {
             "detected" to signals.isNotEmpty(),
             "confidence" to confidence,
             "signals" to signals,
-            "applicable" to true,
+            "applicable" to true
         )
     }
 
@@ -153,7 +151,7 @@ object RootDetector {
             try {
                 packageManager.getPackageInfo(packageName, 0)
                 true
-            } catch (e: PackageManager.NameNotFoundException) {
+            } catch (ignored: PackageManager.NameNotFoundException) {
                 false
             }
         }
@@ -172,7 +170,7 @@ object RootDetector {
             val created = testFile.createNewFile()
             if (created) testFile.delete()
             created
-        } catch (e: Exception) {
+        } catch (ignored: Exception) {
             false
         }
     }
@@ -195,16 +193,14 @@ object RootDetector {
         return !result.isNullOrEmpty()
     }
 
-    private fun runShellCommand(vararg command: String): String? {
-        return try {
-            val process = ProcessBuilder(*command).redirectErrorStream(true).start()
-            val output = BufferedReader(InputStreamReader(process.inputStream))
-                .readLine()
-                ?.trim()
-            process.waitFor()
-            output
-        } catch (e: Exception) {
-            null
-        }
+    private fun runShellCommand(vararg command: String): String? = try {
+        val process = ProcessBuilder(*command).redirectErrorStream(true).start()
+        val output = BufferedReader(InputStreamReader(process.inputStream))
+            .readLine()
+            ?.trim()
+        process.waitFor()
+        output
+    } catch (ignored: Exception) {
+        null
     }
 }
