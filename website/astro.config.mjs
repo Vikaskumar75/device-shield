@@ -2,12 +2,12 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// Served from GitHub Pages at https://vikaskumar75.github.io/flutter-shield/.
+// Served from GitHub Pages at https://vikaskumar75.github.io/device-shield/.
 // If the repository is renamed or a custom domain is added, update `site`
 // and `base` together.
 export default defineConfig({
   site: 'https://vikaskumar75.github.io',
-  base: '/flutter-shield',
+  base: '/device-shield',
   integrations: [
     starlight({
       title: 'device_shield',
@@ -19,11 +19,11 @@ export default defineConfig({
         {
           icon: 'github',
           label: 'GitHub',
-          href: 'https://github.com/Vikaskumar75/flutter-shield',
+          href: 'https://github.com/Vikaskumar75/device-shield',
         },
       ],
       editLink: {
-        baseUrl: 'https://github.com/Vikaskumar75/flutter-shield/edit/main/website/',
+        baseUrl: 'https://github.com/Vikaskumar75/device-shield/edit/main/website/',
       },
       lastUpdated: true,
       customCss: ['./src/styles/theme.css'],
@@ -85,12 +85,12 @@ export default defineConfig({
             { label: 'FAQ', slug: 'help/faq' },
             {
               label: 'Changelog',
-              link: 'https://github.com/Vikaskumar75/flutter-shield/blob/main/app/CHANGELOG.md',
+              link: 'https://github.com/Vikaskumar75/device-shield/blob/main/app/CHANGELOG.md',
               attrs: { target: '_blank' },
             },
             {
               label: 'Contributing',
-              link: 'https://github.com/Vikaskumar75/flutter-shield/blob/main/docs/CONTRIBUTING.md',
+              link: 'https://github.com/Vikaskumar75/device-shield/blob/main/docs/CONTRIBUTING.md',
               attrs: { target: '_blank' },
             },
           ],

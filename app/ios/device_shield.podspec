@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
 Jailbreak, simulator, debugger and mock-location detection, plus screen
 capture protections, for the device_shield Flutter plugin.
                        DESC
-  s.homepage         = 'https://github.com/Vikaskumar75/flutter-shield'
+  s.homepage         = 'https://github.com/Vikaskumar75/device-shield'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'GeekyAnts' => 'vikas@geekyants.com' }
   s.source           = { :path => '.' }

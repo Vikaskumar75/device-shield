@@ -17,8 +17,8 @@ ones; reviewers enforce the rest.
 Prerequisites and the setup script are in the [README](../README.md). In short:
 
 ```bash
-git clone https://github.com/Vikaskumar75/flutter-shield.git
-cd flutter-shield
+git clone https://github.com/Vikaskumar75/device-shield.git
+cd device-shield
 app/tool/setup.sh
 ```
 

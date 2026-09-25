@@ -3,8 +3,8 @@ description: >-
   Runtime device-security checks for Flutter apps: root, jailbreak, emulator,
   debugger and mock-location detection, plus screen capture protection.
 version: 0.0.1
-repository: https://github.com/Vikaskumar75/flutter-shield/tree/main/app
-issue_tracker: https://github.com/Vikaskumar75/flutter-shield/issues
+repository: https://github.com/Vikaskumar75/device-shield/tree/main/app
+issue_tracker: https://github.com/Vikaskumar75/device-shield/issues
 topics:
   - security
   - root-detection

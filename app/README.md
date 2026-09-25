@@ -4,7 +4,7 @@ Runtime device-security checks for Flutter apps on Android and iOS.
 
 > **Pre-release.** Not published to pub.dev. The public API is expected to
 > change before 0.1.0. Android has not yet been verified on a physical
-> device. See [known issues](https://github.com/Vikaskumar75/flutter-shield/blob/main/docs/HANDOVER.md).
+> device. See [known issues](https://github.com/Vikaskumar75/device-shield/blob/main/docs/HANDOVER.md).
 
 ## What it does
 
@@ -56,8 +56,8 @@ See [`example/`](example/) for a complete app.
 ## Contributing
 
 Development setup, coding rules and the checks CI runs are in the
-[repository README](https://github.com/Vikaskumar75/flutter-shield#readme) and
-[CONTRIBUTING.md](https://github.com/Vikaskumar75/flutter-shield/blob/main/docs/CONTRIBUTING.md).
+[repository README](https://github.com/Vikaskumar75/device-shield#readme) and
+[CONTRIBUTING.md](https://github.com/Vikaskumar75/device-shield/blob/main/docs/CONTRIBUTING.md).
 
 ## License
 

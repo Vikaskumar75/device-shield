@@ -7,7 +7,7 @@ protection.
 | Folder | Contents |
 |---|---|
 | [`app/`](app/) | The Flutter plugin package, with its [example app](app/example/). Its [README](app/README.md) is the package's pub.dev page. |
-| [`website/`](website/) | The landing page and documentation site, published to [vikaskumar75.github.io/flutter-shield](https://vikaskumar75.github.io/flutter-shield/) |
+| [`website/`](website/) | The landing page and documentation site, published to [vikaskumar75.github.io/device-shield](https://vikaskumar75.github.io/device-shield/) |
 
 ## Prerequisites
 
@@ -27,8 +27,8 @@ protection.
 ## Set up
 
 ```bash
-git clone https://github.com/Vikaskumar75/flutter-shield.git
-cd flutter-shield
+git clone https://github.com/Vikaskumar75/device-shield.git
+cd device-shield
 app/tool/setup.sh
 ```
 
