@@ -90,6 +90,10 @@ If users would notice the change, add a line under `## Unreleased` →
 
 ## 8. Confirm, then publish
 
+The git guard hook prompts for approval on every git and `gh` write below.
+That's expected: the user approves each one.
+
+
 Show the user the diff summary (`git diff --stat`), the root cause in one
 or two sentences, and the verification results. **Ask before committing
 and pushing.** Once they confirm:

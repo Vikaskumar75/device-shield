@@ -6,6 +6,10 @@ A Flutter plugin (Dart + Kotlin + Swift) for runtime device-security checks.
 - Current state and known issues: docs/HANDOVER.md.
 - Layout: `app/` is the Flutter plugin package (with `example/`),
   `website/` is the docs site, `docs/` holds every project document.
+- **No git or GitHub write actions unless the user explicitly asks**: no
+  commit, push, add, mv, branch, stash, remote changes or `gh` writes. Move
+  files with plain `mv`. Read-only git (status, diff, log) is fine.
+  `.claude/hooks/git_guard.py` forces an approval prompt for writes.
 - New machine: `app/tool/setup.sh --check` reports missing prerequisites.
 - Before calling a change done, run `app/tool/check.sh`. It must pass.
 - The iOS example can't build in place while the package folder is named
