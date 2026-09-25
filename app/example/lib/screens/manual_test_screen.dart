@@ -16,7 +16,7 @@ const _statusIcons = {
   ManualTestStatus.failed: Icons.cancel,
 };
 
-/// Renders the checklist mirrored exactly in MANUAL_TEST_PLAN.md
+/// Renders the checklist mirrored exactly in docs/MANUAL_TEST_PLAN.md
 /// ([buildDefaultManualTestCases]), grouped by category, with status
 /// transitions, freeform notes, and a per-case reset. This screen tracks
 /// its own state locally (a manual QA checklist, not SDK-observed data),

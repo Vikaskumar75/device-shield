@@ -20,7 +20,7 @@ class MethodCodes {
   /// platforms — Android answers with real signal evaluation, iOS
   /// answers with an honest `{'applicable': false, ...}` map, since
   /// "root" is not an iOS concept (not a capability gap — see
-  /// `doc/features/ROOT_JAILBREAK_DETECTION.md`).
+  /// `docs/features/ROOT_JAILBREAK_DETECTION.md`).
   static const String checkRoot = 'checkRoot';
 
   /// FR-02 (SRS §5.2): jailbreak detection (iOS). Called on both
@@ -34,7 +34,7 @@ class MethodCodes {
   /// [checkRoot]/[checkJailbreak], mock location is a real concept on
   /// both, so there is no honest "not applicable" branch here; the
   /// platform difference is signal strength, not existence. See
-  /// `doc/features/MOCK_LOCATION_DETECTION.md`.
+  /// `docs/features/MOCK_LOCATION_DETECTION.md`.
   static const String checkMockLocation = 'checkMockLocation';
 
   /// Screenshot/Screen Recording Protection — Dart→native command.
@@ -44,14 +44,14 @@ class MethodCodes {
   /// rendering layer — **not** a supported Apple API, an undocumented-
   /// internals technique accepted with that risk explicit (see
   /// `ScreenCaptureProtection.swift`'s own top-of-file warning). See
-  /// `doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §9.4/§7/§18.5.
+  /// `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §9.4/§7/§18.5.
   static const String setScreenshotProtection = 'setScreenshotProtection';
 
   /// Screenshot/Screen Recording Protection — Dart→native poll. No
   /// arguments; returns `{'isCaptured': bool}` on iOS, or an explicit
   /// unsupported marker on Android (§7.1: no reliable discrete Android
   /// signal exists). See
-  /// `doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §9.4/§7.
+  /// `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §9.4/§7.
   static const String isScreenCaptureActive = 'isScreenCaptureActive';
 
   /// App-switcher/background-snapshot redaction — Dart→native command.
@@ -61,6 +61,6 @@ class MethodCodes {
   /// iOS: a real, independent mechanism — a blur overlay shown immediately
   /// before the OS captures the app-switcher snapshot, removed when the app
   /// becomes active again. See
-  /// `doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §17.
+  /// `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §17.
   static const String setAppSwitcherProtection = 'setAppSwitcherProtection';
 }

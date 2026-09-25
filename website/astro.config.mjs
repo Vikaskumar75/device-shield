@@ -90,7 +90,7 @@ export default defineConfig({
             },
             {
               label: 'Contributing',
-              link: 'https://github.com/Vikaskumar75/flutter-shield/blob/main/CONTRIBUTING.md',
+              link: 'https://github.com/Vikaskumar75/flutter-shield/blob/main/docs/CONTRIBUTING.md',
               attrs: { target: '_blank' },
             },
           ],

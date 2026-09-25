@@ -23,7 +23,7 @@ import 'security_manager.dart';
 /// itself has no legitimate use for one (all native communication happens
 /// inside `DetectionManager`, via the detectors it hosts, and now inside
 /// [screenCaptureController], the one collaborator that genuinely needs
-/// direct native access — see doc/features/
+/// direct native access — see docs/features/
 /// SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §8.3). A `NativeBridge` is
 /// accepted as a constructor *parameter* solely to hand off to
 /// [screenCaptureController]'s own construction; it is never stored as a

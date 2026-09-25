@@ -2,7 +2,7 @@ package com.geekyants.device_shield.detection
 
 /**
  * Screenshot & Screen Recording Protection —
- * doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
+ * docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
  *
  * Android has no reliable discrete "recording started" signal a
  * third-party app can depend on — `FLAG_SECURE` (see

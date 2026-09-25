@@ -20,7 +20,7 @@ import 'manager.dart';
 /// the SDK's own built-in features do — `NativeBridge` itself already
 /// gained `dispose()` this same way, per an earlier approved architecture
 /// correction. [processResult] (added for Screenshot & Screen Recording
-/// Protection — see doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md
+/// Protection — see docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md
 /// §8.3) is the same kind of additive, non-breaking change, verified
 /// explicitly against this exact question during that feature's Step 8
 /// Architecture Verification Report.

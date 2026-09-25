@@ -11,7 +11,7 @@ import java.io.InputStreamReader
  * FR-01 (SRS section 5.1): heuristic root detection via nine independent
  * signal categories. Every signal is individually weak evidence (a false
  * positive or false negative on any single category is expected, normal
- * heuristic behavior — see doc/features/ROOT_JAILBREAK_DETECTION.md);
+ * heuristic behavior — see docs/features/ROOT_JAILBREAK_DETECTION.md);
  * confidence is proportional to how many fire at once, the same
  * signal-count model [EmulatorDetector]/[DebuggerDetector] already use.
  *

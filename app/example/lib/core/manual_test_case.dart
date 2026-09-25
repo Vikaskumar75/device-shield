@@ -29,7 +29,7 @@ class ManualTestCase {
   }
 }
 
-/// The full checklist — mirrors the categories in MANUAL_TEST_PLAN.md
+/// The full checklist — mirrors the categories in docs/MANUAL_TEST_PLAN.md
 /// exactly, so the in-app screen and the markdown document never drift
 /// apart silently.
 List<ManualTestCase> buildDefaultManualTestCases() {

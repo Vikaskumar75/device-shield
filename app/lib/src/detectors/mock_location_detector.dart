@@ -4,7 +4,7 @@ import '../models/detection_result.dart';
 import '../registry/detector.dart';
 
 /// FR-06: mock/spoofed GPS location detection.
-/// doc/features/MOCK_LOCATION_DETECTION.md.
+/// docs/features/MOCK_LOCATION_DETECTION.md.
 ///
 /// Unlike `RootDetector`/`JailbreakDetector`, mock location is a real
 /// concept on **both** platforms — `evidence['applicable']` is always

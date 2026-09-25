@@ -4,7 +4,7 @@ import Foundation
 /// FR-06: heuristic mock/spoofed GPS location detection via three
 /// independent signal categories — the same signal-count confidence
 /// model `JailbreakDetector`/`EmulatorDetector` already use.
-/// doc/features/MOCK_LOCATION_DETECTION.md.
+/// docs/features/MOCK_LOCATION_DETECTION.md.
 ///
 /// Unlike `checkRoot` on iOS, this never reports `applicable: false` —
 /// mock location is a real concept on iOS too (jailbreak location-

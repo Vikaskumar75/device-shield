@@ -4,7 +4,7 @@ import '../models/detection_result.dart';
 import '../registry/detector.dart';
 
 /// Screenshot & Screen Recording Protection —
-/// doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §9.2.
+/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §9.2.
 ///
 /// Unlike `ScreenshotDetector`, [check] does call a real native method —
 /// `MethodCodes.isScreenCaptureActive` — since "is the screen currently

@@ -10,10 +10,11 @@ ones; reviewers enforce the rest.
 | `app/` | The Flutter plugin package: `lib/`, `android/`, `ios/`, `test/`, `example/`. This is what ships to pub.dev. |
 | `app/tool/` | `setup.sh` and `check.sh` |
 | `website/` | The landing page and documentation site (Astro Starlight) |
+| `docs/` | Project documents: plans, architecture, feature designs, reports. See [docs/README.md](README.md). |
 
 ## Setup
 
-Prerequisites and the setup script are in the [README](README.md). In short:
+Prerequisites and the setup script are in the [README](../README.md). In short:
 
 ```bash
 git clone https://github.com/Vikaskumar75/flutter-shield.git

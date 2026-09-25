@@ -5,7 +5,7 @@ import android.view.WindowManager
 
 /**
  * Screenshot & Screen Recording Protection —
- * doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
+ * docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
  *
  * `FLAG_SECURE` set/clear — a single `Window` flag that blocks *both*
  * screenshots and screen recording/mirroring of this activity's content

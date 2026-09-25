@@ -5,7 +5,7 @@ import UIKit
 /// ⚠️ UNSUPPORTED TECHNIQUE, AND ITS EFFECT IS UNCONFIRMED — READ BEFORE
 /// TOUCHING THIS FILE. ⚠️
 ///
-/// doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §1.6/§7.2/§18.3
+/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §1.6/§7.2/§18.3
 /// investigated this exact mechanism and initially rejected it, for
 /// reasons that are all still true and are recorded here, not hidden,
 /// because a later engineer (including future us) needs them to make an

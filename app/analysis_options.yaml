@@ -33,7 +33,7 @@ linter:
 
     # Public API of a published package. `public_member_api_docs` is
     # deliberately not enabled yet: the public surface is due to be reshaped
-    # (see CONTRIBUTING.md), and documenting members that are about to be
+    # (see docs/CONTRIBUTING.md), and documenting members that are about to be
     # removed is wasted work. Enable it once the v0.1 API is settled.
     - always_declare_return_types
     - type_annotate_public_apis

@@ -41,7 +41,7 @@ shell profile. When a step needs that, it prints the command for you to run.
 > **Known issue:** the iOS example app can't build in place while the package
 > folder is named `app`. It's a Flutter bug that affects any plugin example
 > nested in a folder whose name doesn't match the package (F10 in
-> [HANDOVER.md](HANDOVER.md)). Apps that depend on the plugin aren't affected.
+> [docs/HANDOVER.md](docs/HANDOVER.md)). Apps that depend on the plugin aren't affected.
 
 ## Everyday commands
 
@@ -53,8 +53,9 @@ shell profile. When a step needs that, it prints the command for you to run.
 | Fix a GitHub issue with Claude Code | `/fix-issue <number>` in a Claude Code session |
 
 Coding rules and the full list of CI checks are in
-[CONTRIBUTING.md](CONTRIBUTING.md). Current state and open issues are in
-[HANDOVER.md](HANDOVER.md).
+[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). Current state and open issues are
+in [docs/HANDOVER.md](docs/HANDOVER.md). All other project documents (plans,
+architecture, feature designs, reports) are in [`docs/`](docs/).
 
 ## License
 

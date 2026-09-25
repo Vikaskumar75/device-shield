@@ -14,7 +14,7 @@ import '../models/device_shield_exception.dart';
 /// Bounds match SRS §7.4 exactly — generic SDK-wide settings only, no
 /// detector-specific validation of any kind. The one exception is
 /// [DeviceShieldConfig.screenshotRecordingRiskScoreWeight]'s 0.0–1.0 bound,
-/// added per `doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §4 —
+/// added per `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §4 —
 /// not an SRS §7.4 rule, but the same confidence/risk-score convention
 /// already used everywhere else in this codebase.
 ///

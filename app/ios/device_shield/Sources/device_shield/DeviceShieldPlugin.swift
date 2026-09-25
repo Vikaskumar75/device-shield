@@ -18,7 +18,7 @@ import UIKit
 /// mirrors the Android (`DeviceShieldPlugin.kt`) implementation.
 ///
 /// Screenshot & Screen Recording Protection (see
-/// doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md) adds
+/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md) adds
 /// `setScreenshotProtection`/`isScreenCaptureActive` and starts observing
 /// for screenshots/capture-state changes at registration time. Unlike
 /// Android, this needs no `ActivityAware`-equivalent lifecycle hook —
@@ -74,7 +74,7 @@ public class DeviceShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     case "checkRoot":
       // "Root" is not an iOS concept — an honest not-applicable answer,
       // never a false "not rooted" (design doc:
-      // doc/features/ROOT_JAILBREAK_DETECTION.md).
+      // docs/features/ROOT_JAILBREAK_DETECTION.md).
       result([
         "detected": false,
         "confidence": 0.0,

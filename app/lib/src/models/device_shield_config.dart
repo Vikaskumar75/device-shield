@@ -20,7 +20,7 @@
 /// [allowRecordingDetectionInDebug] are exactly the fields this class's own
 /// doc comment above predicted — the first detector/protection-adjacent
 /// fields added since that prediction was written. See
-/// `doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §4 for the
+/// `docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md` §4 for the
 /// full design and §4.4 for why these live here rather than on
 /// `SecurityProfile`/`ProtectionConfig` (not yet threaded through
 /// `initialize()`). All five default to the least-invasive option, matching

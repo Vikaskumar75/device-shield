@@ -62,7 +62,7 @@ if [[ $pkg_dir == device_shield ]]; then
   ok "package folder is named device_shield"
 else
   echo "  note: the iOS example can't build in place while the package folder is named '$pkg_dir'"
-  echo "        (Flutter bug, F10 in HANDOVER.md). Build it from a copy named device_shield."
+  echo "        (Flutter bug, F10 in docs/HANDOVER.md). Build it from a copy named device_shield."
 fi
 
 if $is_mac; then

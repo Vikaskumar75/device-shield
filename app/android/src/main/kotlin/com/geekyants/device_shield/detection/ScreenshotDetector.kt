@@ -5,7 +5,7 @@ import android.os.Build
 
 /**
  * Screenshot & Screen Recording Protection —
- * doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
+ * docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.1/§9.5.
  *
  * Push-only: unlike [EmulatorDetector]/[DebuggerDetector], there is no
  * meaningful request/response "check" for this — a screenshot is a discrete

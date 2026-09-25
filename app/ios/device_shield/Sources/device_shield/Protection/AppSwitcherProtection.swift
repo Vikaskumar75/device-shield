@@ -1,7 +1,7 @@
 import UIKit
 
 /// App-Switcher / Background-Snapshot Protection — the iOS-only follow-on
-/// design doc §17 named as future work: doc/features/
+/// design doc §17 named as future work: docs/features/
 /// SCREENSHOT_SCREEN_RECORDING_PROTECTION.md. Android needs no equivalent
 /// of this file — it already gets Recents-thumbnail redaction for free as
 /// a side effect of `FLAG_SECURE`

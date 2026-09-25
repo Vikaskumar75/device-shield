@@ -1,7 +1,7 @@
 import UIKit
 
 /// Screenshot & Screen Recording Protection —
-/// doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.2/§9.6.
+/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.2/§9.6.
 ///
 /// Push-only: unlike `EmulatorDetector`/`DebuggerDetector`, there is no
 /// meaningful request/response "check" for this — a screenshot is a

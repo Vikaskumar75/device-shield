@@ -1,7 +1,7 @@
 import UIKit
 
 /// Screenshot & Screen Recording Protection —
-/// doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.2/§9.6.
+/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §7.2/§9.6.
 ///
 /// Unlike Android (no reliable discrete recording signal exists there at
 /// all — see `ScreenRecordingDetector.kt`), iOS has a real, official,

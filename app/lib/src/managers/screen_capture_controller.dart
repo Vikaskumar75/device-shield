@@ -8,7 +8,7 @@ import '../models/detection_result.dart';
 import '../models/device_shield_config.dart';
 
 /// Screenshot & Screen Recording Protection —
-/// doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §9.3/§8.3.
+/// docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md §9.3/§8.3.
 ///
 /// The feature's real-time mechanism: owns the native push-listener
 /// registration and the imperative protection-toggle commands. Owned by

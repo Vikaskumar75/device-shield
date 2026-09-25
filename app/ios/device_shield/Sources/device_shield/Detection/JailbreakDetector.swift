@@ -5,7 +5,7 @@ import Foundation
 /// independent signal categories. Every signal is individually weak
 /// evidence; confidence is proportional to how many fire at once, the
 /// same signal-count model `EmulatorDetector`/`DebuggerDetector` already
-/// use. doc/features/ROOT_JAILBREAK_DETECTION.md.
+/// use. docs/features/ROOT_JAILBREAK_DETECTION.md.
 ///
 /// Deliberately does **not** perform a full `_dyld_image_count`/image-
 /// name scan for injected tweak dylibs — comprehensive runtime

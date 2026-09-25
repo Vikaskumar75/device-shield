@@ -61,7 +61,7 @@ class DemoCustomDetector implements Detector {
 /// Also the single place this app's own discovered SDK gaps are documented
 /// in code (see the doc comments on [setDetectorEnabled] and
 /// [setAdvancedRawCallbackInterception] below) — cross-referenced in
-/// MANUAL_TEST_PLAN.md and the About screen, not hidden.
+/// docs/MANUAL_TEST_PLAN.md and the About screen, not hidden.
 class ShieldController extends ChangeNotifier {
   ShieldController() {
     _nativeBridge = DefaultNativeBridge();

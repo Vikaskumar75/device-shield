@@ -105,7 +105,7 @@ jobs:
           swiftlint lint
       # Flutter can't resolve the Swift package of a plugin example nested in
       # a folder whose name differs from the package (`app` vs `device_shield`),
-      # so build the example from a correctly named copy. See F10 in HANDOVER.md.
+      # so build the example from a correctly named copy. See F10 in docs/HANDOVER.md.
       - name: Build example (simulator)
         run: |
           cp -R . "$RUNNER_TEMP/device_shield"

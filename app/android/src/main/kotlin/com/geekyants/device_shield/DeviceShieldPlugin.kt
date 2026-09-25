@@ -37,7 +37,7 @@ import io.flutter.plugin.common.MethodChannel.Result
  * it, with no interpretation of what either means.
  *
  * Screenshot & Screen Recording Protection (see
- * doc/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md) adds
+ * docs/features/SCREENSHOT_SCREEN_RECORDING_PROTECTION.md) adds
  * `setScreenshotProtection`/`isScreenCaptureActive` and implements
  * [ActivityAware] — `FLAG_SECURE`
  * ([com.geekyants.device_shield.protection.ScreenCaptureProtection]) and the
@@ -101,7 +101,7 @@ class DeviceShieldPlugin :
             "checkRoot" -> result.success(RootDetector.check(applicationContext))
             // "Jailbreak" is not an Android concept — an honest
             // not-applicable answer, never a false "not jailbroken"
-            // (design doc: doc/features/ROOT_JAILBREAK_DETECTION.md).
+            // (design doc: docs/features/ROOT_JAILBREAK_DETECTION.md).
             "checkJailbreak" -> result.success(
                 mapOf(
                     "detected" to false,

@@ -8,7 +8,7 @@ disable-model-invocation: true
 # Fix GitHub issue #$ARGUMENTS
 
 Work through these steps in order. Stop and report to the user whenever a
-step says to stop. Follow `CONTRIBUTING.md` throughout.
+step says to stop. Follow `docs/CONTRIBUTING.md` throughout.
 
 ## 1. Preconditions
 
@@ -56,7 +56,7 @@ bug lives:
 |---|---|---|
 | Dart | `app/test/` | `flutter test <file>` (from `app/`) |
 | Kotlin detection logic | the detector's `evaluate(...)` test in `app/android/src/test/` | Gradle `testDebugUnitTest` (needs Java) |
-| Swift detection logic | the detector's `evaluate(...)` test in `app/ios/device_shield/Tests/` | not runnable from the CLI yet (see `HANDOVER.md`); write it anyway and say so |
+| Swift detection logic | the detector's `evaluate(...)` test in `app/ios/device_shield/Tests/` | not runnable from the CLI yet (see `docs/HANDOVER.md`); write it anyway and say so |
 
 Run it and confirm it fails **for the reason described in the issue**. If
 you can't make it fail, stop and report what you tried.
@@ -67,7 +67,7 @@ you can't make it fail, stop and report what you tried.
 - Don't refactor unrelated code, and don't add dependencies without asking
   the user.
 - Changes to the public API must follow the Public API rules in
-  `CONTRIBUTING.md`.
+  `docs/CONTRIBUTING.md`.
 
 ## 6. Verify
 
@@ -75,7 +75,7 @@ you can't make it fail, stop and report what you tried.
 2. `app/tool/check.sh` passes. List any checks it skipped.
 3. If Swift or iOS config changed: build the example for the simulator.
    It can't build in place while the package folder is named `app` (F10 in
-   `HANDOVER.md`); build from a copy of `app/` named `device_shield`.
+   `docs/HANDOVER.md`); build from a copy of `app/` named `device_shield`.
 4. If Kotlin changed and Java is installed: run
    `./gradlew :device_shield:testDebugUnitTest` in `app/example/android` after a
    `flutter build apk --debug`.
