@@ -10,13 +10,13 @@
 
 Before designing anything new, here is the part of the existing architecture this feature must fit into — verified directly against source, not against `ARCHITECTURE.md`'s aspirational text:
 
-- The SDK has exactly two working detectors today: `EmulatorDetector` and `DebuggerDetector` ([lib/src/detectors/](../../lib/src/detectors/)). Both are **poll-based**: `Detector.check()` is called, native answers once, done. There is no precedent anywhere in this codebase for a detector that needs to push a result to Dart *asynchronously, without being asked*.
-- `NativeBridge` already has exactly the transport this feature needs for that asynchronous push, and it has been sitting unused since Phase 7: `registerCallback(name, callback)` / `unregisterCallback(name)` ([lib/src/bridge/native_bridge.dart](../../lib/src/bridge/native_bridge.dart:35)), backed by a real `EventChannel` (`flutter_shield/events`) and native `sendEvent(callback, data)` methods that already exist in both `FlutterShieldPlugin.kt` and `FlutterShieldPlugin.swift`, with doc comments in both files stating almost verbatim: *"a future detector/protection calls this with its own callback name and payload."* This feature is that future detector/protection.
-- `DetectionResult.type` and `SecurityEvent.type` are both deliberately open `String` values, not closed enums, specifically so a new feature never requires a framework change ([detection_result.dart:3](../../lib/src/models/detection_result.dart:3), [security_event.dart:9](../../lib/src/models/security_event.dart:9)). This feature needs **zero new model classes** — a direct, confirmed reuse win.
-- `SecurityManager` is the sole orchestrator ("one orchestrator, one bridge" — [ARCHITECTURE.md](../../ARCHITECTURE.md) §Governing Rules) and is the *only* thing holding both `PolicyManager` and `EventManager`. `DefaultSecurityManager`'s own doc comment states it "deliberately holds no `NativeBridge` reference... nothing here has any legitimate use for one" ([default_security_manager.dart:18](../../lib/src/managers/default_security_manager.dart:18)). This feature is the **first genuine, legitimate reason** that rule needs revisiting — see §8.3.
-- `SecurityProfile`/`ProtectionConfig` already model "per-protection enablement, generic across every protection type" ([security_profile.dart](../../lib/src/models/security_profile.dart)) — but by the model's own doc comment, `SecurityProfile` is "not yet threaded through any frozen method signature." It is not usable by this feature yet without a larger, separate piece of work. See §4.4 for how this document routes around that gap honestly, without pretending to solve it.
-- `FlutterShieldConfig` *is* the thing actually wired through `FlutterShield.initialize()` today, validated by `FlutterShieldConfigValidator` before reaching `ConfigurationManager`. This is the real, load-bearing config surface this feature must extend.
-- No `lib/src/protections/` or `lib/src/widgets/` directory exists yet. `FlutterShieldWidget` and `SecurityAlertDialog`, both named in `ARCHITECTURE.md`'s component table, do not exist anywhere in `lib/`. This confirms the widget/UI layer is fully greenfield for this feature.
+- The SDK has exactly two working detectors today: `EmulatorDetector` and `DebuggerDetector` ([lib/src/detectors/](../../app/lib/src/detectors/)). Both are **poll-based**: `Detector.check()` is called, native answers once, done. There is no precedent anywhere in this codebase for a detector that needs to push a result to Dart *asynchronously, without being asked*.
+- `NativeBridge` already has exactly the transport this feature needs for that asynchronous push, and it has been sitting unused since Phase 7: `registerCallback(name, callback)` / `unregisterCallback(name)` ([lib/src/bridge/native_bridge.dart](../../app/lib/src/bridge/native_bridge.dart:35)), backed by a real `EventChannel` (`device_shield/events`) and native `sendEvent(callback, data)` methods that already exist in both `DeviceShieldPlugin.kt` and `DeviceShieldPlugin.swift`, with doc comments in both files stating almost verbatim: *"a future detector/protection calls this with its own callback name and payload."* This feature is that future detector/protection.
+- `DetectionResult.type` and `SecurityEvent.type` are both deliberately open `String` values, not closed enums, specifically so a new feature never requires a framework change ([detection_result.dart:3](../../app/lib/src/models/detection_result.dart:3), [security_event.dart:9](../../app/lib/src/models/security_event.dart:9)). This feature needs **zero new model classes** — a direct, confirmed reuse win.
+- `SecurityManager` is the sole orchestrator ("one orchestrator, one bridge" — [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) §Governing Rules) and is the *only* thing holding both `PolicyManager` and `EventManager`. `DefaultSecurityManager`'s own doc comment states it "deliberately holds no `NativeBridge` reference... nothing here has any legitimate use for one" ([default_security_manager.dart:18](../../app/lib/src/managers/default_security_manager.dart:18)). This feature is the **first genuine, legitimate reason** that rule needs revisiting — see §8.3.
+- `SecurityProfile`/`ProtectionConfig` already model "per-protection enablement, generic across every protection type" ([security_profile.dart](../../app/lib/src/models/security_profile.dart)) — but by the model's own doc comment, `SecurityProfile` is "not yet threaded through any frozen method signature." It is not usable by this feature yet without a larger, separate piece of work. See §4.4 for how this document routes around that gap honestly, without pretending to solve it.
+- `DeviceShieldConfig` *is* the thing actually wired through `DeviceShield.initialize()` today, validated by `DeviceShieldConfigValidator` before reaching `ConfigurationManager`. This is the real, load-bearing config surface this feature must extend.
+- No `lib/src/protections/` or `lib/src/widgets/` directory exists yet. `DeviceShieldWidget` and `SecurityAlertDialog`, both named in `ARCHITECTURE.md`'s component table, do not exist anywhere in `lib/`. This confirms the widget/UI layer is fully greenfield for this feature.
 
 ---
 
@@ -73,7 +73,7 @@ What this SDK should support, stated precisely (✓ = in scope for this design; 
 - ✓ Detect screen recording / mirroring (iOS: reliable, via `isCaptured`. Android: **not supported** — see §1.6; the SDK will surface this honestly as "unsupported on this platform" rather than silently no-op)
 - ✓ Block screenshots (Android `FLAG_SECURE` only; iOS returns an explicit "not supported" result, never a silent no-op that looks like success)
 - ✓ Notify Flutter (via the existing `NativeBridge.registerCallback`/`EventChannel` transport)
-- ✓ Notify application (via the existing `EventManager`/`FlutterShield.subscribe` surface, plus two thin convenience methods, §3)
+- ✓ Notify application (via the existing `EventManager`/`DeviceShield.subscribe` surface, plus two thin convenience methods, §3)
 - ✓ Allow application to show an alert (via an **optional**, separate widget-layer component — not core SDK logic; see §5, §9.7)
 - ✓ Allow application to customize the alert entirely, or suppress it and use only the event callback (§5)
 - ✓ Enable/disable feature at `initialize()` time, via config (§4)
@@ -87,40 +87,40 @@ What this SDK should support, stated precisely (✓ = in scope for this design; 
 
 ## 3. Public SDK API Design
 
-Every method below is **pure delegation** — consistent with `FlutterShield`'s existing, established rule that it "owns no logic of its own" ([flutter_shield.dart:20](../../lib/src/api/flutter_shield.dart:20)). None of these are final signatures; they illustrate the shape and are explained individually.
+Every method below is **pure delegation** — consistent with `DeviceShield`'s existing, established rule that it "owns no logic of its own" ([device_shield.dart:20](../../app/lib/src/api/device_shield.dart:20)). None of these are final signatures; they illustrate the shape and are explained individually.
 
 ```dart
 // --- Configuration (see §4) ---
-FlutterShieldConfig(
+DeviceShieldConfig(
   enableScreenshotDetection: false,
   enableScreenRecordingDetection: false,
   enableScreenshotProtection: false,
 );
 
 // --- Runtime, imperative control — independent of detection/policy ---
-Future<bool> FlutterShield.enableScreenshotProtection();
-Future<bool> FlutterShield.disableScreenshotProtection();
-Future<bool> get FlutterShield.isScreenshotProtectionSupported; // false on iOS, always
-bool get FlutterShield.isScreenshotProtectionEnabled;           // last-known local state
+Future<bool> DeviceShield.enableScreenshotProtection();
+Future<bool> DeviceShield.disableScreenshotProtection();
+Future<bool> get DeviceShield.isScreenshotProtectionSupported; // false on iOS, always
+bool get DeviceShield.isScreenshotProtectionEnabled;           // last-known local state
 
-// --- Convenience event subscriptions — pure sugar over FlutterShield.subscribe ---
-StreamSubscription<SecurityEvent> FlutterShield.onScreenshot(
+// --- Convenience event subscriptions — pure sugar over DeviceShield.subscribe ---
+StreamSubscription<SecurityEvent> DeviceShield.onScreenshot(
   void Function(SecurityEvent event) handler,
 );
-StreamSubscription<SecurityEvent> FlutterShield.onScreenRecordingChanged(
+StreamSubscription<SecurityEvent> DeviceShield.onScreenRecordingChanged(
   void Function(SecurityEvent event) handler,
 );
 ```
 
 ### Explanation of every API
 
-- **`FlutterShieldConfig.enableScreenshotDetection`** — opts the `ScreenshotDetector` into existence at boot. Does not, by itself, register the detector with `DetectionManager` for the periodic-poll path (see §10) — it only enables the push-listener half. This split exists because "was a screenshot taken" has no meaningful periodic-poll answer; see §7 for why.
-- **`FlutterShieldConfig.enableScreenRecordingDetection`** — opts `ScreenRecordingDetector` into existence. Enables both its poll path (`Detector.check()`, useful for `FlutterShield.checkNow()`/risk-scoring consistency with every other detector) and its push path (`isCaptured` change notifications). On Android, this field is accepted but the resulting detector always reports `DetectionStatus.failed` with an explicit "not supported on this platform" evidence field — see §7.1 — rather than silently doing nothing.
-- **`FlutterShieldConfig.enableScreenshotProtection`** — whether `FLAG_SECURE` (Android) is applied automatically at boot. Deliberately **off by default** (see §4.5) — forcing every screen of every host app to block screenshots by default would be a surprising, breaking, opinionated default inconsistent with every other field in `FlutterShieldConfig` today, all of which default to the least-invasive option.
-- **`FlutterShield.enableScreenshotProtection()` / `disableScreenshotProtection()`** — the *imperative* on/off switch, for the common real case: a host app wants protection on for one specific sensitive screen (e.g., the OTP entry route) and off elsewhere. Returns `Future<bool>` — the actual applied state as confirmed by native, not an optimistic guess — because on iOS this call is a legitimate no-op (see next bullet) and the caller deserves a truthful answer, not silence. This is a deliberate, explained design choice: an app that doesn't check the return value and assumes success on iOS is exactly the failure mode this signature is designed to prevent.
-- **`FlutterShield.isScreenshotProtectionSupported`** — always resolves `false` on iOS, always `true` on Android. Exists so an app can decide, ahead of time, whether to show a platform-specific fallback (e.g., a warning banner on iOS instead of relying on blocking that doesn't exist there).
-- **`FlutterShield.isScreenshotProtectionEnabled`** — a synchronous, locally-cached read of last-known state (not a fresh native round-trip) — matches the existing pattern of `FlutterShield.status` being a synchronous, always-answerable read. Trade-off stated explicitly: this can theoretically drift from native truth if something outside the SDK toggles the underlying window flag directly; accepted because re-querying natively on every read would be needless overhead for a value that only this SDK is expected to mutate.
-- **`FlutterShield.onScreenshot(handler)` / `onScreenRecordingChanged(handler)`** — 100% equivalent to `FlutterShield.subscribe(handler, filter: (e) => e.type == 'screenshot_taken')` / `'screen_recording_state_changed'`. Added purely as documented, discoverable sugar — a developer scanning `FlutterShield`'s public surface should be able to find "screenshot" without already knowing the exact event-type string to filter on. They introduce no new capability and no new logic, matching the facade's existing rule.
+- **`DeviceShieldConfig.enableScreenshotDetection`** — opts the `ScreenshotDetector` into existence at boot. Does not, by itself, register the detector with `DetectionManager` for the periodic-poll path (see §10) — it only enables the push-listener half. This split exists because "was a screenshot taken" has no meaningful periodic-poll answer; see §7 for why.
+- **`DeviceShieldConfig.enableScreenRecordingDetection`** — opts `ScreenRecordingDetector` into existence. Enables both its poll path (`Detector.check()`, useful for `DeviceShield.checkNow()`/risk-scoring consistency with every other detector) and its push path (`isCaptured` change notifications). On Android, this field is accepted but the resulting detector always reports `DetectionStatus.failed` with an explicit "not supported on this platform" evidence field — see §7.1 — rather than silently doing nothing.
+- **`DeviceShieldConfig.enableScreenshotProtection`** — whether `FLAG_SECURE` (Android) is applied automatically at boot. Deliberately **off by default** (see §4.5) — forcing every screen of every host app to block screenshots by default would be a surprising, breaking, opinionated default inconsistent with every other field in `DeviceShieldConfig` today, all of which default to the least-invasive option.
+- **`DeviceShield.enableScreenshotProtection()` / `disableScreenshotProtection()`** — the *imperative* on/off switch, for the common real case: a host app wants protection on for one specific sensitive screen (e.g., the OTP entry route) and off elsewhere. Returns `Future<bool>` — the actual applied state as confirmed by native, not an optimistic guess — because on iOS this call is a legitimate no-op (see next bullet) and the caller deserves a truthful answer, not silence. This is a deliberate, explained design choice: an app that doesn't check the return value and assumes success on iOS is exactly the failure mode this signature is designed to prevent.
+- **`DeviceShield.isScreenshotProtectionSupported`** — always resolves `false` on iOS, always `true` on Android. Exists so an app can decide, ahead of time, whether to show a platform-specific fallback (e.g., a warning banner on iOS instead of relying on blocking that doesn't exist there).
+- **`DeviceShield.isScreenshotProtectionEnabled`** — a synchronous, locally-cached read of last-known state (not a fresh native round-trip) — matches the existing pattern of `DeviceShield.status` being a synchronous, always-answerable read. Trade-off stated explicitly: this can theoretically drift from native truth if something outside the SDK toggles the underlying window flag directly; accepted because re-querying natively on every read would be needless overhead for a value that only this SDK is expected to mutate.
+- **`DeviceShield.onScreenshot(handler)` / `onScreenRecordingChanged(handler)`** — 100% equivalent to `DeviceShield.subscribe(handler, filter: (e) => e.type == 'screenshot_taken')` / `'screen_recording_state_changed'`. Added purely as documented, discoverable sugar — a developer scanning `DeviceShield`'s public surface should be able to find "screenshot" without already knowing the exact event-type string to filter on. They introduce no new capability and no new logic, matching the facade's existing rule.
 
 ---
 
@@ -138,20 +138,20 @@ StreamSubscription<SecurityEvent> FlutterShield.onScreenRecordingChanged(
 
 ### 4.2 Defaults — and why they are conservative
 
-All three boolean toggles above default to `false`. This matches `FlutterShieldConfig`'s existing, established philosophy: every field in the current model (`debugLogging`, `runOnUIThread`, etc.) defaults to the least-invasive option, and no existing detector is auto-registered at boot without the host app opting in (`FlutterShield.registerDetector()` must be called explicitly today, even for `EmulatorDetector`/`DebuggerDetector`). This feature does not introduce a new precedent — it follows the one already set.
+All three boolean toggles above default to `false`. This matches `DeviceShieldConfig`'s existing, established philosophy: every field in the current model (`debugLogging`, `runOnUIThread`, etc.) defaults to the least-invasive option, and no existing detector is auto-registered at boot without the host app opting in (`DeviceShield.registerDetector()` must be called explicitly today, even for `EmulatorDetector`/`DebuggerDetector`). This feature does not introduce a new precedent — it follows the one already set.
 
 ### 4.3 Widget-layer configuration (separate from the above — see §5, §9.7)
-These are **not** part of `FlutterShieldConfig` and do not touch `ConfigurationManager` at all — they belong entirely to the optional, separate UI-layer component:
+These are **not** part of `DeviceShieldConfig` and do not touch `ConfigurationManager` at all — they belong entirely to the optional, separate UI-layer component:
 
 | Option | Controls |
 |---|---|
 | `showAlert` | Whether the optional alert widget renders anything at all in response to an event, vs. the app relying purely on `onScreenshot`/`onScreenRecordingChanged` callbacks. |
 | `alertTitle` / `alertMessage` | Default copy for the built-in alert, if used unmodified. |
 | `customDialogBuilder` | A `Widget Function(BuildContext, SecurityEvent)` the app supplies to fully replace the built-in alert's content while still using the built-in show/dismiss plumbing. |
-| `customEventHandler` | A raw callback bypassing the widget entirely — functionally identical to calling `FlutterShield.onScreenshot`/`onScreenRecordingChanged` directly; exists as a discoverable named option on the widget for apps that start from the widget and later want more control. |
+| `customEventHandler` | A raw callback bypassing the widget entirely — functionally identical to calling `DeviceShield.onScreenshot`/`onScreenRecordingChanged` directly; exists as a discoverable named option on the widget for apps that start from the widget and later want more control. |
 
 ### 4.4 Why this isn't built on `SecurityProfile`/`ProtectionConfig` yet
-`SecurityProfile.protectionConfigs` (a `List<ProtectionConfig>`, each with an open `type: String` and `enabled: bool`) is *already* a generically-correct model for exactly this kind of toggle — in principle, `ProtectionConfig(type: 'screenshot', enabled: true)` is a perfect fit. But per that model's own doc comment, `SecurityProfile` is not yet threaded through any frozen method signature — no version of `FlutterShield.initialize()` accepts one today, and wiring that up is a separate, larger, not-yet-scoped piece of infrastructure work with its own cross-cutting implications (it's documented as a dependency of `PermissionManager`, `DetectionManager`, *and* `PolicyManager` simultaneously). Building this feature's config on top of a mechanism that doesn't exist yet would silently make this design depend on unscoped future work. Instead, this document adds the three fields directly to `FlutterShieldConfig` (the surface that is actually wired today), and explicitly records the intended migration: **once `SecurityProfile` is threaded through `initialize()`, these three fields should move to `ProtectionConfig` entries for consistency with every other protection**, at which point the `FlutterShieldConfig` fields become deprecated aliases, not a second parallel system.
+`SecurityProfile.protectionConfigs` (a `List<ProtectionConfig>`, each with an open `type: String` and `enabled: bool`) is *already* a generically-correct model for exactly this kind of toggle — in principle, `ProtectionConfig(type: 'screenshot', enabled: true)` is a perfect fit. But per that model's own doc comment, `SecurityProfile` is not yet threaded through any frozen method signature — no version of `DeviceShield.initialize()` accepts one today, and wiring that up is a separate, larger, not-yet-scoped piece of infrastructure work with its own cross-cutting implications (it's documented as a dependency of `PermissionManager`, `DetectionManager`, *and* `PolicyManager` simultaneously). Building this feature's config on top of a mechanism that doesn't exist yet would silently make this design depend on unscoped future work. Instead, this document adds the three fields directly to `DeviceShieldConfig` (the surface that is actually wired today), and explicitly records the intended migration: **once `SecurityProfile` is threaded through `initialize()`, these three fields should move to `ProtectionConfig` entries for consistency with every other protection**, at which point the `DeviceShieldConfig` fields become deprecated aliases, not a second parallel system.
 
 ### 4.5 Configuration-driven, not hardcoded
 All three core toggles are read from `ConfigurationManager.current` (the existing single owner of live config — "no manager caches its own copy," per its own contract) at the point `ScreenCaptureController`/the two detectors are constructed during boot, exactly matching how `DefaultDetectionManager`'s `detectorTimeout` is already read once from `ConfigurationManager.current.checkTimeout` at construction time in `PluginInitializer`. No new configuration-access pattern is introduced.
@@ -160,13 +160,13 @@ All three core toggles are read from `ConfigurationManager.current` (the existin
 
 ## 5. User Customization
 
-Every customization point below lives in the **optional widget layer** (§9.7), never in core SDK logic — this is a deliberate architectural boundary (see §8.4), matching the fact that `FlutterShield`/`SecurityManager`/`EventManager` today import no Flutter widget code at all, only `LifecycleManager` does (for `WidgetsBindingObserver`, a platform-integration necessity, not a UI concern).
+Every customization point below lives in the **optional widget layer** (§9.7), never in core SDK logic — this is a deliberate architectural boundary (see §8.4), matching the fact that `DeviceShield`/`SecurityManager`/`EventManager` today import no Flutter widget code at all, only `LifecycleManager` does (for `WidgetsBindingObserver`, a platform-integration necessity, not a UI concern).
 
 | Customization | Mechanism | Optional? |
 |---|---|---|
 | Custom Alert copy | `alertTitle`/`alertMessage` params | Yes — has a default |
 | Custom Widget / Custom Dialog / Custom BottomSheet | `customDialogBuilder: Widget Function(BuildContext, SecurityEvent)` — the widget decides *whether* to present it as a dialog, bottom sheet, banner, or anything else; the SDK does not dictate presentation shape | Yes |
-| Disable Alert entirely | `showAlert: false`, or simply never mount the optional widget at all and use `FlutterShield.onScreenshot`/`onScreenRecordingChanged` directly | Yes — this is the "only event callback" mode, and is expected to be the common case for apps with their own design system |
+| Disable Alert entirely | `showAlert: false`, or simply never mount the optional widget at all and use `DeviceShield.onScreenshot`/`onScreenRecordingChanged` directly | Yes — this is the "only event callback" mode, and is expected to be the common case for apps with their own design system |
 | Custom Localization | Not the SDK's concern to solve generically — `alertTitle`/`alertMessage`/`customDialogBuilder` all accept whatever the host app's own localization pipeline produces; the SDK does not ship its own i18n strings or opinionated locale logic |
 | Custom Theme | Not special-cased — `customDialogBuilder` receives `BuildContext`, so it inherits the host app's `Theme`/`MaterialApp` ambient styling automatically, same as any other widget the app builds |
 | Custom Button Text | Part of `customDialogBuilder`'s returned widget tree — not a separate parameter, since the SDK does not dictate how many buttons exist or what they do |
@@ -184,14 +184,14 @@ Every customization point below lives in the **optional widget layer** (§9.7), 
 flowchart TD
     USER["User takes a screenshot"]
     NATIVE["Native OS signal\n(iOS: userDidTakeScreenshotNotification\nAndroid: MediaStore heuristic / API 34 callback)"]
-    PLUGIN["FlutterShieldPlugin.sendEvent(\n  'onScreenshotTaken', data)"]
-    ECS["EventChannelService\n(flutter_shield/events, unfiltered forwarding)"]
+    PLUGIN["DeviceShieldPlugin.sendEvent(\n  'onScreenshotTaken', data)"]
+    ECS["EventChannelService\n(device_shield/events, unfiltered forwarding)"]
     NB["DefaultNativeBridge._routeNativeEvent()\nroutes by 'callback' key"]
     SCC["ScreenCaptureController\n(the registered callback)"]
     SM["SecurityManager.processResult(DetectionResult)\n(new, small, additive — see §8.3)"]
     POL["PolicyManager.evaluate()\n→ SecurityAction"]
     EM["EventManager.emit(SecurityEvent(\n  type: 'screenshot_taken', ...))"]
-    APP["Application subscriber\n(FlutterShield.onScreenshot / .subscribe)"]
+    APP["Application subscriber\n(DeviceShield.onScreenshot / .subscribe)"]
     ALERT["Optional: widget layer shows alert"]
     ANALYTICS["Optional: app forwards to its own analytics"]
 
@@ -206,7 +206,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     OS["iOS: UIScreen.capturedDidChangeNotification fires\n(isCaptured true or false)"]
-    PLUGIN["FlutterShieldPlugin.sendEvent(\n  'onScreenCaptureStateChanged', {isCaptured})"]
+    PLUGIN["DeviceShieldPlugin.sendEvent(\n  'onScreenCaptureStateChanged', {isCaptured})"]
     ECS["EventChannelService"]
     NB["DefaultNativeBridge routing"]
     SCC["ScreenCaptureController"]
@@ -248,7 +248,7 @@ Both diagrams share the same spine from `NativeBridge` onward — the only thing
 - **`userDidTakeScreenshotNotification`** (available since iOS 7.0) fires *after* a screenshot has already been taken and saved to Photos. It is purely informational — there is no way to intercept or cancel the screenshot, and no way to know what was in it beyond the fact that the notification fired while your app was foregrounded.
 - **ReplayKit — explicitly not the mechanism used here, and a correction worth stating plainly:** ReplayKit (`RPScreenRecorder`) is Apple's framework for an app to record **its own** screen and broadcast/share that recording — it is designed for building in-app "record my gameplay" features, not for detecting that some *other* process (Control Center, AirPlay, a different app) is capturing the screen. Some of this repository's own planning documents (`SDK_MILESTONE_PLAN.md`, `ROADMAP.md`) describe iOS recording detection as "ReplayKit monitoring" — this is imprecise. The correct, actually-existing mechanism for detecting *external* capture is `UIScreen.isCaptured`, not ReplayKit. This document corrects that terminology going forward.
 - **Screenshot/recording blocking through a *supported* mechanism: does not exist.** There is no public API, private-API workaround considered acceptable for App Store distribution, or documented Apple-sanctioned mechanism to prevent a screenshot or a recording session on iOS. This remains true. **§18.5 update**: this SDK now implements a real black-screenshot/recording effect anyway, via `ScreenCaptureProtection.swift`'s `UITextField.isSecureTextEntry` layer re-parenting technique — the same category of "commonly: overlaying a blur/warning after detection" claim this bullet used to dismiss does *not* apply to that specific technique (it genuinely excludes content from the capture itself, not a post-hoc overlay) — but it is still not a documented Apple contract, and the fragility warning in that file's own header comment is the load-bearing caveat, not this paragraph's older, now-superseded blanket dismissal.
-- **Version compatibility:** both APIs used here (`isCaptured`/`capturedDidChangeNotification` since iOS 11, `userDidTakeScreenshotNotification` since iOS 7) are trivially available at this plugin's current Swift Package Manager floor of iOS 18.0 (set in [ios/flutter_shield/Package.swift](../../ios/flutter_shield/Package.swift:8)). That floor exists for unrelated SPM tooling reasons (confirmed earlier in this project's history), not because this feature needs a recent iOS version — worth stating so no one assumes this feature is why the floor is high.
+- **Version compatibility:** both APIs used here (`isCaptured`/`capturedDidChangeNotification` since iOS 11, `userDidTakeScreenshotNotification` since iOS 7) are trivially available at this plugin's current Swift Package Manager floor of iOS 18.0 (set in [ios/device_shield/Package.swift](../../app/ios/device_shield/Package.swift:8)). That floor exists for unrelated SPM tooling reasons (confirmed earlier in this project's history), not because this feature needs a recent iOS version — worth stating so no one assumes this feature is why the floor is high.
 
 ---
 
@@ -262,18 +262,18 @@ Both diagrams share the same spine from `NativeBridge` onward — the only thing
 | `MethodChannelService` / `EventChannelService` | Unchanged, reused exactly as-is — this feature adds new method/callback *names*, not new channels. |
 | `EventManager` | Unchanged. Receives `SecurityEvent`s exactly like every other feature; has no knowledge this feature exists. |
 | `PolicyManager` | Unchanged. `evaluate()`/`executeAction()` treat this feature's `DetectionResult`s exactly like any other detector's — no special-casing, per the existing "Rule doesn't know what any specific condition is" design. |
-| `ConfigurationManager` | Unchanged contract. Supplies the three new `FlutterShieldConfig` fields (§4) at the point `SecurityManager`/its collaborators are constructed, same pattern as `checkTimeout` today. |
+| `ConfigurationManager` | Unchanged contract. Supplies the three new `DeviceShieldConfig` fields (§4) at the point `SecurityManager`/its collaborators are constructed, same pattern as `checkTimeout` today. |
 | `LifecycleManager` | **Not used by this feature at all.** Considered and rejected — see §8.5. |
 | `ServiceContainer` | Unchanged. No new `Manager`-lifecycle singleton is registered for this feature (see §8.4) — this is a deliberate minimalism decision, directly satisfying "do not introduce unnecessary managers." |
 | `DetectorFactory` / `DetectorRegistry` | Reused for the poll-path halves of `ScreenshotDetector`/`ScreenRecordingDetector` — registered exactly like `EmulatorDetector`/`DebuggerDetector` are today, via the existing extension mechanism. |
 | `PluginInitializer` | Unchanged contract shape. Gains no new boot step — the new push-listener wiring happens inside `SecurityManager.initialize()`, which `PluginInitializer` already calls at its existing step 7 ("Managers"). |
-| `FlutterShield` | Gains the new methods listed in §3 — pure delegation, no new logic, matching its existing rule. |
+| `DeviceShield` | Gains the new methods listed in §3 — pure delegation, no new logic, matching its existing rule. |
 
 ### 8.2 Dependency diagram
 
 ```mermaid
 flowchart TD
-    APP["Flutter App"] --> API["FlutterShield"]
+    APP["Flutter App"] --> API["DeviceShield"]
     API --> SM["SecurityManager"]
     SM --> DET["DetectionManager"]
     SM --> POL["PolicyManager"]
@@ -299,7 +299,7 @@ Note the two independent paths into `NativeBridge` from this feature: the poll p
 
 **Decision:** extract that per-result body into a new, small, additive method on the `SecurityManager` contract — `Future<void> processResult(DetectionResult result)` — called both by `checkNow()`'s existing loop (one call per batch item, no behavior change) and by the new `ScreenCaptureController` on every native push. This is a pure refactor-plus-one-new-public-entry-point, not a redesign: `checkNow()`'s observable behavior is unchanged, and the new method is additive to the contract, not a breaking change to it.
 
-**Decision:** `ScreenCaptureController` does **not** hold a concrete `SecurityManager` reference to call `processResult()`. Doing so would create a two-node cycle (`SecurityManager` owns `ScreenCaptureController`; `ScreenCaptureController` calls back into `SecurityManager`) — exactly the shape this codebase already solved once, for `LifecycleManager`/`SecurityManager`, via the narrow `SecurityLifecycleHandler` callback contract ([lifecycle.dart:49](../../lib/src/state/lifecycle.dart:49)). This design reuses that exact precedent: `ScreenCaptureController` is constructed with a plain callback (`Future<void> Function(DetectionResult) onResult`), and `SecurityManager` passes its own `processResult` method as that callback — the same shape as `SecurityManager` implementing `SecurityLifecycleHandler` and passing itself to `LifecycleManager.attach()` today. No new abstract contract type is introduced; a plain function type is sufficient here since there is exactly one callback, not four.
+**Decision:** `ScreenCaptureController` does **not** hold a concrete `SecurityManager` reference to call `processResult()`. Doing so would create a two-node cycle (`SecurityManager` owns `ScreenCaptureController`; `ScreenCaptureController` calls back into `SecurityManager`) — exactly the shape this codebase already solved once, for `LifecycleManager`/`SecurityManager`, via the narrow `SecurityLifecycleHandler` callback contract ([lifecycle.dart:49](../../app/lib/src/state/lifecycle.dart:49)). This design reuses that exact precedent: `ScreenCaptureController` is constructed with a plain callback (`Future<void> Function(DetectionResult) onResult`), and `SecurityManager` passes its own `processResult` method as that callback — the same shape as `SecurityManager` implementing `SecurityLifecycleHandler` and passing itself to `LifecycleManager.attach()` today. No new abstract contract type is introduced; a plain function type is sufficient here since there is exactly one callback, not four.
 
 **Decision:** `SecurityManager`'s existing "deliberately holds no `NativeBridge`" rule is revisited, narrowly, for this feature only. `ScreenCaptureController` (owned/constructed by `SecurityManager`, exactly like `DetectionManager`/`PolicyManager` are today) holds `NativeBridge` directly — using the *same* pattern every leaf `Detector` already uses, not a new one. `SecurityManager` itself still never touches `NativeBridge` directly; it only owns a small collaborator that does, exactly as it already owns `DetectionManager` (which, transitively through its detectors, also reaches `NativeBridge`). The prior rule's stated reasoning — "nothing here has any legitimate use for one" — is exactly the premise this feature invalidates: proactive screenshot-protection enable/disable is an imperative native command with no natural home in `DetectionManager` (which is detection-only, read-only, by its own contract) or in an individual `Detector` (whose contract has no "enable/disable" concept at all, deliberately, since it's read-only by shape). `ScreenCaptureController` is the minimal new surface that carries exactly this one new responsibility, owned by the one component ("one orchestrator") whose job is coordinating everything else.
 
@@ -307,7 +307,7 @@ Note the two independent paths into `NativeBridge` from this feature: the poll p
 `ScreenCaptureController` is **not** registered in `ServiceContainer` and does **not** implement the `Manager` lifecycle interface (`initialize()`/`dispose()` as a standalone boot step). It is a small, constructor-injected collaborator **owned by `SecurityManager`**, exactly matching how `DetectionManager` and `PolicyManager` are owned today (constructed inside `PluginInitializer._resolveOrRegisterSecurityManager()`, passed into `DefaultSecurityManager`'s constructor, never independently resolved from the container by anything else). Its `initialize()`/`dispose()` (plain methods, not a `Manager` implementation) are called from within `SecurityManager.initialize()`/`dispose()`, the same way `SecurityManager.initialize()` today calls `detectionManager.initialize()` and `policyManager.initialize()` as ordinary method calls, not container resolutions. This avoids adding a tenth boot step to `PluginInitializer`'s already-numbered sequence for something that is, architecturally, a private implementation detail of `SecurityManager`, not a new peer service.
 
 ### 8.5 Why `LifecycleManager` is deliberately not used
-It was considered — "pause protection while backgrounded" sounds superficially like a lifecycle concern. Rejected because: (a) `FLAG_SECURE` does not need lifecycle-driven toggling at all — it persists correctly across background/foreground transitions with zero extra code; (b) `LifecycleManager`'s contract is explicitly, deliberately forbidden from constructing or emitting a `SecurityEvent` or referencing `EventManager` in any way ([lifecycle.dart:62](../../lib/src/state/lifecycle.dart:62)), and this feature's entire push path is built on exactly the emit path `LifecycleManager` is walled off from. Routing through it would either violate that existing, explicit rule or add an indirection with no benefit.
+It was considered — "pause protection while backgrounded" sounds superficially like a lifecycle concern. Rejected because: (a) `FLAG_SECURE` does not need lifecycle-driven toggling at all — it persists correctly across background/foreground transitions with zero extra code; (b) `LifecycleManager`'s contract is explicitly, deliberately forbidden from constructing or emitting a `SecurityEvent` or referencing `EventManager` in any way ([lifecycle.dart:62](../../app/lib/src/state/lifecycle.dart:62)), and this feature's entire push path is built on exactly the emit path `LifecycleManager` is walled off from. Routing through it would either violate that existing, explicit rule or add an indirection with no benefit.
 
 ---
 
@@ -315,7 +315,7 @@ It was considered — "pause protection while backgrounded" sounds superficially
 
 ### 9.1 `ScreenshotDetector`
 - **File:** `lib/src/detectors/screenshot_detector.dart`
-- **Purpose:** the poll-path half of screenshot detection — implements the standard `Detector` contract so it participates in `DetectionManager.runAllChecks()`/`FlutterShield.checkNow()` exactly like `EmulatorDetector`/`DebuggerDetector`, for consistency with the rest of the SDK's detector model and so risk-scoring (`PolicyManager.calculateRiskScore()`) treats it uniformly.
+- **Purpose:** the poll-path half of screenshot detection — implements the standard `Detector` contract so it participates in `DetectionManager.runAllChecks()`/`DeviceShield.checkNow()` exactly like `EmulatorDetector`/`DebuggerDetector`, for consistency with the rest of the SDK's detector model and so risk-scoring (`PolicyManager.calculateRiskScore()`) treats it uniformly.
 - **Dependencies:** `NativeBridge` only (constructor-injected, same shape as every existing detector).
 - **Responsibilities:** on `check()`, ask native "was a screenshot observed since the last check" (a simple internal counter/flag reset on each call) and return a `DetectionResult(type: 'screenshot', ...)`. This is a secondary, consistency-only path — the primary, real-time path is the push mechanism (§9.3), not this one. This asymmetry (poll path exists mostly for API-shape consistency, not as the main mechanism) is stated explicitly, not hidden.
 - **Public methods:** the standard `Detector` contract only (`type`, `priority`, `initialize()`, `check()`, `dispose()`) — no additional public surface, to keep it a drop-in-compatible `Detector` like every other one.
@@ -346,7 +346,7 @@ It was considered — "pause protection while backgrounded" sounds superficially
 ### 9.6 New native classes — iOS
 - `ios/.../Detection/ScreenshotDetector.swift` — wraps `userDidTakeScreenshotNotification`.
 - `ios/.../Detection/ScreenRecordingDetector.swift` — wraps `UIScreen.isCaptured`/`capturedDidChangeNotification`.
-- `ios/.../Protection/ScreenCaptureProtection.swift` — **added in §18.5**, superseding the line that used to read here. `UITextField.isSecureTextEntry` layer re-parenting; not a supported Apple API — see that file's own top-of-file warning before modifying it. `FlutterShieldPlugin.swift`'s handler for `setScreenshotProtection` now genuinely applies protection on iOS rather than returning `{'applied': false}` unconditionally.
+- `ios/.../Protection/ScreenCaptureProtection.swift` — **added in §18.5**, superseding the line that used to read here. `UITextField.isSecureTextEntry` layer re-parenting; not a supported Apple API — see that file's own top-of-file warning before modifying it. `DeviceShieldPlugin.swift`'s handler for `setScreenshotProtection` now genuinely applies protection on iOS rather than returning `{'applied': false}` unconditionally.
 - `ios/.../Protection/AppSwitcherProtection.swift` — **added in §18.1**, a real, fully-supported mechanism (public UIKit only) for the app-switcher-snapshot case specifically.
 
 ### 9.7 New optional widget-layer components (not core SDK — see §8.4/§5)
@@ -363,10 +363,10 @@ flowchart LR
     D["ScreenshotDetector /\nScreenRecordingDetector\n.check()"] --> DM["DetectionManager\n.runAllChecks()"]
     DM --> POL["PolicyManager\n.evaluate()"]
     POL --> EM["EventManager\n.emit()"]
-    EM --> API["FlutterShield\n(.checkNow() caller / .subscribe())"]
+    EM --> API["DeviceShield\n(.checkNow() caller / .subscribe())"]
 ```
 
-This is the **existing, unmodified** pipeline every current detector already uses — `FlutterShield.checkNow()`, the periodic timer, `calculateRiskScore()`, all continue to work for this feature's poll path with zero changes. It exists primarily so this feature behaves consistently with the rest of the SDK's detector model (a host app that already polls all detectors uniformly gets these two "for free," in the same shape), while the real-time reaction described in §6/§11 comes from the separate push path.
+This is the **existing, unmodified** pipeline every current detector already uses — `DeviceShield.checkNow()`, the periodic timer, `calculateRiskScore()`, all continue to work for this feature's poll path with zero changes. It exists primarily so this feature behaves consistently with the rest of the SDK's detector model (a host app that already polls all detectors uniformly gets these two "for free," in the same shape), while the real-time reaction described in §6/§11 comes from the separate push path.
 
 ---
 
@@ -379,7 +379,7 @@ There are genuinely **two independent flows** here, and conflating them would be
 ```mermaid
 flowchart TD
     APP["App enters a sensitive route\n(e.g. OTP entry screen)"]
-    CALL["FlutterShield.enableScreenshotProtection()"]
+    CALL["DeviceShield.enableScreenshotProtection()"]
     SCC["ScreenCaptureController.enable()"]
     NB["NativeBridge.invoke(setScreenshotProtection, enabled:true)"]
     NATIVE["Android: FLAG_SECURE set\niOS: returns applied:false (unsupported)"]
@@ -397,7 +397,7 @@ flowchart TD
     POL["PolicyManager.evaluate()\n→ SecurityAction (e.g. .custom, .warn, .report)"]
     ACT["PolicyManager.executeAction()\n(e.g. a registered ActionHandler against\nSecurityAction.custom could itself call\nenableScreenshotProtection() retroactively)"]
     EVT["EventManager.emit(SecurityEvent)"]
-    CB["Application callback\n(FlutterShield.onScreenshot/.onScreenRecordingChanged)"]
+    CB["Application callback\n(DeviceShield.onScreenshot/.onScreenRecordingChanged)"]
     ALERT["Optional: widget-layer alert (§5, §9.7)"]
 
     DETECT --> SM --> POL
@@ -477,7 +477,7 @@ Note this reuses `ARCHITECTURE.md`'s own already-stated rule verbatim: "action e
 | Layer | What's tested |
 |---|---|
 | **Dart unit tests** | `ScreenshotDetector`/`ScreenRecordingDetector`'s `check()` shaping logic against a fake `NativeBridge` (mirroring `test/detectors/emulator_detector_test.dart`'s existing pattern exactly); `ScreenCaptureController`'s push-routing logic (raw callback payload → correctly-shaped `DetectionResult` → `onResult` invoked) against a fake `NativeBridge`, with no real platform channel involved. |
-| **Dart integration tests** | The full push path using a fake `EventChannel`/`MethodChannel` pair (mirroring `test/detectors/debugger_detector_integration_test.dart`'s existing pattern), asserting an emitted `SecurityEvent` reaches a `FlutterShield.subscribe()`/`onScreenshot()` listener end-to-end within the Dart layer, without a real device. |
+| **Dart integration tests** | The full push path using a fake `EventChannel`/`MethodChannel` pair (mirroring `test/detectors/debugger_detector_integration_test.dart`'s existing pattern), asserting an emitted `SecurityEvent` reaches a `DeviceShield.subscribe()`/`onScreenshot()` listener end-to-end within the Dart layer, without a real device. |
 | **Android unit tests** | `ScreenshotDetector.kt`'s pure decision logic (mirroring `EmulatorDetectorTest.kt`/`DebuggerDetectorTest.kt`'s existing separation of pure-logic-from-platform-calls pattern) against synthetic inputs; `ScreenCaptureProtection.kt`'s flag-set/clear logic against a mocked `Window`. |
 | **iOS unit tests** | Equivalent Swift-side tests for the notification-wrapping logic, mirroring `DebuggerDetectorTests.swift`'s existing pattern. |
 | **Flutter widget tests** | The optional alert widget (§9.7), once built: verifies `customDialogBuilder` overrides the default correctly, `showAlert: false` renders nothing, and the widget correctly subscribes/unsubscribes across its own lifecycle. |
@@ -492,7 +492,7 @@ Note this reuses `ARCHITECTURE.md`'s own already-stated rule verbatim: "action e
 2. **Show screenshot detection** — same device with protection *off*, take a screenshot, show the `screenshot_taken` event arriving in an on-screen log within the demo app (matching the exact "recent security events" live-feed pattern already built and demonstrated for `EmulatorDetector`/`DebuggerDetector` in this project's example app).
 3. **Show recording detection (iOS)** — start a Control Center screen recording live on a real iOS device, show the `screen_recording_state_changed` event fire with `isCaptured: true` in real time; stop recording, show it flip back to `false`.
 4. **Show the honest Android recording gap** — deliberately demonstrate that starting a screen recording on the Android device produces *no* event, with the demo narrating why (§7.1) — turning a limitation into a credibility-building moment rather than hiding it.
-5. **Show callbacks** — `FlutterShield.onScreenshot`/`onScreenRecordingChanged` wired to a simple `print`/on-screen log, demonstrating the pure-callback usage mode with zero UI dependency.
+5. **Show callbacks** — `DeviceShield.onScreenshot`/`onScreenRecordingChanged` wired to a simple `print`/on-screen log, demonstrating the pure-callback usage mode with zero UI dependency.
 6. **Show the alert** — mount the optional widget-layer alert (§9.7) and trigger a screenshot, showing the default alert appear.
 7. **Show customization** — swap in a `customDialogBuilder` returning a completely different-looking widget (e.g. a bottom sheet instead of a dialog) live, to demonstrate the "everything optional" design principle (§5) concretely rather than only asserting it.
 8. **Show the proactive vs reactive distinction (§11)** — call `enableScreenshotProtection()` explicitly before entering a "sensitive screen" in the demo, then show it has no bearing on whether a *recording* event fires elsewhere in the app, making the two-flows design tangible rather than abstract.
@@ -502,7 +502,7 @@ Note this reuses `ARCHITECTURE.md`'s own already-stated rule verbatim: "action e
 ## 17. Future Improvements
 
 - ~~**App Switcher / Recents snapshot redaction**~~ — **implemented**, see §18.1. Was: a closely related, much cheaper follow-on; Android gets this automatically as a `FLAG_SECURE` side effect already; iOS needed a small, separate mechanism.
-- **`SecurityProfile`/`ProtectionConfig` migration** — once `SecurityProfile` is threaded through `FlutterShield.initialize()` (separate, larger, unscoped work), migrate this feature's three `FlutterShieldConfig` fields to `ProtectionConfig(type: 'screenshot', ...)` / `ProtectionConfig(type: 'screen_recording', ...)` entries, per §4.4's stated migration path.
+- **`SecurityProfile`/`ProtectionConfig` migration** — once `SecurityProfile` is threaded through `DeviceShield.initialize()` (separate, larger, unscoped work), migrate this feature's three `DeviceShieldConfig` fields to `ProtectionConfig(type: 'screenshot', ...)` / `ProtectionConfig(type: 'screen_recording', ...)` entries, per §4.4's stated migration path.
 - **Per-route protection helper** — a small, optional Flutter `NavigatorObserver` or route-wrapper widget that calls `enableScreenshotProtection()`/`disableScreenshotProtection()` automatically on enter/exit of a marked route, removing the manual call-site burden §7.1 currently places on the host app, and narrowing (though not eliminating) the transition race window named there. **Still not implemented** — audited in §18.3, remains the host app's own responsibility.
 - **Android 14+-only mode** — an explicit config knob to skip the pre-14 `MediaStore` heuristic entirely (avoiding the permission request named in §14.4) for host apps willing to trade "no screenshot detection on older Android" for "no extra runtime permission, ever."
 - **Burst/dedup `EventProcessor`** — a ready-made `EventProcessor` (registered via the existing `EventManager.addProcessor()`) that collapses a rapid burst of screenshot events into one, for apps that don't want per-screenshot noise — built as a reusable processor, not special-cased into this feature's own emit path (§13).
@@ -518,11 +518,11 @@ This section records a follow-up audit performed after §1–17 were implemented
 
 `ios/.../Protection/AppSwitcherProtection.swift` (new file, mirroring Android's `protection/` package). Mechanism: a dedicated top-level `UIWindow` (not a subview of Flutter's own key window — touches no Flutter view/hit-test state at all) holding a `UIVisualEffectView` blur, shown on `UIApplication.willResignActiveNotification` (fires *before* the OS captures the app-switcher snapshot) and removed on `didBecomeActiveNotification`. Built entirely from public, documented UIKit API — no private selectors, no undocumented internals, no App Store risk.
 
-Exposed as `FlutterShield.enableAppSwitcherProtection()` / `.disableAppSwitcherProtection()` / `.isAppSwitcherProtectionEnabled`, plus `FlutterShieldConfig.enableAppSwitcherProtection` for boot-time auto-enable. On Android, this is a **documented alias** for `enableScreenshotProtection()` — both set the same `FLAG_SECURE` flag, because Recents redaction there is genuinely the same mechanism, not a second one; inventing an independent Android control would misrepresent the platform (§2's own "no control that doesn't exist" principle). On iOS this is the **first protection call in this SDK that can honestly report `applied: true`.**
+Exposed as `DeviceShield.enableAppSwitcherProtection()` / `.disableAppSwitcherProtection()` / `.isAppSwitcherProtectionEnabled`, plus `DeviceShieldConfig.enableAppSwitcherProtection` for boot-time auto-enable. On Android, this is a **documented alias** for `enableScreenshotProtection()` — both set the same `FLAG_SECURE` flag, because Recents redaction there is genuinely the same mechanism, not a second one; inventing an independent Android control would misrepresent the platform (§2's own "no control that doesn't exist" principle). On iOS this is the **first protection call in this SDK that can honestly report `applied: true`.**
 
 ### 18.2 Configuration-driven behavior — fixed (was dead code)
 
-`enableScreenshotDetection`, `enableScreenRecordingDetection`, `enableScreenshotProtection`, and the new `enableAppSwitcherProtection` were previously validated by `FlutterShieldConfigValidator` and stored by `ConfigurationManager`, but **no runtime code ever read them** — `ScreenCaptureController.initialize()` registered both native push listeners unconditionally regardless of config, and protection was never auto-applied at boot no matter what a host app configured. This was a genuine SDK implementation gap, not a platform limitation, and has been fixed: `DefaultSecurityManager.initialize()` now passes `ConfigurationManager.current` into `ScreenCaptureController.initialize(config)`, which gates each of the four flags independently and is idempotent (a second `initialize()` call double-registers nothing). See `screen_capture_controller_test.dart`'s "config-gated initialize" group and `default_security_manager_test.dart`'s "config-driven boot" group for regression coverage.
+`enableScreenshotDetection`, `enableScreenRecordingDetection`, `enableScreenshotProtection`, and the new `enableAppSwitcherProtection` were previously validated by `DeviceShieldConfigValidator` and stored by `ConfigurationManager`, but **no runtime code ever read them** — `ScreenCaptureController.initialize()` registered both native push listeners unconditionally regardless of config, and protection was never auto-applied at boot no matter what a host app configured. This was a genuine SDK implementation gap, not a platform limitation, and has been fixed: `DefaultSecurityManager.initialize()` now passes `ConfigurationManager.current` into `ScreenCaptureController.initialize(config)`, which gates each of the four flags independently and is idempotent (a second `initialize()` call double-registers nothing). See `screen_capture_controller_test.dart`'s "config-gated initialize" group and `default_security_manager_test.dart`'s "config-driven boot" group for regression coverage.
 
 ### 18.3 iOS full-screenshot blocking — investigated, initially rejected (see §18.5 for the reversal)
 
@@ -537,11 +537,11 @@ Investigated specifically: the "secure text entry" technique some third-party SD
 
 ### 18.4 Per-route auto-protection `NavigatorObserver` — still not implemented, confirmed real gap
 
-Remains exactly as §17 described it: no automatic `enable()`/`disable()` on route enter/exit exists. A host app must call `FlutterShield.enableScreenshotProtection()`/`disableScreenshotProtection()` itself at the right navigation moments. This is a real, currently-unimplemented convenience gap (not a platform limitation) — deliberately out of this audit's scope because it is Flutter-widget/navigation-layer work (a `NavigatorObserver` or route wrapper), a different architectural layer from the native protection/detection mechanisms this audit focused on, and §8.4's "core SDK stays UI/navigation-independent" principle means it belongs in the optional widget layer (§9.7), not core. Flagged explicitly here rather than silently left off the list.
+Remains exactly as §17 described it: no automatic `enable()`/`disable()` on route enter/exit exists. A host app must call `DeviceShield.enableScreenshotProtection()`/`disableScreenshotProtection()` itself at the right navigation moments. This is a real, currently-unimplemented convenience gap (not a platform limitation) — deliberately out of this audit's scope because it is Flutter-widget/navigation-layer work (a `NavigatorObserver` or route wrapper), a different architectural layer from the native protection/detection mechanisms this audit focused on, and §8.4's "core SDK stays UI/navigation-independent" principle means it belongs in the optional widget layer (§9.7), not core. Flagged explicitly here rather than silently left off the list.
 
 ### 18.5 iOS full-screenshot blocking — implemented by explicit approval; **live verification result was negative on Simulator, real cause unconfirmed**
 
-After §18.3's investigation was presented — including the risk that this can silently regress on a future iOS release — the decision to implement it anyway was made explicitly by the host app, for iOS parity with real production payment apps (Google Pay, PhonePe, and others are reported to ship exactly this technique, sometimes via the published Flutter plugin `screen_protector`, which uses the same mechanism). This is a deliberate risk-acceptance decision recorded here, not an SDK default silently switched on — `enableScreenshotProtection`/`FlutterShieldConfig.enableScreenshotProtection` default to `false`, unchanged.
+After §18.3's investigation was presented — including the risk that this can silently regress on a future iOS release — the decision to implement it anyway was made explicitly by the host app, for iOS parity with real production payment apps (Google Pay, PhonePe, and others are reported to ship exactly this technique, sometimes via the published Flutter plugin `screen_protector`, which uses the same mechanism). This is a deliberate risk-acceptance decision recorded here, not an SDK default silently switched on — `enableScreenshotProtection`/`DeviceShieldConfig.enableScreenshotProtection` default to `false`, unchanged.
 
 **Mechanism** (`ios/.../Protection/ScreenCaptureProtection.swift`, new file):
 1. A `UITextField` is created with `isSecureTextEntry = true` and kept as a **permanent** (invisible, non-interactive, no border/background) subview of the protected view for as long as protection is enabled — critically, never added-then-immediately-removed, since `UIView.removeFromSuperview()` also detaches whatever `CALayer` currently parents the view, which would immediately undo the re-parenting below if called too early. This exact ordering bug was caught and fixed during this session's own implementation, before any device testing — see the file's own doc comment.
@@ -550,7 +550,7 @@ After §18.3's investigation was presented — including the risk that this can 
 
 **Scope**: the *entire Flutter root view* (`ScreenCaptureProtection.currentRootView()` — the key window's `rootViewController.view`), matching Android `FLAG_SECURE`'s whole-`Window` scope.
 
-**Wired into**: `FlutterShieldPlugin.swift`'s `setScreenshotProtection` handler, which previously returned `{"applied": false}` unconditionally on iOS and now calls this mechanism, returning an honest `applied: false` only if no window/root view exists yet.
+**Wired into**: `DeviceShieldPlugin.swift`'s `setScreenshotProtection` handler, which previously returned `{"applied": false}` unconditionally on iOS and now calls this mechanism, returning an honest `applied: false` only if no window/root view exists yet.
 
 **⚠️ Live-tested this session on a real booted Simulator (iPhone 17 Pro Max, iOS 26.4.1) — result: the capture-exclusion effect did NOT occur.** `enableScreenshotProtection()` returned `applied: true`, and the re-parenting demonstrably changed the live view hierarchy (the app's own responsive layout visibly switched from a drawer to a permanent nav rail immediately after enabling — clear evidence the `CALayer` surgery genuinely executed, not a silent no-op). But a ground-truth screenshot taken via `xcrun simctl io screenshot` (the same underlying mechanism as Simulator's Cmd+S — not a debug/API-level capture) with protection enabled showed the **full, real screen content. Not black.**
 

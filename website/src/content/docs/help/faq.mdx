@@ -1,0 +1,46 @@
+---
+title: FAQ
+description: Frequently asked questions about device_shield.
+---
+
+### Can device_shield stop a determined attacker?
+
+No. Every check runs on the device, and tools like Magisk DenyList and Frida
+can defeat on-device checks. Use it to raise the cost of tampering and as a
+risk signal. For guarantees, use server-verified attestation. See the
+[Security model](../../concepts/security-model/).
+
+### Should I block rooted or jailbroken users?
+
+Only after measuring. Log results in production first and look at which
+signals fire on real users. Many legitimate users run custom ROMs. A softer
+response, such as extra verification, is usually better than a hard block.
+
+### Does it send any data anywhere?
+
+No. It makes no network requests and stores nothing.
+
+### Does it need any permissions?
+
+On Android it adds one install-time permission (`DETECT_SCREEN_CAPTURE`) and
+package-visibility entries. Neither shows a prompt. Location permission is
+optional, requested by your app, and only used for mock-location detection.
+
+### Why is iOS screenshot protection not supported?
+
+Apple provides no API to block screenshots. Techniques that work around this
+rely on undocumented UIKit behaviour, which is fragile and failed in testing.
+
+### Does it work on web or desktop?
+
+No. Android and iOS only.
+
+### Is it on pub.dev?
+
+Not yet. See [Installation](../../installation/).
+
+### How is this different from other root/jailbreak packages?
+
+It reports **which signals fired**, not just a boolean. It says when a check
+doesn't apply (`applicable: false`) or failed (`status: failed`), and its
+documentation states what has and hasn't been verified.

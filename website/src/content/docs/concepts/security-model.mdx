@@ -1,0 +1,59 @@
+---
+title: Security model
+description: What device_shield can and cannot protect against, and how to use its results responsibly.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`device_shield` runs its checks **on the user's device**, inside your app's
+process. That determines what it can and can't do.
+
+## What it's good for
+
+- **Raising the cost of casual tampering.** Most rooted phones, emulators
+  and fake-GPS setups are detected without the user doing anything special
+  to hide them.
+- **Adapting your app's behaviour.** Hide a sensitive screen, ask for extra
+  verification, or disable a feature when the device looks risky.
+- **Risk signals for your backend.** Send the result (the `signals`, not
+  just `detected`) alongside a transaction and let your fraud rules weigh it.
+- **Keeping screenshots out of sensitive screens** on Android, where
+  `FLAG_SECURE` is enforced by the operating system.
+
+## What it can't do
+
+<Aside type="caution" title="Every on-device check can be bypassed">
+  The user controls the device. Tools such as Magisk DenyList, Shamiko and
+  Frida exist specifically to hide root or to hook an app's own checks. A
+  determined attacker can make every `device_shield` result come back clean.
+</Aside>
+
+- **It isn't attestation.** If your server must know that a request comes
+  from a genuine, unmodified copy of your app on a genuine device, use
+  [Play Integrity](https://developer.android.com/google/play/integrity) on
+  Android and [App Attest](https://developer.apple.com/documentation/devicecheck)
+  on iOS. Both need your server to verify a signed token.
+- **It isn't authorisation.** Never let a client-side result grant access
+  to anything. The server decides.
+- **It can't make iOS block screenshots.** Apple provides no supported API
+  for this. See [Screenshot protection](../../protection/screenshot/).
+
+## False positives
+
+Heuristic checks fire on legitimate devices too: custom ROMs, developer and
+engineering builds, and phones with developer tools installed. Blocking
+these users outright can cost you real customers.
+
+Before you block anyone:
+
+1. Log results in production without acting on them.
+2. Look at which `signals` fire, and on how many real users.
+3. Decide per signal what your app does, and prefer a softer response
+   (extra verification) over a hard block.
+
+## Data and privacy
+
+- The SDK makes **no network requests** and **stores nothing**.
+- Results stay in your app. What you do with them is up to you.
+- The iOS privacy manifest declares no tracking, no collected data and no
+  required-reason APIs.

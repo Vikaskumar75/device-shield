@@ -1,0 +1,71 @@
+---
+title: API status
+description: The current device_shield public API, its known problems, and what is changing before 0.1.0.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Redesign planned before 0.1.0">
+  The current API asks you to build a native bridge and register detectors by
+  hand, and its events don't say what was detected. It's being simplified
+  before the first release. Full API guides will be written once it settles.
+  Until then this page documents what exists today.
+</Aside>
+
+Everything public is exported from one import:
+
+```dart
+import 'package:device_shield/device_shield.dart';
+```
+
+## Two ways to use it today
+
+1. **Call detectors directly** (recommended for now). Build a detector with a
+   `DefaultNativeBridge`, then `await detector.check()`. You get the full
+   `DetectionResult`. See [Quick start](../../quick-start/).
+2. **Use the `DeviceShield` facade** for periodic monitoring, events and
+   protections. `DeviceShield.initialize()` starts a timer that runs every
+   registered detector.
+
+## `DeviceShield`
+
+| Member | Description |
+|---|---|
+| `initialize({DeviceShieldConfig config})` | Starts the SDK and its periodic timer. The first check runs after one full interval |
+| `status` | Current `SDKState`. Safe to read at any time |
+| `checkNow()` | Runs every registered detector once. Results arrive as events |
+| `pause()` / `resume()` | Stop or restart the timer. Also called automatically when the app goes to the background or foreground |
+| `registerDetector(Detector)` | Adds a detector to the periodic checks. There's no way to remove one |
+| `subscribe(handler, {filter})` | Receive a `SecurityEvent` for every result |
+| `onScreenshot(handler)` / `onScreenRecordingChanged(handler)` | Filtered `subscribe` for those events |
+| `enableScreenshotProtection()` / `disableScreenshotProtection()` | See [Screenshot protection](../../protection/screenshot/) |
+| `enableAppSwitcherProtection()` / `disableAppSwitcherProtection()` | See [App-switcher protection](../../protection/app-switcher/) |
+| `isScreenshotProtectionEnabled` / `isAppSwitcherProtectionEnabled` | Last known local state |
+| `shutdown()` / `reinitialize({config})` / `dispose()` | Stop, restart or fully tear down the SDK |
+| `addRule(Rule)` / `removeRule(id)` | Policy rules. Resolved actions are logged but not enforced |
+| `registerCallback(name, fn)` / `unregisterCallback(name)` | Low-level native callbacks. Avoid: they can override the SDK's own routing |
+
+## `DeviceShieldConfig`
+
+| Field | Default | Effect today |
+|---|---|---|
+| `periodicCheckInterval` | `30000` ms | Timer interval, minimum 5000 |
+| `checkTimeout` | `5000` ms | Per-detector timeout. The native call itself also times out at 5 s |
+| `enableScreenshotDetection` | `false` | Emit screenshot events |
+| `enableScreenRecordingDetection` | `false` | Emit screen-recording change events (iOS) |
+| `enableScreenshotProtection` | `false` | Apply screenshot protection at startup |
+| `enableAppSwitcherProtection` | `false` | Apply app-switcher protection at startup |
+| `debugLogging`, `runOnUIThread`, `maxRetryAttempts`, `retryDelay`, `screenshotRecordingRiskScoreWeight`, `allowRecordingDetectionInDebug` | — | **No effect yet.** Validated but not used |
+
+## Known problems in the current API
+
+- **Events don't say whether anything was detected.** A `SecurityEvent` from a
+  periodic check carries only `type`, `action` and `confidence`. There's no
+  `detected`, `status` or `signals`, so a failed check looks like a clean one.
+  Call `check()` directly when you need the result.
+- **Every registered detector emits an event on every cycle**, detected or not.
+- **`shutdown()` forgets registrations.** After `reinitialize()`, register
+  detectors and subscriptions again.
+- **Logging can't be turned off.** The SDK always logs at info level.
+
+All of these are addressed by the planned redesign.

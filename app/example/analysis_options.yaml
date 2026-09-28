@@ -1,0 +1,2 @@
+# The example app follows the same rules as the package itself.
+include: ../analysis_options.yaml

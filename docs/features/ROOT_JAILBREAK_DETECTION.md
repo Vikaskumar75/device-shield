@@ -12,7 +12,7 @@ Root (Android) and jailbreak (iOS) both mean the same underlying thing: the OS's
 
 ### 1.2 What this reuses — nothing new architecturally
 
-This feature is a direct extension of the existing `Detector` pattern (`EmulatorDetector`/`DebuggerDetector`) — no new manager, no new controller, no new `FlutterShieldConfig` fields, no new `NativeBridge` transport. Two pure-poll `Detector`s, registered via the existing `DetectorFactory`, exactly like every built-in detector before them. See §8 for why this is deliberately minimal.
+This feature is a direct extension of the existing `Detector` pattern (`EmulatorDetector`/`DebuggerDetector`) — no new manager, no new controller, no new `DeviceShieldConfig` fields, no new `NativeBridge` transport. Two pure-poll `Detector`s, registered via the existing `DetectorFactory`, exactly like every built-in detector before them. See §8 for why this is deliberately minimal.
 
 ---
 
@@ -55,7 +55,7 @@ Android 11 (API 30) restricts `PackageManager.getPackageInfo()` for a specific p
 |---|---|---|
 | `jailbreak_app_paths` | `/Applications/Cydia.app`, `Sileo.app`, `Zebra.app` exist | — |
 | `suspicious_system_paths` | `/Library/MobileSubstrate/MobileSubstrate.dylib`, `/bin/bash`, `/etc/apt`, `/var/lib/cydia`, `/private/var/stash`, ... | — |
-| `writable_outside_sandbox` | Attempt to write+delete a file at `/private/flutter_shield_jailbreak_test.txt` | Should fail under App Sandbox on a non-jailbroken device |
+| `writable_outside_sandbox` | Attempt to write+delete a file at `/private/device_shield_jailbreak_test.txt` | Should fail under App Sandbox on a non-jailbroken device |
 | `dyld_env_var` | `DYLD_INSERT_LIBRARIES` environment variable non-empty | Deliberately **not** a full `_dyld_image_count`/image-name scan for injected tweak dylibs — comprehensive runtime injection/hook-framework scanning is a separate, already-planned P0 feature (FR-07, "Runtime Hook Detection: Frida, Xposed, Substrate, Magisk modules"); this detector doesn't duplicate that scope |
 | `process_spawn_check` | `posix_spawn` successfully launching `/bin/ls` as a child process | This is SRS §5.2's "jailbreak APIs" category. The classic version of this check is `fork()` — **not used here**: Swift's Darwin overlay marks `fork()` `@available(*, unavailable, message: "Please use threads or posix_spawn*()")`, a hard compiler error on this SDK, not a lint. Rather than route around that via `dlsym`/`dlopen` to reach the raw C symbol (crossing into the same "circumventing a deliberate platform restriction" territory `ScreenCaptureProtection.swift` already documents the risk of, and not separately approved for this detector), this uses `posix_spawn` — literally Apple's own suggested alternative in that error message, and an equivalent signal: a sandboxed app shouldn't be able to spawn an arbitrary system binary either |
 
@@ -82,9 +82,9 @@ Both are honest "no" answers, for genuinely different reasons — hence two diff
 
 ## 6. Architecture — why this needed none
 
-Every other piece of machinery this SDK has (`ScreenCaptureController`, the three `FlutterShieldConfig` fields, the `NativeBridge.registerCallback` push path) exists specifically because the screenshot/recording feature has a **native push mechanism** — an OS event that fires asynchronously and needs a boot-time decision about whether to listen for it. Root/jailbreak detection has no such mechanism: it's a synchronous poll, "what is true about this device right now," exactly like `EmulatorDetector`/`DebuggerDetector` already are. Those two detectors need zero `FlutterShieldConfig` fields and are registered explicitly by the host app via `DetectorFactory` + `DetectionManager.registerDetector()` — `RootDetector`/`JailbreakDetector` follow that exact precedent.
+Every other piece of machinery this SDK has (`ScreenCaptureController`, the three `DeviceShieldConfig` fields, the `NativeBridge.registerCallback` push path) exists specifically because the screenshot/recording feature has a **native push mechanism** — an OS event that fires asynchronously and needs a boot-time decision about whether to listen for it. Root/jailbreak detection has no such mechanism: it's a synchronous poll, "what is true about this device right now," exactly like `EmulatorDetector`/`DebuggerDetector` already are. Those two detectors need zero `DeviceShieldConfig` fields and are registered explicitly by the host app via `DetectorFactory` + `DetectionManager.registerDetector()` — `RootDetector`/`JailbreakDetector` follow that exact precedent.
 
-This is a deliberate choice informed by this SDK's own history: the screenshot/recording feature originally shipped three `FlutterShieldConfig` boolean flags that were validated and stored but never actually read by any runtime code — a real bug, found and fixed in a later audit. Adding config surface here that mirrors that same shape, for a feature that structurally doesn't need it, would risk repeating that exact mistake. No config field exists for this feature that isn't wired to something.
+This is a deliberate choice informed by this SDK's own history: the screenshot/recording feature originally shipped three `DeviceShieldConfig` boolean flags that were validated and stored but never actually read by any runtime code — a real bug, found and fixed in a later audit. Adding config surface here that mirrors that same shape, for a feature that structurally doesn't need it, would risk repeating that exact mistake. No config field exists for this feature that isn't wired to something.
 
 ---
 
@@ -110,6 +110,6 @@ No signal in either detector reads, transmits, or retains any user data — only
 |---|---|
 | Dart unit | `test/detectors/root_detector_test.dart`, `jailbreak_detector_test.dart` — response-shaping logic against a fake `NativeBridge`, mirroring `emulator_detector_test.dart`'s pattern exactly, including the `'applicable'` key on both the real and not-applicable response shapes |
 | Dart integration | `test/detectors/root_jailbreak_detector_integration_test.dart` — real `DetectorFactory` + `DefaultDetectionManager` pipeline; the pre-existing "all built-in detectors together" test in `screenshot_recording_detector_integration_test.dart` was updated (4 → 6 detectors), not duplicated |
-| Android unit | `RootDetectorTest.kt` — one test per signal category against `evaluate()`'s pure logic, synthetic inputs, mirroring `EmulatorDetectorTest.kt`'s pattern; `FlutterShieldPluginTest.kt` — dispatch tests for both `checkRoot` and the honest `checkJailbreak` not-applicable response |
-| iOS unit | `JailbreakDetectorTests.swift` — one test per signal category against `evaluate()`; `FlutterShieldPluginTests.swift` — dispatch tests for both `checkJailbreak` and the honest `checkRoot` not-applicable response |
+| Android unit | `RootDetectorTest.kt` — one test per signal category against `evaluate()`'s pure logic, synthetic inputs, mirroring `EmulatorDetectorTest.kt`'s pattern; `DeviceShieldPluginTest.kt` — dispatch tests for both `checkRoot` and the honest `checkJailbreak` not-applicable response |
+| iOS unit | `JailbreakDetectorTests.swift` — one test per signal category against `evaluate()`; `DeviceShieldPluginTests.swift` — dispatch tests for both `checkJailbreak` and the honest `checkRoot` not-applicable response |
 | Real device — non-negotiable, not satisfiable by mocks | A real rooted Android device/emulator (Magisk, both systemless and legacy) and a real jailbroken iOS device (checkra1n/unc0ver/palera1n, whichever is current) confirming `detected: true` with a real signal set, plus a real non-rooted/non-jailbroken device confirming `detected: false` — **not performed as part of this implementation pass**; flagged here explicitly, not silently assumed to pass |

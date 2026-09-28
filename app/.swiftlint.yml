@@ -1,0 +1,32 @@
+# SwiftLint static analysis. Formatting (indentation, line length, trailing
+# commas, import order) belongs to swift-format (.swift-format), so rules that
+# overlap with it are disabled here to avoid the two tools disagreeing.
+included:
+  - ios/device_shield/Sources
+  - ios/device_shield/Tests
+  - example/ios/Runner
+  - example/ios/RunnerTests
+
+excluded:
+  - ios/FlutterFramework
+  - example/ios/Flutter
+
+disabled_rules:
+  - trailing_comma
+  - line_length
+  - opening_brace
+  - vertical_whitespace_opening_braces
+
+opt_in_rules:
+  - empty_count
+  - fatal_error_message
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - unowned_variable_capture
+
+# A method-channel dispatcher is one `case` per method; counting each case as
+# a branch penalises the most readable shape for it.
+cyclomatic_complexity:
+  ignores_case_statements: true
+
+strict: true

@@ -1,0 +1,53 @@
+---
+title: Root detection (Android)
+description: How device_shield detects rooted Android devices, every signal it reports, and how much to trust each one.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+```dart
+final result = await RootDetector(nativeBridge: DefaultNativeBridge()).check();
+```
+
+Android only. On iOS the result is `detected: false` with
+`evidence['applicable'] == false`. Use [jailbreak detection](../jailbreak/)
+there.
+
+## Signals
+
+| Signal | What it checks | Guidance |
+|---|---|---|
+| `su_binary_path` | An `su` binary at one of 9 standard paths (`/system/bin/su`, `/system/xbin/su`, `/sbin/su`, `/data/local/xbin/su`, …) | Strong |
+| `su_executable` | `which su` finds an `su` on the `PATH` | Strong |
+| `magisk_artifacts` | Magisk directories: `/sbin/.magisk`, `/cache/.magisk`, `/data/adb/magisk`, `/data/adb/modules` | Strong |
+| `writable_system` | The app can create a file in `/system` or `/system/bin` (it deletes it immediately) | Strong |
+| `superuser_apps_installed` | One of 13 root-management apps is installed (Magisk, SuperSU, KingRoot, …) | Medium: installed isn't the same as rooted |
+| `root_cloaking_apps_installed` | One of 8 root-hiding apps is installed (RootCloak, Hide My Root, Substrate, …) | Medium |
+| `busybox_present` | BusyBox at `/system/xbin/busybox` or `/system/bin/busybox` | Weak: some ROMs ship it |
+| `build_tags_test_keys` | `Build.TAGS` contains `test-keys` | Weak: common on custom ROMs and emulators |
+| `dangerous_system_props` | `ro.debuggable=1` or `ro.secure=0` | Weak: true on every emulator and engineering build |
+
+"Guidance" is our assessment of how often a signal fires on devices that
+aren't actually rooted. Validate it against your own users.
+
+## How the result is computed
+
+- `detected` is `true` if **any** signal fires.
+- `confidence` is the number of signals that fired divided by 9.
+
+<Aside type="caution" title="Every emulator reports rooted">
+  Emulators set `ro.debuggable=1`, so `dangerous_system_props` fires and
+  `detected` becomes `true`. Decide on the signals, not on `detected`. See
+  [Detection results](../../concepts/detection-results/#detected-and-confidence).
+</Aside>
+
+## Limitations
+
+- **Magisk hides itself by default.** Magisk can repackage its app under a
+  random name and hide root from chosen apps (DenyList, Shamiko). A device
+  set up this way can pass every check.
+- **Package checks depend on the manifest.** The app-installed signals rely on
+  `<queries>` entries merged from the plugin. See
+  [Android setup](../../platforms/android/#queries-package-visibility).
+- **Runs on the main thread** and starts three short-lived processes
+  (`which su` and two `getprop` calls).

@@ -1,0 +1,90 @@
+---
+title: Installation
+description: Add device_shield to a Flutter app and meet its platform requirements.
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Requirements
+
+| | Minimum |
+|---|---|
+| Flutter | 3.44.8 (Dart 3.12.2) |
+| Android | API 21 (Android 5.0) |
+| iOS | 15.0 |
+
+## Add the package
+
+`device_shield` isn't published to pub.dev yet. Until it is, depend on the
+Git repository and pin a commit so a later change can't break your build:
+
+```yaml title="pubspec.yaml"
+dependencies:
+  device_shield:
+    git:
+      url: https://github.com/Vikaskumar75/device-shield.git
+      path: app
+      ref: <commit-sha>
+```
+
+Then:
+
+```bash
+flutter pub get
+```
+
+Import it:
+
+```dart
+import 'package:device_shield/device_shield.dart';
+```
+
+## Platform setup
+
+<Tabs syncKey="platform">
+  <TabItem label="Android">
+    No changes are required. The plugin's manifest entries merge into your app
+    automatically. If you want the location-based mock-location signals, your
+    app must request location permission itself.
+
+    See [Android setup](../platforms/android/) for what gets merged and why.
+  </TabItem>
+  <TabItem label="iOS">
+    Set your deployment target to iOS 15.0 or later. If you want the
+    location-based mock-location signals, add a location usage description to
+    `Info.plist` and request authorisation yourself.
+
+    See [iOS setup](../platforms/ios/).
+  </TabItem>
+</Tabs>
+
+## iOS: Swift Package Manager and CocoaPods
+
+The plugin ships a Swift package (used by default in recent Flutter
+versions) and a podspec for CocoaPods. So far, only Swift Package Manager
+resolution in a separate app has been checked. A full app build and the
+CocoaPods path haven't been verified yet.
+
+<Aside type="note" title="Plugin contributors only">
+  Building the plugin's own example app can fail to resolve packages with
+  `unable to override package 'device_shield'`. It's a Flutter bug affecting
+  plugin examples nested in a folder whose name doesn't match the package, and
+  it doesn't affect apps that depend on the plugin. See the
+  [repository README](https://github.com/Vikaskumar75/device-shield#set-up).
+</Aside>
+
+## Verify the install
+
+<Steps>
+
+1. Run the quick-start check on a device or emulator:
+
+   ```dart
+   final result = await EmulatorDetector(nativeBridge: DefaultNativeBridge()).check();
+   debugPrint('${result.status} ${result.detected} ${result.evidence}');
+   ```
+
+2. On an Android emulator or the iOS Simulator you should see `detected: true`
+   and a signal such as `simulator_target` (iOS) or `hardware` (Android).
+
+</Steps>

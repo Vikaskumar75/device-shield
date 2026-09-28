@@ -1,0 +1,78 @@
+---
+title: Quick start
+description: Run your first device check with device_shield.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="This API will change">
+  The public API is being redesigned before 0.1.0. The calls on this page work
+  today, but expect breaking changes. See [API status](../reference/api/).
+</Aside>
+
+## Run a check
+
+Create a detector and call `check()`. It returns a `DetectionResult`:
+
+```dart
+import 'package:device_shield/device_shield.dart';
+
+Future<void> checkDevice() async {
+  final bridge = DefaultNativeBridge();
+
+  final root = await RootDetector(nativeBridge: bridge).check();
+  final emulator = await EmulatorDetector(nativeBridge: bridge).check();
+
+  if (root.status == DetectionStatus.failed) {
+    // The check couldn't run (timeout or platform error). Treat as unknown.
+    return;
+  }
+
+  final signals = (root.evidence['signals'] as List?)?.cast<String>() ?? [];
+  debugPrint('rooted: ${root.detected}, signals: $signals');
+  debugPrint('emulator: ${emulator.detected}');
+}
+```
+
+Root detection only applies on Android. On iOS, `RootDetector` returns
+`detected: false` with `evidence['applicable'] == false`. Use
+`JailbreakDetector` there. Both are safe to call on either platform.
+
+## Decide what to do
+
+Don't act on `detected` alone. It becomes `true` when **any** signal fires,
+including weak ones such as `build_tags_test_keys`, which is common on custom
+ROMs. Decide per signal instead:
+
+```dart
+const strongRootSignals = {'su_binary_path', 'su_executable', 'magisk_artifacts', 'writable_system'};
+
+final isRooted = signals.any(strongRootSignals.contains);
+```
+
+The [signals reference](../reference/signals/) lists every signal with
+guidance on how much to trust it.
+
+## Protect a sensitive screen
+
+On Android, block screenshots and screen recording while a screen is visible.
+This needs the SDK to be initialised first:
+
+```dart
+await DeviceShield.initialize();
+
+// When the sensitive screen opens:
+await DeviceShield.enableScreenshotProtection(); // Android: true when applied
+
+// When it closes:
+await DeviceShield.disableScreenshotProtection();
+```
+
+On iOS this call doesn't block screenshots. See
+[Screenshot protection](../protection/screenshot/).
+
+## Next steps
+
+- [Detection results](../concepts/detection-results/): every field, and what it means.
+- [Android setup](../platforms/android/) and [iOS setup](../platforms/ios/).
+- [Security model](../concepts/security-model/): what these checks can't guarantee.

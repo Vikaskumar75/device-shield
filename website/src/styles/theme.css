@@ -1,0 +1,49 @@
+/* Brand tokens layered on Starlight's theme variables, so the custom
+   landing page and the docs share one palette in both colour schemes. */
+
+:root {
+  --sl-color-accent-low: #06302c;
+  --sl-color-accent: #14b8a6;
+  --sl-color-accent-high: #99f6e4;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #eceef2;
+  --sl-color-gray-2: #c0c2c7;
+  --sl-color-gray-3: #888b96;
+  --sl-color-gray-4: #545861;
+  --sl-color-gray-5: #353841;
+  --sl-color-gray-6: #24272f;
+  --sl-color-black: #0f1115;
+
+  --ds-surface: #15181e;
+  --ds-surface-raised: #1b1f26;
+  --ds-border: #2a2e37;
+  --ds-ok: #34d399;
+  --ds-warn: #fbbf24;
+  --ds-muted: #888b96;
+  --ds-code-bg: #0b0d11;
+  --ds-glow: rgba(20, 184, 166, 0.18);
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #ccfbf1;
+  --sl-color-accent: #0f766e;
+  --sl-color-accent-high: #134e4a;
+  --sl-color-white: #0f1115;
+  --sl-color-gray-1: #24272f;
+  --sl-color-gray-2: #353841;
+  --sl-color-gray-3: #545861;
+  --sl-color-gray-4: #888b96;
+  --sl-color-gray-5: #c0c2c7;
+  --sl-color-gray-6: #eceef2;
+  --sl-color-gray-7: #f6f7f9;
+  --sl-color-black: #ffffff;
+
+  --ds-surface: #ffffff;
+  --ds-surface-raised: #f6f7f9;
+  --ds-border: #e2e4e9;
+  --ds-ok: #047857;
+  --ds-warn: #b45309;
+  --ds-muted: #545861;
+  --ds-code-bg: #ffffff;
+  --ds-glow: rgba(15, 118, 110, 0.12);
+}
