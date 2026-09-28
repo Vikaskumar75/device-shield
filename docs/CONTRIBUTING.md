@@ -10,17 +10,53 @@ ones; reviewers enforce the rest.
 | `app/` | The Flutter plugin package: `lib/`, `android/`, `ios/`, `test/`, `example/`. This is what ships to pub.dev. |
 | `app/tool/` | `setup.sh` and `check.sh` |
 | `website/` | The landing page and documentation site (Astro Starlight) |
+| `README.md` | A copy of `app/README.md`, so GitHub and pub.dev show the same page. Edit `app/README.md` and copy it; `check.sh` and CI fail if they differ. |
 | `docs/` | Project documents: plans, architecture, feature designs, reports. See [docs/README.md](README.md). |
 
 ## Setup
 
-Prerequisites and the setup script are in the [README](../README.md). In short:
+### Prerequisites
+
+| Tool | Version | Needed for | Installed by `app/tool/setup.sh` |
+|---|---|---|---|
+| macOS | | iOS builds and Swift tooling (Dart and Android work on any OS) | — |
+| [Homebrew](https://brew.sh) | | Installing the tools below | No |
+| Flutter | 3.44.8, pinned in `app/.fvmrc` | Everything | Optional, via [fvm](https://fvm.app) |
+| Xcode | 16 or later (tested with 27) | iOS builds, `swift format` | No (App Store) |
+| Android Studio, or the Android SDK command-line tools | SDK 36 | Android builds | No |
+| JDK | 17+. Android Studio's bundled JDK works | Android builds, Gradle | `openjdk@17`, only if none is found |
+| Node.js | 22.12+ | The docs site in `website/` | Yes |
+| [GitHub CLI](https://cli.github.com) (`gh`) | Recent | `/fix-issue`, opening PRs | Yes. Then run `gh auth login` |
+| ktlint, detekt | 1.8.0, 1.23.8 | Kotlin linting | Yes |
+| SwiftLint | Recent | Swift linting | Yes |
+
+### Set up
 
 ```bash
 git clone https://github.com/Vikaskumar75/device-shield.git
 cd device-shield
 app/tool/setup.sh
 ```
+
+The setup script checks every prerequisite, offers to install the missing
+command-line tools with Homebrew, and fetches the Dart and npm dependencies.
+Re-running it is safe. Use `--check` to only report what's missing, or
+`--yes` to install without prompts. It never uses `sudo` and never edits your
+shell profile; when a step needs that, it prints the command for you to run.
+
+The iOS example app can't build in place while the package folder is named
+`app` (F10 in [HANDOVER.md](HANDOVER.md)). Build it from a copy of `app/`
+named `device_shield`. Apps that depend on the plugin aren't affected.
+
+### Everyday commands
+
+| Task | Command |
+|---|---|
+| Run every check CI runs | `app/tool/check.sh` |
+| Run the example app | `cd app/example && flutter run` |
+| Run the real native checks on a device | `cd app/example && flutter test integration_test -d <device>` |
+| Preview the docs site | `npm run dev --prefix website` |
+| Fix a GitHub issue with Claude Code | `/fix-issue <number>` in a Claude Code session |
 
 ## Before you push
 

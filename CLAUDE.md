@@ -27,6 +27,8 @@ inside `app/`.
 - Architecture and design go in `docs/architecture/`, feature designs in
   `docs/features/`, and status or investigation reports in `docs/reports/`.
 - When you add a document, add a line for it to `docs/README.md`.
-- Exceptions: `README.md` and `CLAUDE.md` stay at the root.
+- Exceptions: `README.md` and `CLAUDE.md` stay at the root. The root
+  `README.md` is a copy of `app/README.md`: edit `app/README.md`, then
+  `cp app/README.md README.md` (`check.sh` enforces it).
   `app/README.md` and `app/CHANGELOG.md` stay in the package (pub.dev
   requires them). User-facing docs are pages in `website/src/content/docs/`.
