@@ -12,6 +12,13 @@ skipped=()
 have() { command -v "$1" >/dev/null 2>&1; }
 step() { printf '\n==> %s\n' "$1"; }
 
+step 'README copies in sync'
+# The root README (GitHub) is a copy of app/README.md (pub.dev).
+cmp -s README.md ../README.md || {
+  echo 'README.md and ../README.md differ. Edit app/README.md, then: cp app/README.md README.md' >&2
+  exit 1
+}
+
 step 'Dart format'
 dart format --output=none --set-exit-if-changed .
 
