@@ -1,0 +1,42 @@
+---
+title: Roadmap
+description: What device_shield supports today, what is planned, and what is deliberately out of scope.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Available now
+
+Root, jailbreak, emulator, debugger and mock-location detection; screenshot
+and screen-recording detection; screenshot and app-switcher protection. See
+[Platform support](../platform-support/) for the details on each platform.
+
+## Coming soon
+
+<Aside type="note">
+  These are planned, not built. Order and timing can change. Nothing here is
+  available in the current release.
+</Aside>
+
+| Module | Platforms | Notes |
+|---|---|---|
+| **Runtime hook detection** | Android, iOS | Detect instrumentation frameworks such as Frida, Xposed and Substrate. An ongoing arms race: expect it to raise the cost of attacks, not stop them. |
+| **App integrity** | Android, iOS | Wraps [Play Integrity](https://developer.android.com/google/play/integrity) and [App Attest](https://developer.apple.com/documentation/devicecheck). The SDK obtains the token, and **your server must verify it**. |
+| **Developer options detection** | Android | Whether developer options, or USB debugging, are enabled. Many legitimate users have them on, so treat it as a weak signal. |
+| **Overlay detection** | Android | Detect windows drawn over your app, which can be used for tapjacking. |
+| **Screen-recording detection on Android** | Android 15+ | Uses the platform's screen-recording callback (API 35). |
+| **Improved iOS mock location** | iOS 15+ | Uses Apple's `isSimulatedBySoftware` flag on real location updates. |
+
+## Not planned
+
+These come up often but are deliberately out of scope:
+
+- **SSL pinning.** Dart's HTTP stack doesn't go through the native network
+  layer, so native pinning wouldn't cover it, and a pin mistake can lock every
+  user out. Use Dart's `SecurityContext` in your HTTP client instead.
+- **Clipboard protection.** Flutter text fields already let you control copy
+  and paste per field.
+- **Policy or rule engines, and remote event reporting.** Your app decides what
+  to do with a result, and sends it to your own backend if you need that.
+
+Want something moved up, or added? [Open an issue](https://github.com/Vikaskumar75/device-shield/issues).

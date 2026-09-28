@@ -12,6 +12,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Executor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -31,6 +32,25 @@ import org.mockito.Mockito.`when`
  */
 
 internal class DeviceShieldPluginTest {
+    /** Runs work immediately, so tests can assert results synchronously. */
+    private val immediate = Executor { it.run() }
+
+    /** An executor that only queues work, so a test controls when it runs. */
+    private class QueuedExecutor : Executor {
+        val pending = ArrayDeque<Runnable>()
+
+        override fun execute(command: Runnable) {
+            pending.addLast(command)
+        }
+
+        fun runAll() {
+            while (pending.isNotEmpty()) pending.removeFirst().run()
+        }
+    }
+
+    private fun newPlugin(background: Executor = immediate, mainThread: Executor = immediate) =
+        DeviceShieldPlugin(background, mainThread)
+
     /**
      * Builds a plugin with [DeviceShieldPlugin.onAttachedToEngine] already
      * run against a mocked [FlutterPlugin.FlutterPluginBinding] whose
@@ -43,8 +63,12 @@ internal class DeviceShieldPluginTest {
      * Mockito mock otherwise returns `null` for `packageManager` itself,
      * not a `PackageManager` that throws per-lookup.
      */
-    private fun attachedPlugin(debuggable: Boolean = false): DeviceShieldPlugin {
-        val plugin = DeviceShieldPlugin()
+    private fun attachedPlugin(
+        debuggable: Boolean = false,
+        background: Executor = immediate,
+        mainThread: Executor = immediate
+    ): DeviceShieldPlugin {
+        val plugin = newPlugin(background, mainThread)
         val messenger: BinaryMessenger = mock(BinaryMessenger::class.java)
         val context: Context = mock(Context::class.java)
         val applicationInfo = ApplicationInfo().apply {
@@ -65,7 +89,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onMethodCall_getPlatformVersion_returnsExpectedValue() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
 
         val call = MethodCall("getPlatformVersion", null)
         val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
@@ -76,7 +100,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onMethodCall_checkEmulator_returnsAnEmulatorDetectionMap() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val call = MethodCall("checkEmulator", null)
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -149,7 +173,7 @@ internal class DeviceShieldPluginTest {
     fun onMethodCall_checkJailbreak_returnsTheHonestNotApplicableMap() {
         // "Jailbreak" is not an Android concept — never a false "not
         // jailbroken".
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val call = MethodCall("checkJailbreak", null)
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -198,7 +222,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onMethodCall_setScreenshotProtection_withNoActivityAttached_reportsNotApplied() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val call = MethodCall("setScreenshotProtection", mapOf("enabled" to true))
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -209,7 +233,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onMethodCall_setScreenshotProtection_enabled_setsFlagSecureAndReportsApplied() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val (binding, _, window) = activityBinding()
         plugin.onAttachedToActivity(binding)
         val call = MethodCall("setScreenshotProtection", mapOf("enabled" to true))
@@ -223,7 +247,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onMethodCall_setScreenshotProtection_disabled_clearsFlagSecureAndReportsApplied() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val (binding, _, window) = activityBinding()
         plugin.onAttachedToActivity(binding)
         val call = MethodCall("setScreenshotProtection", mapOf("enabled" to false))
@@ -237,7 +261,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onMethodCall_setScreenshotProtection_afterActivityDetached_reportsNotApplied() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val (binding, _, _) = activityBinding()
         plugin.onAttachedToActivity(binding)
         plugin.onDetachedFromActivity()
@@ -251,7 +275,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onMethodCall_setAppSwitcherProtection_withNoActivityAttached_reportsNotApplied() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val call = MethodCall("setAppSwitcherProtection", mapOf("enabled" to true))
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -267,7 +291,7 @@ internal class DeviceShieldPluginTest {
         // intentionally the identical FLAG_SECURE mechanism, not a second
         // one, because Recents redaction is already that flag's side
         // effect (design doc §7.1/§18.1).
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val (binding, _, window) = activityBinding()
         plugin.onAttachedToActivity(binding)
         val call = MethodCall("setAppSwitcherProtection", mapOf("enabled" to true))
@@ -281,7 +305,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onMethodCall_setAppSwitcherProtection_disabled_clearsFlagSecureAndReportsApplied() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val (binding, _, window) = activityBinding()
         plugin.onAttachedToActivity(binding)
         val call = MethodCall("setAppSwitcherProtection", mapOf("enabled" to false))
@@ -295,7 +319,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onMethodCall_isScreenCaptureActive_returnsTheHonestUnsupportedMap() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val call = MethodCall("isScreenCaptureActive", null)
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -313,7 +337,7 @@ internal class DeviceShieldPluginTest {
         // onDetachedFromEngine. Verified indirectly: setScreenshotProtection
         // reports not-applied after full engine detach, exactly as it
         // would after onDetachedFromActivity alone.
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val messenger: BinaryMessenger = mock(BinaryMessenger::class.java)
         val engineBinding: FlutterPlugin.FlutterPluginBinding =
             mock(FlutterPlugin.FlutterPluginBinding::class.java)
@@ -333,7 +357,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onMethodCall_unknownBridgeMethod_returnsNotImplemented() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val call = MethodCall("someFutureSecurityCheck", null)
         val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
 
@@ -344,7 +368,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun sendEvent_withActiveListener_deliversTheCallbackDataShape() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val sink: EventChannel.EventSink = mock(EventChannel.EventSink::class.java)
         plugin.onListen(null, sink)
 
@@ -355,7 +379,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun sendEvent_withNullData_forwardsNullDataUnchanged() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val sink: EventChannel.EventSink = mock(EventChannel.EventSink::class.java)
         plugin.onListen(null, sink)
 
@@ -366,7 +390,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun sendEvent_withNoActiveListener_isANoOpRatherThanThrowing() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
 
         // No listener has ever attached — this must simply not throw.
         plugin.sendEvent("onSecurityEvent", "root_detected")
@@ -374,7 +398,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onCancel_stopsRoutingToThePreviousSink() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val sink: EventChannel.EventSink = mock(EventChannel.EventSink::class.java)
         plugin.onListen(null, sink)
 
@@ -386,7 +410,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onListen_replacesAnyPreviouslyRegisteredSink() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val firstSink: EventChannel.EventSink = mock(EventChannel.EventSink::class.java)
         val secondSink: EventChannel.EventSink = mock(EventChannel.EventSink::class.java)
         plugin.onListen(null, firstSink)
@@ -400,7 +424,7 @@ internal class DeviceShieldPluginTest {
 
     @Test
     fun onDetachedFromEngine_removesBothChannelHandlersAndClearsTheEventSink() {
-        val plugin = DeviceShieldPlugin()
+        val plugin = newPlugin()
         val messenger: BinaryMessenger = mock(BinaryMessenger::class.java)
         val binding: FlutterPlugin.FlutterPluginBinding =
             mock(FlutterPlugin.FlutterPluginBinding::class.java)
@@ -423,5 +447,107 @@ internal class DeviceShieldPluginTest {
         // sink.
         plugin.sendEvent("probe", "x")
         verify(sink, never()).success(Mockito.any())
+    }
+
+    @Test
+    fun detectionRunsOnTheBackgroundExecutorAndRepliesOnTheMainThread() {
+        val background = QueuedExecutor()
+        val mainThread = QueuedExecutor()
+        val plugin = attachedPlugin(background = background, mainThread = mainThread)
+        val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
+
+        plugin.onMethodCall(MethodCall("checkRoot", null), mockResult)
+
+        // Nothing runs on the calling (main) thread.
+        assertEquals(1, background.pending.size)
+        verifyNoInteractions(mockResult)
+
+        background.runAll()
+        // The check ran, but the reply waits for the main thread.
+        assertEquals(1, mainThread.pending.size)
+        verifyNoInteractions(mockResult)
+
+        mainThread.runAll()
+        verify(mockResult).success(Mockito.any())
+    }
+
+    @Test
+    fun aCheckThatThrowsRepliesWithAnErrorInsteadOfCrashing() {
+        // Without onAttachedToEngine, applicationContext is uninitialised, so
+        // the root check throws inside the background task.
+        val plugin = newPlugin()
+        val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
+
+        plugin.onMethodCall(MethodCall("checkRoot", null), mockResult)
+
+        verify(mockResult).error(Mockito.eq("CHECK_FAILED"), Mockito.any(), Mockito.isNull())
+        verify(mockResult, never()).success(Mockito.any())
+    }
+
+    @Test
+    fun protectionStaysOnTheCallingThread() {
+        val background = QueuedExecutor()
+        val plugin = newPlugin(background = background)
+        val mockResult: MethodChannel.Result = mock(MethodChannel.Result::class.java)
+
+        plugin.onMethodCall(MethodCall("setScreenshotProtection", mapOf("enabled" to true)), mockResult)
+
+        assertTrue(background.pending.isEmpty())
+        verify(mockResult).success(mapOf("applied" to false))
+    }
+
+    @Test
+    fun disablingOneProtectionKeepsFlagSecureWhileTheOtherIsOn() {
+        val plugin = newPlugin()
+        val (binding, _, window) = activityBinding()
+        plugin.onAttachedToActivity(binding)
+        val result: MethodChannel.Result = mock(MethodChannel.Result::class.java)
+
+        plugin.onMethodCall(MethodCall("setScreenshotProtection", mapOf("enabled" to true)), result)
+        plugin.onMethodCall(MethodCall("setAppSwitcherProtection", mapOf("enabled" to false)), result)
+
+        verify(window, never()).clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+
+    @Test
+    fun flagSecureIsClearedOnlyWhenBothProtectionsAreOff() {
+        val plugin = newPlugin()
+        val (binding, _, window) = activityBinding()
+        plugin.onAttachedToActivity(binding)
+        val result: MethodChannel.Result = mock(MethodChannel.Result::class.java)
+
+        plugin.onMethodCall(MethodCall("setScreenshotProtection", mapOf("enabled" to true)), result)
+        plugin.onMethodCall(MethodCall("setAppSwitcherProtection", mapOf("enabled" to true)), result)
+        plugin.onMethodCall(MethodCall("setScreenshotProtection", mapOf("enabled" to false)), result)
+        verify(window, never()).clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
+        plugin.onMethodCall(MethodCall("setAppSwitcherProtection", mapOf("enabled" to false)), result)
+        verify(window).clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+
+    @Test
+    fun protectionIsReappliedToTheNewWindowAfterAConfigurationChange() {
+        val plugin = newPlugin()
+        val (binding, _, _) = activityBinding()
+        plugin.onAttachedToActivity(binding)
+        val result: MethodChannel.Result = mock(MethodChannel.Result::class.java)
+        plugin.onMethodCall(MethodCall("setScreenshotProtection", mapOf("enabled" to true)), result)
+
+        plugin.onDetachedFromActivityForConfigChanges()
+        val (newBinding, _, newWindow) = activityBinding()
+        plugin.onReattachedToActivityForConfigChanges(newBinding)
+
+        verify(newWindow).addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+
+    @Test
+    fun attachingWithoutProtectionLeavesTheWindowFlagsAlone() {
+        val plugin = newPlugin()
+        val (binding, _, window) = activityBinding()
+
+        plugin.onAttachedToActivity(binding)
+
+        verify(window, never()).addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        verify(window, never()).clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 }

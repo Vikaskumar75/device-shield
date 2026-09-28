@@ -72,10 +72,11 @@ export default defineConfig({
         {
           label: 'Reference',
           items: [
-            { label: 'API status', slug: 'reference/api' },
+            { label: 'API reference', slug: 'reference/api' },
             { label: 'Signals', slug: 'reference/signals' },
-            { label: 'Error codes', slug: 'reference/errors' },
+            { label: 'Error handling', slug: 'reference/errors' },
             { label: 'Platform support', slug: 'reference/platform-support' },
+            { label: 'Roadmap', slug: 'reference/roadmap' },
           ],
         },
         {

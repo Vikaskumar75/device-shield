@@ -2,7 +2,7 @@ name: device_shield
 description: >-
   Runtime device-security checks for Flutter apps: root, jailbreak, emulator,
   debugger and mock-location detection, plus screen capture protection.
-version: 0.0.1
+version: 0.1.0
 repository: https://github.com/Vikaskumar75/device-shield/tree/main/app
 issue_tracker: https://github.com/Vikaskumar75/device-shield/issues
 topics:
@@ -18,7 +18,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  plugin_platform_interface: ^2.0.2
 
 dev_dependencies:
   flutter_test:

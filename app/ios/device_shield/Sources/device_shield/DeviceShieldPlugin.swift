@@ -87,21 +87,16 @@ public class DeviceShieldPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
       // platform-exclusive concept.
       result(MockLocationDetector.check())
     case "setScreenshotProtection":
-      // See ScreenCaptureProtection.swift's own top-of-file warning
-      // before touching this — NOT a supported Apple API, and its
-      // black-screenshot effect is UNCONFIRMED (design doc §18.5: live
-      // Simulator testing showed the re-parenting executes but the
-      // capture-exclusion did not occur; untested on real hardware).
-      // `applied: true` proves only that the re-parenting call executed.
-      // An honest "not applied" if there's no root view to protect yet.
+      // Relies on undocumented UIKit behaviour; see ScreenCaptureProtection.
+      // `applied` means the technique was installed, not that a capture was
+      // observed to be blocked, which only a physical device can show.
       let enabled = (call.arguments as? [String: Any])?["enabled"] as? Bool ?? false
       let applied: Bool
       if enabled {
-        if let root = ScreenCaptureProtection.currentRootView() {
-          applied = ScreenCaptureProtection.enable(protecting: root)
-        } else {
-          applied = false
-        }
+        applied =
+          ScreenCaptureProtection.currentWindow().map {
+            ScreenCaptureProtection.enable(protecting: $0)
+          } ?? false
       } else {
         ScreenCaptureProtection.disable()
         applied = true

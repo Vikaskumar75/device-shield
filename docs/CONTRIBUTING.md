@@ -70,7 +70,9 @@ argue with them in review.
   unit tests; `check` stays small enough to review by eye.
 - **Never block the main thread.** Detector work that touches the filesystem,
   spawns processes or queries `PackageManager` runs off the platform main
-  thread. (Known violation: F2 in `HANDOVER.md`.)
+  thread. On Android, route it through `respondInBackground` in
+  `DeviceShieldPlugin.kt`. (Known violation: iOS handlers, F2 in
+  `HANDOVER.md`.)
 - **Never throw across the channel.** An expected failure (timeout, missing
   permission, unsupported OS version) comes back as a result with a failure
   status.

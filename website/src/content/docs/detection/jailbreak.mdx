@@ -6,33 +6,32 @@ description: How device_shield detects jailbroken iOS devices and what each sign
 import { Aside } from '@astrojs/starlight/components';
 
 ```dart
-final result = await JailbreakDetector(nativeBridge: DefaultNativeBridge()).check();
+final result = await DeviceShield.checkJailbreak();
 ```
 
-iOS only. On Android the result is `detected: false` with
-`evidence['applicable'] == false`. Use [root detection](../root/) there.
+iOS only. On Android, and on the iOS Simulator, the status is
+`CheckStatus.notApplicable`. Use [root detection](../root/) on Android.
 
 ## Signals
 
-| Signal | What it checks | Guidance |
+| Signal | What it checks | Strength |
 |---|---|---|
 | `jailbreak_app_paths` | `/Applications/Cydia.app`, `Sileo.app` or `Zebra.app` exists | Strong |
-| `suspicious_system_paths` | One of 9 paths that stock iOS doesn't expose, such as `/Library/MobileSubstrate/MobileSubstrate.dylib`, `/bin/bash`, `/usr/sbin/sshd`, `/etc/apt` | Strong on devices |
+| `suspicious_system_paths` | One of 9 paths that stock iOS doesn't expose, such as `/Library/MobileSubstrate/MobileSubstrate.dylib`, `/bin/bash`, `/usr/sbin/sshd`, `/etc/apt` | Strong |
 | `writable_outside_sandbox` | The app can write, then delete, a file under `/private/` | Strong |
-| `process_spawn_check` | `posix_spawn("/bin/ls")` succeeds, which the sandbox normally blocks | Strong on devices |
+| `process_spawn_check` | `posix_spawn("/bin/ls")` succeeds, which the sandbox normally blocks | Strong |
 | `dyld_env_var` | `DYLD_INSERT_LIBRARIES` is set, meaning libraries are being injected | Strong |
 
 ## How the result is computed
 
-- `detected` is `true` if any signal fires.
-- `confidence` is the number of signals that fired divided by 5.
+Every jailbreak signal is strong, so any one of them means `detected`.
 
 ## Limitations
 
-<Aside type="caution" title="Test on a physical device">
-  On the Simulator, paths from the host Mac may be visible, so jailbreak
-  signals can fire on a stock Simulator. None of these checks has been
-  verified on a physical jailbroken device yet.
+<Aside type="note" title="Not applicable on the Simulator">
+  The Simulator can't be jailbroken, and its file system shows parts of the
+  host Mac, so the check returns `notApplicable` there. None of these checks
+  has been verified on a physical jailbroken device yet.
 </Aside>
 
 - Rootless jailbreaks (Dopamine, palera1n rootless) install under

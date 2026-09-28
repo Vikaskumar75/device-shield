@@ -1,5 +1,11 @@
 # DeviceShield — Complete Code Trace (Entry Point → Everything)
 
+> **Archived: describes the pre-0.1 architecture.** The Dart layer it
+> describes (managers, registries, policy engine, DI container) was removed in
+> 0.1.0, so links into `app/lib/src/` point at files that no longer exist.
+> See the git history before `release/0.1.0` for that code, and
+> [HANDOVER.md](../HANDOVER.md) for the current design.
+
 This document traces **what actually exists in the code today** (`lib/`, `android/`, `ios/`), starting from the single entry point a host app touches, and following every call outward. It complements — and occasionally corrects against — the design docs already in this repo (`ARCHITECTURE.md`, `ARCHITECTURE_CONTRACTS.md`, `ROADMAP.md`): those describe the intended design, this describes what's verified to be wired up in the source right now.
 
 > **package name**: `device_shield` · **type**: Flutter plugin (federated: Dart API + Android/Kotlin + iOS/Swift native implementations) · **not** a git repo in this checkout.

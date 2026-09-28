@@ -2,6 +2,8 @@ package com.geekyants.device_shield
 
 import android.app.Activity
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import com.geekyants.device_shield.detection.DebuggerDetector
 import com.geekyants.device_shield.detection.EmulatorDetector
 import com.geekyants.device_shield.detection.MockLocationDetector
@@ -17,6 +19,8 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 /**
  * DeviceShieldPlugin
@@ -46,12 +50,20 @@ import io.flutter.plugin.common.MethodChannel.Result
  * `Activity`/`Window`-level APIs; this plugin previously only held a bare
  * `Context`, which has no `Window`.
  */
-class DeviceShieldPlugin :
-    FlutterPlugin,
+class DeviceShieldPlugin internal constructor(
+    // Where detection work runs, and where its results are delivered. Tests
+    // pass executors that run immediately; production uses [CHECK_EXECUTOR]
+    // and the main looper.
+    private val background: Executor,
+    private val mainThread: Executor
+) : FlutterPlugin,
     ActivityAware,
     MethodCallHandler,
     EventChannel.StreamHandler {
     // Phase 1 legacy channel — untouched, not merged or renamed.
+    // Flutter's generated plugin registrant needs a no-argument constructor.
+    constructor() : this(CHECK_EXECUTOR, MAIN_THREAD)
+
     private lateinit var channel: MethodChannel
 
     // Phase 7 bridge channels.
@@ -70,6 +82,9 @@ class DeviceShieldPlugin :
     // Activity-dependent call site below checks for null rather than
     // assuming attachment.
     private var activity: Activity? = null
+
+    private var screenshotProtection = false
+    private var appSwitcherProtection = false
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         applicationContext = flutterPluginBinding.applicationContext
@@ -94,11 +109,11 @@ class DeviceShieldPlugin :
         when (call.method) {
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
 
-            "checkEmulator" -> result.success(EmulatorDetector.check())
+            "checkEmulator" -> respondInBackground(result) { EmulatorDetector.check() }
 
-            "checkDebugger" -> result.success(DebuggerDetector.check(applicationContext))
+            "checkDebugger" -> respondInBackground(result) { DebuggerDetector.check(applicationContext) }
 
-            "checkRoot" -> result.success(RootDetector.check(applicationContext))
+            "checkRoot" -> respondInBackground(result) { RootDetector.check(applicationContext) }
 
             // "Jailbreak" is not an Android concept — an honest
             // not-applicable answer, never a false "not jailbroken"
@@ -115,21 +130,16 @@ class DeviceShieldPlugin :
             // FR-06: real signal evaluation on both platforms — mock
             // location is a real concept on Android and iOS alike, unlike
             // checkRoot/checkJailbreak's platform-exclusive concepts.
-            "checkMockLocation" -> result.success(MockLocationDetector.check(applicationContext))
+            "checkMockLocation" -> respondInBackground(result) { MockLocationDetector.check(applicationContext) }
 
-            "setScreenshotProtection" -> applyFlagSecure(call, result)
+            "setScreenshotProtection" -> setProtection(call, result) { screenshotProtection = it }
 
             "isScreenCaptureActive" -> result.success(ScreenRecordingDetector.check())
 
-            // On Android this is intentionally the exact same FLAG_SECURE
-            // mechanism as setScreenshotProtection above — not a second,
-            // independent control. Recents-thumbnail redaction is already
-            // a side effect of that one flag (design doc §7.1/§17), so
-            // this handler is a documented alias, sharing the same native
-            // state, kept as its own method name only for cross-platform
-            // API symmetry with iOS (AppSwitcherProtection.swift), where
-            // it genuinely is a separate, new mechanism.
-            "setAppSwitcherProtection" -> applyFlagSecure(call, result)
+            // FLAG_SECURE also hides the Recents thumbnail, so on Android both
+            // protections are the same flag. Each keeps its own state, and the
+            // flag stays set while either is on.
+            "setAppSwitcherProtection" -> setProtection(call, result) { appSwitcherProtection = it }
 
             else -> {
                 // Bridge transport is registered; most detector/security
@@ -140,30 +150,49 @@ class DeviceShieldPlugin :
         }
     }
 
-    // / Shared by `setScreenshotProtection` and `setAppSwitcherProtection`
-    // / — both are, on Android, literally the same `FLAG_SECURE` toggle
-    // / (see the call-site comment on `setAppSwitcherProtection` above for
-    // / why that's intentional, not a bug).
-    private fun applyFlagSecure(call: MethodCall, result: Result) {
-        val enabled = call.argument<Boolean>("enabled") ?: false
+    /**
+     * Runs [check] off the platform main thread and replies on it. Root and
+     * mock-location checks start processes and query `PackageManager`, which
+     * would otherwise block the UI.
+     *
+     * Everything is caught: an exception escaping a background thread would
+     * crash the host app, where on the main thread Flutter turned it into a
+     * channel error. Dart reports that error as `CheckStatus.failed`.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    private fun respondInBackground(result: Result, check: () -> Any?) {
+        background.execute {
+            try {
+                val value = check()
+                mainThread.execute { result.success(value) }
+            } catch (error: Exception) {
+                mainThread.execute { result.error("CHECK_FAILED", error.message, null) }
+            }
+        }
+    }
+
+    private fun setProtection(call: MethodCall, result: Result, update: (Boolean) -> Unit) {
         val currentActivity = activity
         if (currentActivity == null) {
-            // No Activity attached yet — nothing to apply the flag to. An
-            // honest "not applied" answer, never a silent false success.
+            // No window to apply the flag to yet; Dart reports this as failed.
             result.success(mapOf("applied" to false))
+            return
+        }
+        update(call.argument<Boolean>("enabled") ?: false)
+        applyFlagSecure(currentActivity)
+        result.success(mapOf("applied" to true))
+    }
+
+    private fun applyFlagSecure(currentActivity: Activity) {
+        if (screenshotProtection || appSwitcherProtection) {
+            ScreenCaptureProtection.enable(currentActivity)
         } else {
-            if (enabled) {
-                ScreenCaptureProtection.enable(currentActivity)
-            } else {
-                ScreenCaptureProtection.disable(currentActivity)
-            }
-            result.success(mapOf("applied" to true))
+            ScreenCaptureProtection.disable(currentActivity)
         }
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        activity = binding.activity
-        startObservingScreenshots(binding.activity)
+        attachActivity(binding.activity)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -171,8 +200,18 @@ class DeviceShieldPlugin :
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        activity = binding.activity
-        startObservingScreenshots(binding.activity)
+        attachActivity(binding.activity)
+    }
+
+    private fun attachActivity(currentActivity: Activity) {
+        activity = currentActivity
+        startObservingScreenshots(currentActivity)
+        // A configuration change (e.g. rotation) creates a new window without
+        // FLAG_SECURE. Re-apply protection that was on. Only when on, so a
+        // flag the host app set itself is left alone.
+        if (screenshotProtection || appSwitcherProtection) {
+            ScreenCaptureProtection.enable(currentActivity)
+        }
     }
 
     override fun onDetachedFromActivity() {
@@ -230,5 +269,25 @@ class DeviceShieldPlugin :
         // before this, but this ensures ScreenshotDetector is never left
         // observing a stale Activity if teardown ever happens out of order.
         detachActivity()
+    }
+
+    private companion object {
+        /**
+         * One thread for the whole process, so checks run one at a time:
+         * `MockLocationDetector` keeps the previous fix in memory. It's a
+         * daemon thread, so it never keeps the process alive.
+         */
+        val CHECK_EXECUTOR: Executor by lazy {
+            Executors.newSingleThreadExecutor { runnable ->
+                Thread(runnable, "device_shield-checks").apply { isDaemon = true }
+            }
+        }
+
+        // Lazy, so JVM unit tests that inject their own executors never touch
+        // the (unmocked) Android main looper.
+        val MAIN_THREAD: Executor by lazy {
+            val handler = Handler(Looper.getMainLooper())
+            Executor { command -> handler.post(command) }
+        }
     }
 }

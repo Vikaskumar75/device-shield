@@ -5,22 +5,31 @@ All notable changes to this package are documented here. The format follows
 follows [Semantic Versioning](https://semver.org/). Until 1.0.0, minor
 versions may contain breaking changes.
 
-## 0.0.1 (unreleased)
+## 0.1.0 (unreleased)
 
-Not yet published.
+First release.
 
-### Changed
-- **Renamed the package from `flutter_shield` to `device_shield`**, because
-  `flutter_shield` is already taken on pub.dev. The import is now
-  `package:device_shield/device_shield.dart`, the facade is `DeviceShield`,
-  and `FlutterShieldConfig`/`FlutterShieldException` are now
-  `DeviceShieldConfig`/`DeviceShieldException`. Channel names changed to
-  `device_shield/…`.
-- Android package and example identifiers renamed from `com.example` to
-  `com.geekyants` (`com.geekyants.device_shield`).
-- Minimum iOS version lowered from 18.0 to 15.0.
-- Stricter Dart analysis; all Dart and Swift sources formatted.
+### Detection
+- Root (Android), jailbreak (iOS), emulator / simulator, debugger and mock
+  location checks, through `DeviceShield.check()` or one method per check.
+- Every result lists the signals that fired, each with a strength. A check is
+  detected with at least one strong signal or two medium ones. Weak signals
+  (common on custom ROMs, emulators and debug builds) never decide the result
+  on their own.
+- A check that can't run returns `CheckStatus.failed`; nothing throws. A check
+  that doesn't exist on the platform returns `CheckStatus.notApplicable`,
+  including jailbreak detection on the iOS Simulator.
 
-### Fixed
-- Android 14+: declared `DETECT_SCREEN_CAPTURE`, whose absence crashed the
-  host app on attach (not yet verified on a device).
+### Screen
+- `DeviceShield.screenshots` (Android 14+ and iOS) and
+  `DeviceShield.screenRecordingChanges` / `isScreenRecorded()` (iOS).
+- `setScreenshotProtection` and `setAppSwitcherProtection`. On Android both
+  use `FLAG_SECURE`, tracked separately and re-applied after configuration
+  changes. iOS screenshot protection is experimental until verified on a
+  device.
+
+### Platform
+- Android checks run on a background thread.
+- Android 14+: declares `DETECT_SCREEN_CAPTURE`, required for screenshot
+  detection.
+- Minimum Android API 21, iOS 15.0.

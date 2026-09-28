@@ -6,16 +6,15 @@ description: How device_shield detects rooted Android devices, every signal it r
 import { Aside } from '@astrojs/starlight/components';
 
 ```dart
-final result = await RootDetector(nativeBridge: DefaultNativeBridge()).check();
+final result = await DeviceShield.checkRoot();
 ```
 
-Android only. On iOS the result is `detected: false` with
-`evidence['applicable'] == false`. Use [jailbreak detection](../jailbreak/)
-there.
+Android only. On iOS the status is `CheckStatus.notApplicable`. Use
+[jailbreak detection](../jailbreak/) there.
 
 ## Signals
 
-| Signal | What it checks | Guidance |
+| Signal | What it checks | Strength |
 |---|---|---|
 | `su_binary_path` | An `su` binary at one of 9 standard paths (`/system/bin/su`, `/system/xbin/su`, `/sbin/su`, `/data/local/xbin/su`, …) | Strong |
 | `su_executable` | `which su` finds an `su` on the `PATH` | Strong |
@@ -25,21 +24,11 @@ there.
 | `root_cloaking_apps_installed` | One of 8 root-hiding apps is installed (RootCloak, Hide My Root, Substrate, …) | Medium |
 | `busybox_present` | BusyBox at `/system/xbin/busybox` or `/system/bin/busybox` | Weak: some ROMs ship it |
 | `build_tags_test_keys` | `Build.TAGS` contains `test-keys` | Weak: common on custom ROMs and emulators |
-| `dangerous_system_props` | `ro.debuggable=1` or `ro.secure=0` | Weak: true on every emulator and engineering build |
+| `dangerous_system_props` | `ro.debuggable=1` or `ro.secure=0` | Weak: fires on engineering builds and some emulator images |
 
-"Guidance" is our assessment of how often a signal fires on devices that
-aren't actually rooted. Validate it against your own users.
-
-## How the result is computed
-
-- `detected` is `true` if **any** signal fires.
-- `confidence` is the number of signals that fired divided by 9.
-
-<Aside type="caution" title="Every emulator reports rooted">
-  Emulators set `ro.debuggable=1`, so `dangerous_system_props` fires and
-  `detected` becomes `true`. Decide on the signals, not on `detected`. See
-  [Detection results](../../concepts/detection-results/#detected-and-confidence).
-</Aside>
+Weak signals fire on many unmodified devices, for example custom ROMs and
+engineering builds, so they never decide the result. See
+[Detection results](../../concepts/detection-results/) for the rule.
 
 ## Limitations
 
@@ -49,5 +38,5 @@ aren't actually rooted. Validate it against your own users.
 - **Package checks depend on the manifest.** The app-installed signals rely on
   `<queries>` entries merged from the plugin. See
   [Android setup](../../platforms/android/#queries-package-visibility).
-- **Runs on the main thread** and starts three short-lived processes
-  (`which su` and two `getprop` calls).
+- Starts three short-lived processes (`which su` and two `getprop` calls),
+  on a background thread.

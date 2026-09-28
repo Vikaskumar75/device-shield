@@ -3,29 +3,17 @@ title: Screenshot detection
 description: Get notified when the user takes a screenshot of your app.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
-Screenshot detection is **event-based**: the platform tells the SDK when a
-screenshot is taken, and the SDK passes it on as a `SecurityEvent`.
+The platform tells the SDK when a screenshot is taken while your app is in
+the foreground, and `DeviceShield.screenshots` passes it on:
 
 ```dart
-await DeviceShield.initialize(
-  config: const DeviceShieldConfig(enableScreenshotDetection: true),
-);
-
-final subscription = DeviceShield.onScreenshot((event) {
-  // A screenshot was taken while your app was in the foreground.
+final subscription = DeviceShield.screenshots.listen((_) {
+  // A screenshot was just taken.
 });
 
 // Later:
 await subscription.cancel();
 ```
-
-<Aside type="caution" title="Don't register ScreenshotDetector">
-  `ScreenshotDetector` exists for the SDK's internal wiring. Registering it with
-  `registerDetector` doesn't enable detection. It only adds a "nothing
-  detected" event to every periodic check. Use the config flag above.
-</Aside>
 
 ## Platform behaviour
 
@@ -34,15 +22,16 @@ await subscription.cancel();
 | Supported | Android 14 (API 34) and later | All supported versions |
 | Mechanism | `Activity.registerScreenCaptureCallback` | `userDidTakeScreenshotNotification` |
 | Timing | Just after capture | After the screenshot is saved |
-| Signal in native payload | `screen_capture_callback` | `screenshot_notification` |
 
-Neither platform lets an app **prevent** a screenshot from here. You're told
-after the fact. On Android, use [screenshot protection](../../protection/screenshot/)
-to block them instead.
+Neither platform lets an app **prevent** a screenshot from here; you're told
+after the fact. Use [screenshot protection](../../protection/screenshot/) to
+keep content out of screenshots.
+
+With screenshot protection on, Android still reports the screenshot. The
+image the user gets is black.
 
 ## Limitations
 
-- Below Android 14 nothing happens, and there's currently no API to ask
-  whether detection is supported on the running device.
-- Screen recordings don't trigger this event. See
-  [Screen recording](../screen-recording/).
+- Below Android 14 the stream never fires, and there's currently no way to
+  ask whether the running device supports it.
+- Screen recordings don't fire this. See [Screen recording](../screen-recording/).

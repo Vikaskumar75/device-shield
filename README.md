@@ -49,6 +49,7 @@ shell profile. When a step needs that, it prints the command for you to run.
 |---|---|
 | Run every check CI runs | `app/tool/check.sh` |
 | Run the example app | `cd app/example && flutter run` |
+| Run the real native checks on a device | `cd app/example && flutter test integration_test -d <device>` |
 | Preview the docs site | `npm run dev --prefix website` |
 | Fix a GitHub issue with Claude Code | `/fix-issue <number>` in a Claude Code session |
 

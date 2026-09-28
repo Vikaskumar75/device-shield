@@ -1,15 +1,17 @@
 ---
-title: Signals reference
-description: Every signal device_shield reports, per platform, with guidance on how much to trust it.
+title: Signals
+description: Every signal device_shield reports, per platform, with its strength.
 ---
 
-Signals appear in `result.evidence['signals']`. "Guidance" is our assessment
-of how likely a signal is to fire on a device that isn't actually compromised.
-Validate it against your own users before blocking anyone.
+Signals appear in `result.signals`, each with a strength that decides how
+much it counts. See [Detection results](../../concepts/detection-results/)
+for the rule. The strengths live in
+[`signal_strengths.dart`](https://github.com/Vikaskumar75/device-shield/blob/main/app/lib/src/signal_strengths.dart),
+and a test fails if native code emits a signal missing from it.
 
 ## Android
 
-| Detector | Signal | Guidance |
+| Check | Signal | Strength |
 |---|---|---|
 | root | `su_binary_path` | Strong |
 | root | `su_executable` | Strong |
@@ -19,33 +21,38 @@ Validate it against your own users before blocking anyone.
 | root | `root_cloaking_apps_installed` | Medium |
 | root | `busybox_present` | Weak |
 | root | `build_tags_test_keys` | Weak |
-| root | `dangerous_system_props` | Weak (every emulator) |
-| emulator | `fingerprint`, `model`, `manufacturer`, `hardware`, `product`, `brand_device`, `qemu_pipe` | Build heuristics. Reliable for stock emulators |
+| root | `dangerous_system_props` | Weak |
+| emulator | `qemu_pipe` | Strong |
+| emulator | `fingerprint`, `model`, `manufacturer`, `hardware`, `product`, `brand_device` | Medium |
 | debugger | `debugger_connected` | Strong |
 | debugger | `waiting_for_debugger` | Strong |
-| debugger | `debuggable_flag` | Weak (every debug build) |
-| mock_location | `mock_provider_flag` | Strong |
-| mock_location | `mock_app_selected_for_this_app` | Strong |
-| mock_location | `impossible_velocity` | Medium |
-| mock_location | `fake_gps_app_installed` | Weak |
-| mock_location | `legacy_allow_mock_location_setting` | Medium (Android 5.x only) |
+| debugger | `debuggable_flag` | Weak |
+| mock location | `mock_provider_flag` | Strong |
+| mock location | `mock_app_selected_for_this_app` | Strong |
+| mock location | `impossible_velocity` | Medium |
+| mock location | `legacy_allow_mock_location_setting` | Medium |
+| mock location | `fake_gps_app_installed` | Weak |
 
 ## iOS
 
-| Detector | Signal | Guidance |
+| Check | Signal | Strength |
 |---|---|---|
 | jailbreak | `jailbreak_app_paths` | Strong |
-| jailbreak | `suspicious_system_paths` | Strong on devices, unreliable on the Simulator |
+| jailbreak | `suspicious_system_paths` | Strong |
 | jailbreak | `writable_outside_sandbox` | Strong |
-| jailbreak | `process_spawn_check` | Strong on devices, unreliable on the Simulator |
+| jailbreak | `process_spawn_check` | Strong |
 | jailbreak | `dyld_env_var` | Strong |
-| emulator | `simulator_target` | Exact |
-| debugger | `ptrace_flag` | Exact |
-| mock_location | `known_spoofing_tweak_artifact` | Strong |
-| mock_location | `invalid_location_accuracy` | Medium |
-| mock_location | `impossible_velocity` | Medium |
+| emulator | `simulator_target` | Strong |
+| debugger | `ptrace_flag` | Strong |
+| mock location | `known_spoofing_tweak_artifact` | Strong |
+| mock location | `invalid_location_accuracy` | Medium |
+| mock location | `impossible_velocity` | Medium |
 
-## Event-only signals
+Jailbreak detection doesn't run on the iOS Simulator, which can't be
+jailbroken. It returns `CheckStatus.notApplicable` there.
 
-These appear in native screenshot payloads, not in `check()` results:
-`screen_capture_callback` (Android) and `screenshot_notification` (iOS).
+## Choosing strengths
+
+A strength reflects how often a signal fires on devices that aren't
+compromised. They're our assessment, based on how each check works. Measure
+them against your own users before blocking anyone.

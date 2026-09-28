@@ -55,25 +55,25 @@ your app:
 ```
 
 Request it at runtime with your usual permission flow. The result's
-`evidence['permissionGranted']` tells you whether the SDK could read a
+`locationPermissionGranted` tells you whether the SDK could read a
 location.
 
 ## Threading
 
-<Aside type="caution" title="Checks run on the main thread">
-  Android checks currently run on the platform main thread. Root detection
-  starts three short-lived processes and makes 21 package lookups, so
-  it can cause dropped frames. Run checks at quiet moments (for example after
-  your first frame), not on every rebuild. Moving this work to a background
-  thread is planned.
-</Aside>
+Root, emulator, debugger and mock-location checks run on a background
+thread, one at a time, and deliver their result back on the main thread. Root
+detection still starts three short-lived processes and makes 21 package
+lookups, so a check takes noticeably longer than a frame. Await it; don't run
+it on every rebuild.
 
 ## Emulators and debug builds
 
-- Every Android emulator reports **rooted**: its system properties set
-  `ro.debuggable=1`, which fires `dangerous_system_props`.
-- Every debuggable build reports **debugger detected** at low confidence via
-  `debuggable_flag`, even with no debugger attached.
+- **Emulators** are detected as emulators. On the Android 17 emulator image
+  (API 37) the build-property signals `hardware` and `product` fire.
+- **Root on an emulator:** some emulator images set `ro.debuggable=1`, which
+  fires the weak `dangerous_system_props` signal. Weak signals never mean
+  `detected`, so emulators come back `clear`.
+- **Debug builds** fire the weak `debuggable_flag` signal, so the debugger
+  check stays `clear` unless a debugger is actually attached.
 
-Both are expected. Test your handling of *real* results on a release build on
-a physical device.
+Test your handling of real results on a release build on a physical device.

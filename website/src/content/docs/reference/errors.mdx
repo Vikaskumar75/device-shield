@@ -1,62 +1,31 @@
 ---
-title: Error codes
-description: Exceptions thrown by device_shield and what each code means.
+title: Error handling
+description: How device_shield reports failures.
 ---
 
-Detector `check()` calls never throw. They return `status: failed`
-instead. The `DeviceShield` facade throws subclasses of
-`DeviceShieldException`, each with a `code`, a `message` and optional
-`details`.
+**No `device_shield` method throws.** Failures come back as values, so a
+check can never crash your app:
+
+| Where | Failure looks like |
+|---|---|
+| Any check | `status: CheckStatus.failed`, with a reason in `error` |
+| A protection call | `ProtectionResult.failed`, or `unsupported` on platforms without it |
+| `isScreenRecorded()` | `null` |
+
+## `error` values
+
+| Value | Cause |
+|---|---|
+| `Not supported on this platform` | The plugin isn't available here, for example on web or desktop |
+| `Timed out after 5s` | The native check didn't answer in time |
+| `CHECK_FAILED: …` | The native check threw. The message is the native exception's |
+| Any other text | An unexpected platform error, passed through |
+
+A failed check means "unknown". Don't treat it as a clean result:
 
 ```dart
-try {
-  await DeviceShield.initialize(config: config);
-} on ConfigurationException catch (e) {
-  debugPrint('Bad config: ${e.code} ${e.message}');
+final report = await DeviceShield.check();
+if (report.anyFailed) {
+  // Retry later, or fall back to your stricter behaviour.
 }
 ```
-
-## Initialisation: `InitializationException`
-
-| Code | Cause |
-|---|---|
-| `NOT_INITIALIZED` | A method was called before `DeviceShield.initialize()` |
-| `ALREADY_INITIALIZING` | `initialize()` was called again while still running |
-| `ALREADY_DISPOSED` | The SDK was used after `dispose()` |
-| `NOT_RUNNING` | `shutdown()` was called when the SDK wasn't running |
-| `UNRESOLVED_DEPENDENCY` | A method was called after `shutdown()`. Call `reinitialize()` first |
-
-## Configuration: `ConfigurationException`
-
-| Code | Rule |
-|---|---|
-| `INVALID_INTERVAL` | `periodicCheckInterval` must be at least 5000 ms |
-| `INVALID_TIMEOUT` | `checkTimeout` must be 1000–30000 ms |
-| `INVALID_RETRY` | `maxRetryAttempts` must be 0–10 |
-| `INVALID_RETRY_DELAY` | `retryDelay` must be 500–10000 ms |
-| `INVALID_RISK_WEIGHT` | `screenshotRecordingRiskScoreWeight` must be 0.0–1.0 |
-
-## Native bridge: `NativeBridgeException`
-
-Detectors catch these and turn them into `status: failed`. You'll only see
-them if you call the bridge directly.
-
-| Code | Cause |
-|---|---|
-| `BRIDGE_TIMEOUT` | The native call took longer than 5 seconds |
-| `BRIDGE_UNAVAILABLE` | No native handler, for example on an unsupported platform |
-| `BRIDGE_MALFORMED_RESPONSE` | The native side returned an unexpected type |
-
-## Detection: `DetectionException`
-
-| Code | Cause |
-|---|---|
-| `DETECTOR_TYPE_UNKNOWN` | `DetectorFactory` was asked for a type it doesn't know |
-| `DETECTOR_UNAVAILABLE` | A registered detector couldn't be used |
-
-## Other errors
-
-- `ArgumentError`: `registerDetector` was called twice with the same detector
-  type.
-- Calling `shutdown()` or `reinitialize()` before `initialize()` currently
-  throws a `TypeError` rather than `NOT_INITIALIZED`. This is a known bug.

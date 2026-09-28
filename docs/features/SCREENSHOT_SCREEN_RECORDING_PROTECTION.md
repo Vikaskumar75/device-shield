@@ -1,5 +1,11 @@
 # Screenshot & Screen Recording Protection — Design Document
 
+> **Archived: describes the pre-0.1 architecture.** The Dart layer it
+> describes (managers, registries, policy engine, DI container) was removed in
+> 0.1.0, so links into `app/lib/src/` point at files that no longer exist.
+> See the git history before `release/0.1.0` for that code, and
+> [HANDOVER.md](../HANDOVER.md) for the current design.
+
 **Status:** Planning only. No implementation exists yet. This document was produced after reading the entire repository (`lib/`, `android/`, `ios/`, `test/`, and every architecture/roadmap doc) and is written to be consistent with what the codebase actually contains today, not with what the roadmap aspires to.
 
 **Scope of this document:** design and API surface only. No Dart/Kotlin/Swift implementation code is included anywhere below, per the task's own instruction.

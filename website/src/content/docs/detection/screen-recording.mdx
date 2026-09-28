@@ -6,42 +6,33 @@ description: Detect when the screen is being recorded, mirrored or cast on iOS.
 import { Aside } from '@astrojs/starlight/components';
 
 **iOS only.** Android offers no reliable signal on the versions the SDK
-supports, so it always reports `supported: false`.
+supports, so the Android answers are `null` and no events fire.
 
 ## Check the current state
 
 ```dart
-final result = await ScreenRecordingDetector(nativeBridge: DefaultNativeBridge()).check();
-
-final isCaptured = result.evidence['isCaptured'] == true;
-final supported = result.evidence['supported'] == true; // false on Android
+final recorded = await DeviceShield.isScreenRecorded();
+// true / false on iOS, null where it can't be determined (Android)
 ```
-
-On Android, `status` is `completed` with `supported: false`. Check
-`supported` before trusting `isCaptured`.
 
 ## Get notified of changes
 
 ```dart
-await DeviceShield.initialize(
-  config: const DeviceShieldConfig(enableScreenRecordingDetection: true),
-);
-
-DeviceShield.onScreenRecordingChanged((event) {
-  // Capture started or stopped. Call check() above for the current state.
+DeviceShield.screenRecordingChanges.listen((isRecorded) {
+  // isRecorded: recording or mirroring started (true) or stopped (false)
 });
 ```
 
-Events fire only when the state **changes**. There's no initial event, so
-check the current state once when your screen opens.
+Events fire only when the state **changes**. There's no initial event, so call
+`isScreenRecorded()` once when your screen opens.
 
-## What counts as "captured"
+## What counts as "recorded"
 
 The SDK reads `UIScreen.isCaptured`, which is `true` during screen recording,
-AirPlay mirroring and when an external display mirrors the screen. It can't
+AirPlay mirroring, and when an external display mirrors the screen. It can't
 tell these apart.
 
 <Aside type="note">
-  Android 15 (API 35) added a screen-recording callback. The SDK doesn't use it
-  yet.
+  Android 15 (API 35) added a screen-recording callback. Support for it is on
+  the [roadmap](../../reference/roadmap/).
 </Aside>

@@ -77,14 +77,15 @@ CocoaPods path haven't been verified yet.
 
 <Steps>
 
-1. Run the quick-start check on a device or emulator:
+1. Run a check on a device, emulator or simulator:
 
    ```dart
-   final result = await EmulatorDetector(nativeBridge: DefaultNativeBridge()).check();
-   debugPrint('${result.status} ${result.detected} ${result.evidence}');
+   final report = await DeviceShield.check();
+   debugPrint('${report.all}');
    ```
 
-2. On an Android emulator or the iOS Simulator you should see `detected: true`
-   and a signal such as `simulator_target` (iOS) or `hardware` (Android).
+2. On an Android emulator or the iOS Simulator, `emulator` should be
+   `detected`, with `hardware` and `product` (Android) or `simulator_target`
+   (iOS) among its signals.
 
 </Steps>

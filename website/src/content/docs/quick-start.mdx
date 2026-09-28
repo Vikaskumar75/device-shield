@@ -3,76 +3,79 @@ title: Quick start
 description: Run your first device check with device_shield.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
-<Aside type="caution" title="This API will change">
-  The public API is being redesigned before 0.1.0. The calls on this page work
-  today, but expect breaking changes. See [API status](../reference/api/).
-</Aside>
-
-## Run a check
-
-Create a detector and call `check()`. It returns a `DetectionResult`:
+## Run every check
 
 ```dart
 import 'package:device_shield/device_shield.dart';
 
 Future<void> checkDevice() async {
-  final bridge = DefaultNativeBridge();
+  final report = await DeviceShield.check();
 
-  final root = await RootDetector(nativeBridge: bridge).check();
-  final emulator = await EmulatorDetector(nativeBridge: bridge).check();
-
-  if (root.status == DetectionStatus.failed) {
-    // The check couldn't run (timeout or platform error). Treat as unknown.
-    return;
+  if (report.root.detected || report.jailbreak.detected) {
+    // e.g. hide sensitive screens or ask for extra verification
   }
-
-  final signals = (root.evidence['signals'] as List?)?.cast<String>() ?? [];
-  debugPrint('rooted: ${root.detected}, signals: $signals');
-  debugPrint('emulator: ${emulator.detected}');
+  if (report.anyFailed) {
+    // Some check couldn't run. Treat the result as incomplete.
+  }
 }
 ```
 
-Root detection only applies on Android. On iOS, `RootDetector` returns
-`detected: false` with `evidence['applicable'] == false`. Use
-`JailbreakDetector` there. Both are safe to call on either platform.
+There's nothing to initialise and nothing throws. `check()` runs every
+check and returns a [`SecurityReport`](../reference/api/#securityreport).
+A check that doesn't exist on the current platform, such as root on iOS,
+comes back as `CheckStatus.notApplicable`.
 
-## Decide what to do
+## Look at the evidence
 
-Don't act on `detected` alone. It becomes `true` when **any** signal fires,
-including weak ones such as `build_tags_test_keys`, which is common on custom
-ROMs. Decide per signal instead:
+Every result lists the signals that fired, each with a strength:
 
 ```dart
-const strongRootSignals = {'su_binary_path', 'su_executable', 'magisk_artifacts', 'writable_system'};
+final root = await DeviceShield.checkRoot();
 
-final isRooted = signals.any(strongRootSignals.contains);
+switch (root.status) {
+  case CheckStatus.detected:
+    print('Rooted: ${root.signals}'); // [su_binary_path (strong)]
+  case CheckStatus.clear:
+    print('Clear. Weak signals, if any: ${root.signals}');
+  case CheckStatus.notApplicable:
+    print('Not an Android device');
+  case CheckStatus.failed:
+    print('Could not check: ${root.error}');
+}
 ```
 
-The [signals reference](../reference/signals/) lists every signal with
-guidance on how much to trust it.
+A check is **detected** when at least one strong signal fires, or at least
+two medium ones. Weak signals, which are common on custom ROMs and debug
+builds, are reported but never decide the result on their own. See
+[Detection results](../concepts/detection-results/).
 
 ## Protect a sensitive screen
 
-On Android, block screenshots and screen recording while a screen is visible.
-This needs the SDK to be initialised first:
-
 ```dart
-await DeviceShield.initialize();
-
-// When the sensitive screen opens:
-await DeviceShield.enableScreenshotProtection(); // Android: true when applied
+// When the screen opens:
+final result = await DeviceShield.setScreenshotProtection(true);
+if (result != ProtectionResult.applied) {
+  // unsupported on this platform, or no window yet
+}
 
 // When it closes:
-await DeviceShield.disableScreenshotProtection();
+await DeviceShield.setScreenshotProtection(false);
 ```
 
-On iOS this call doesn't block screenshots. See
-[Screenshot protection](../protection/screenshot/).
+On Android this blocks screenshots and screen recording, and hides the app
+in Recents. For iOS, see [Screenshot protection](../protection/screenshot/).
+
+## React to screenshots
+
+```dart
+final subscription = DeviceShield.screenshots.listen((_) {
+  // The user just took a screenshot.
+});
+// Later: await subscription.cancel();
+```
 
 ## Next steps
 
-- [Detection results](../concepts/detection-results/): every field, and what it means.
+- [API reference](../reference/api/): every method and type.
 - [Android setup](../platforms/android/) and [iOS setup](../platforms/ios/).
 - [Security model](../concepts/security-model/): what these checks can't guarantee.

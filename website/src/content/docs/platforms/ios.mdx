@@ -38,7 +38,7 @@ The plugin never asks for location access. To enable the location-based
 2. Request authorisation with your usual location plugin.
 
 Without authorisation, only the jailbreak-tweak signal can fire, and
-`evidence['permissionGranted']` is `false`.
+`locationPermissionGranted` is `false`.
 
 <Aside type="note" title="Current limitation">
   Even with authorisation, iOS location signals rarely fire today, because the
@@ -55,6 +55,7 @@ Mention jailbreak detection in your review notes if your app is questioned.
 ## Simulator behaviour
 
 - The Simulator always reports **emulator detected** (`simulator_target`).
-- Jailbreak detection may report signals on the Simulator, because the host
-  Mac's file system is partly visible. Test jailbreak handling on a physical
+- Jailbreak detection returns **not applicable** on the Simulator. It can't be
+  jailbroken, and its file system shows parts of the host Mac, which would
+  otherwise fire the path checks. Test jailbreak handling on a physical
   device.

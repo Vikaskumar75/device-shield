@@ -11,14 +11,11 @@ const repo = 'https://github.com/Vikaskumar75/device-shield';
 
 const heroCode = `import 'package:device_shield/device_shield.dart';
 
-final detector = RootDetector(
-  nativeBridge: DefaultNativeBridge(),
-);
-final result = await detector.check();
+final report = await DeviceShield.check();
 
-if (result.detected) {
-  // Which checks fired, e.g. [su_binary_path, magisk_artifacts]
-  final signals = result.evidence['signals'];
+if (report.root.detected) {
+  // Which signals fired, and how strongly
+  print(report.root.signals);
 }`;
 
 type Support = 'yes' | 'partial' | 'no';
@@ -82,6 +79,36 @@ const features: Feature[] = [
   },
 ];
 
+interface Upcoming {
+  title: string;
+  body: string;
+  platforms: string;
+}
+
+// Planned, not built. Keep in sync with src/content/docs/reference/roadmap.mdx.
+const upcoming: Upcoming[] = [
+  {
+    title: 'Runtime hook detection',
+    body: 'Detect instrumentation frameworks such as Frida, Xposed and Substrate hooking into your app.',
+    platforms: 'Android & iOS',
+  },
+  {
+    title: 'App integrity',
+    body: 'Hand you Play Integrity and App Attest tokens for your server to verify. Requires a backend.',
+    platforms: 'Android & iOS',
+  },
+  {
+    title: 'Developer options & overlays',
+    body: 'Flag enabled developer options and screen overlays that can be used for tapjacking.',
+    platforms: 'Android',
+  },
+  {
+    title: 'More recording & location signals',
+    body: 'Screen-recording detection on Android 15+, and simulated-location detection on iOS 15+.',
+    platforms: 'Android & iOS',
+  },
+];
+
 const supportLabel: Record<Support, string> = {
   yes: 'Supported',
   partial: 'Limited',
@@ -97,17 +124,17 @@ const facts = [
 
 const honesty = [
   {
-    token: 'applicable: false',
+    token: 'notApplicable',
     title: 'Says when a check can’t run',
-    body: 'Ask for jailbreak detection on Android and you get “not applicable”, never a false “clean”.',
+    body: 'Ask for jailbreak detection on Android and you get “not applicable”, never a false “clear”.',
   },
   {
-    token: 'signals: [...]',
+    token: 'signals + strength',
     title: 'Shows its evidence',
-    body: 'Results list the exact signals that fired, so you decide what counts for your app.',
+    body: 'Every result lists the signals that fired and how strong each is. Weak ones never decide on their own.',
   },
   {
-    token: 'status: failed',
+    token: 'failed',
     title: 'Fails loudly',
     body: 'A check that errors or times out comes back as failed. It never quietly turns into a clean result.',
   },
@@ -138,7 +165,7 @@ const honesty = [
           GitHub
         </a>
       </div>
-      <p class="install"><span>$</span> flutter pub add device_shield <em>coming soon</em></p>
+      <p class="install"><span>$</span> flutter pub add device_shield <em>0.1.0 coming soon</em></p>
     </div>
     <div class="hero-code">
       <div class="window">
@@ -146,13 +173,12 @@ const honesty = [
         <Code code={heroCode} lang="dart" frame="none" />
       </div>
       <div class="result">
-        <div class="result-row"><span>type</span><code>"root"</code></div>
-        <div class="result-row"><span>detected</span><code class="warn">true</code></div>
-        <div class="result-row"><span>confidence</span><code>0.22</code></div>
+        <div class="result-row"><span>check</span><code>root</code></div>
+        <div class="result-row"><span>status</span><code class="warn">detected</code></div>
         <div class="result-row">
-          <span>evidence.signals</span><code>[su_binary_path, magisk_artifacts]</code>
+          <span>signals</span><code>su_binary_path · strong</code>
         </div>
-        <div class="result-row"><span>status</span><code>completed</code></div>
+        <div class="result-row"><span></span><code>busybox_present · weak</code></div>
       </div>
     </div>
   </section>
@@ -195,6 +221,31 @@ const honesty = [
               </span>
             </div>
           </a>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="section">
+    <header class="section-head">
+      <p class="kicker">Coming soon</p>
+      <h2>What we're building next.</h2>
+      <p>
+        Planned, not yet available. Order and timing can change. Follow the{' '}
+        <a href={link('reference/roadmap/')}>roadmap</a> for status.
+      </p>
+    </header>
+    <div class="upcoming">
+      {
+        upcoming.map((u) => (
+          <div class="upcoming-card">
+            <div class="upcoming-top">
+              <span class="pill">Planned</span>
+              <span class="upcoming-platforms">{u.platforms}</span>
+            </div>
+            <h3>{u.title}</h3>
+            <p>{u.body}</p>
+          </div>
         ))
       }
     </div>
@@ -257,16 +308,15 @@ const honesty = [
   .content-panel h1#_top {
     display: none;
   }
-  /* The hero background bleeds past the content column; don't let it
-     create a horizontal scrollbar. */
-  body {
-    overflow-x: clip;
-  }
 </style>
 
 <style>
   .landing {
     --radius: 14px;
+    /* The hero background extends past the content column; clip it here so
+       it never widens the page. `clip` (unlike `hidden`) leaves vertical
+       overflow visible and creates no scroll container. */
+    overflow-x: clip;
     display: flex;
     flex-direction: column;
     gap: 6rem;
@@ -597,6 +647,45 @@ const honesty = [
     border-color: color-mix(in srgb, var(--ds-warn) 35%, transparent);
   }
 
+  .upcoming {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .upcoming-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1.4rem;
+    border: 1px dashed var(--ds-border);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--ds-surface) 60%, transparent);
+  }
+  .upcoming-card p {
+    margin: 0;
+    color: var(--sl-color-gray-2);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  .upcoming-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .pill {
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-accent-high);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .upcoming-platforms {
+    color: var(--ds-muted);
+    font-size: 0.75rem;
+  }
   .honesty {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -701,6 +790,9 @@ const honesty = [
   }
 
   @media (max-width: 60rem) {
+    .upcoming {
+      grid-template-columns: 1fr 1fr;
+    }
     .hero {
       grid-template-columns: minmax(0, 1fr);
       gap: 3rem;
@@ -723,6 +815,9 @@ const honesty = [
     }
   }
   @media (max-width: 40rem) {
+    .upcoming {
+      grid-template-columns: 1fr;
+    }
     .landing {
       gap: 4rem;
     }

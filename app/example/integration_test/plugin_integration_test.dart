@@ -1,10 +1,6 @@
-// This is a basic Flutter integration test.
-//
-// Since integration tests run in a full Flutter application, they can interact
-// with the host side of a plugin implementation, unlike Dart unit tests.
-//
-// For more information about Flutter integration tests, please see
-// https://flutter.dev/to/integration-testing
+// Runs the real native checks on a device or emulator:
+//   cd app/example && flutter test integration_test
+import 'dart:io';
 
 import 'package:device_shield/device_shield.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,11 +9,37 @@ import 'package:integration_test/integration_test.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('getPlatformVersion test', (WidgetTester tester) async {
-    final DeviceShield plugin = DeviceShield();
-    final String? version = await plugin.getPlatformVersion();
-    // The version string depends on the host platform running the test, so
-    // just assert that some non-empty string is returned.
-    expect(version?.isNotEmpty, true);
+  testWidgets('every check runs on this platform', (tester) async {
+    final report = await DeviceShield.check();
+
+    for (final result in report.all) {
+      // Printed so a device run records what actually fired.
+      // ignore: avoid_print
+      print(result);
+      expect(result.status, isNot(CheckStatus.failed), reason: '$result');
+    }
+    if (Platform.isAndroid) {
+      expect(report.jailbreak.status, CheckStatus.notApplicable);
+      expect(report.root.status, isNot(CheckStatus.notApplicable));
+    }
+    if (Platform.isIOS) {
+      expect(report.root.status, CheckStatus.notApplicable);
+      // The Simulator can't be jailbroken, so the check doesn't apply there.
+      final onSimulator = report.emulator.detected;
+      expect(
+        report.jailbreak.status,
+        onSimulator
+            ? CheckStatus.notApplicable
+            : isNot(CheckStatus.notApplicable),
+      );
+    }
+  });
+
+  testWidgets('screen protection can be turned on and off', (tester) async {
+    final on = await DeviceShield.setAppSwitcherProtection(true);
+    final off = await DeviceShield.setAppSwitcherProtection(false);
+
+    expect(on, ProtectionResult.applied);
+    expect(off, ProtectionResult.applied);
   });
 }

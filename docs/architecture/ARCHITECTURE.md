@@ -1,5 +1,11 @@
 # DeviceShield — SDK Architecture
 
+> **Archived: describes the pre-0.1 architecture.** The Dart layer it
+> describes (managers, registries, policy engine, DI container) was removed in
+> 0.1.0, so links into `app/lib/src/` point at files that no longer exist.
+> See the git history before `release/0.1.0` for that code, and
+> [HANDOVER.md](../HANDOVER.md) for the current design.
+
 This is the design we've settled on for the internal architecture — the components, their connections, and the flows between them. It's the blueprint implementation should follow. No feature/detector-specific logic is included here on purpose; this only covers the framework every feature will sit on top of.
 
 ---

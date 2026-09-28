@@ -36,17 +36,29 @@ enum JailbreakDetector {
   private static let signalCategoryCount = 5.0
 
   static func check() -> [String: Any] {
-    return evaluate(
-      jailbreakAppPathExists: jailbreakAppPaths.contains {
-        FileManager.default.fileExists(atPath: $0)
-      },
-      suspiciousSystemPathExists: suspiciousSystemPaths.contains {
-        FileManager.default.fileExists(atPath: $0)
-      },
-      writableOutsideSandbox: canWriteOutsideSandbox(),
-      dyldEnvVarSet: !(ProcessInfo.processInfo.environment["DYLD_INSERT_LIBRARIES"] ?? "").isEmpty,
-      processSpawnSucceeded: canSpawnProcess()
-    )
+    #if targetEnvironment(simulator)
+      // The Simulator can't be jailbroken, and its path and process checks
+      // see the host Mac (e.g. /bin/bash), which would report a jailbreak.
+      return [
+        "detected": false,
+        "confidence": 0.0,
+        "signals": [String](),
+        "applicable": false,
+      ]
+    #else
+      return evaluate(
+        jailbreakAppPathExists: jailbreakAppPaths.contains {
+          FileManager.default.fileExists(atPath: $0)
+        },
+        suspiciousSystemPathExists: suspiciousSystemPaths.contains {
+          FileManager.default.fileExists(atPath: $0)
+        },
+        writableOutsideSandbox: canWriteOutsideSandbox(),
+        dyldEnvVarSet: !(ProcessInfo.processInfo.environment["DYLD_INSERT_LIBRARIES"] ?? "")
+          .isEmpty,
+        processSpawnSucceeded: canSpawnProcess()
+      )
+    #endif
   }
 
   /// Pure decision logic, separated from the real filesystem/process

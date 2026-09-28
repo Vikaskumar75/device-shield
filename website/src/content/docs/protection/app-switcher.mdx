@@ -4,15 +4,11 @@ description: Hide your app's content in the app switcher and Recents screen.
 ---
 
 When the user opens the app switcher, the operating system shows a snapshot of
-your app. App-switcher protection keeps sensitive content out of it.
+your app. App-switcher protection keeps sensitive content out of it:
 
 ```dart
-await DeviceShield.initialize();
-await DeviceShield.enableAppSwitcherProtection();
+await DeviceShield.setAppSwitcherProtection(true);
 ```
-
-Or enable it from launch with
-`DeviceShieldConfig(enableAppSwitcherProtection: true)`.
 
 ## iOS
 
@@ -23,6 +19,6 @@ becomes active again. Verified on the iOS Simulator.
 ## Android
 
 Android uses the same `FLAG_SECURE` flag as
-[screenshot protection](../screenshot/), which also hides the Recents
-thumbnail. Enabling this also blocks screenshots, and disabling it also
-disables screenshot protection.
+[screenshot protection](../screenshot/), which hides the Recents thumbnail.
+While app-switcher protection is on, screenshots are blocked too. The flag
+stays set until both protections are off.

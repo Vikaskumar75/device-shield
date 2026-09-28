@@ -8,38 +8,38 @@ description: What device_shield supports on each platform, and what has actually
 | Feature | Android | iOS |
 |---|---|---|
 | Root detection | ✓ | Not applicable |
-| Jailbreak detection | Not applicable | ✓ |
+| Jailbreak detection | Not applicable | ✓ (not applicable on the Simulator) |
 | Emulator / simulator detection | ✓ | ✓ |
 | Debugger detection | ✓ | ✓ |
 | Mock location detection | ✓ (location signals need permission) | Limited |
 | Screenshot detection | API 34+ | ✓ |
 | Screen recording detection | — | ✓ |
-| Screenshot protection | ✓ (`FLAG_SECURE`) | ✗ Doesn't work |
+| Screenshot protection | ✓ (`FLAG_SECURE`) | Experimental |
 | App-switcher protection | ✓ (shares `FLAG_SECURE`) | ✓ |
 
 ## Verification status
 
-"Supported" means the code exists and its decision logic is unit-tested.
-Here is what has been observed running:
+What has actually been observed running, as of 0.1.0:
 
-| Feature | Android | iOS |
+| Feature | Android 17 emulator (API 37) | iOS 26.5 Simulator |
 |---|---|---|
-| Builds | ✓ Debug APK | ✓ Simulator build |
-| Native unit tests | ✓ 67 passing (JVM) | Not runnable yet |
-| Any runtime behaviour | ✗ Not run on a device or emulator | Simulator only (iOS 26.4) |
-| Emulator / simulator detection | Unverified | ✓ Simulator |
-| App-switcher protection | Unverified | ✓ Simulator |
-| Screenshot protection | Unverified | ✗ Tested, doesn't work |
-| Root / jailbreak on a compromised device | Unverified | Unverified |
-| Mock location with a spoofing app | Unverified | Unverified |
-| Physical devices | Not tested | Not tested |
+| Every check runs without failing | ✓ | ✓ |
+| Emulator / simulator detection | ✓ `hardware`, `product` | ✓ `simulator_target` |
+| Root / jailbreak on a clean device | ✓ clear | ✓ not applicable (Simulator) |
+| Debug build not reported as debugger | ✓ | ✓ |
+| Screenshot detection | ✓ | Not tested |
+| Screenshot protection | ✓ black system screenshot and `screencap`, also after rotation | Installs cleanly; **blocking not verifiable on the Simulator** |
+| App-switcher protection | ✓ (same flag) | ✓ |
+| No crash on attach (Android 14+ permission) | ✓ | — |
 
-This table is updated as testing happens.
+**Not yet verified anywhere:** physical Android devices, physical iPhones, a
+rooted or jailbroken device, a device using a fake-GPS app, and iOS versions
+before 26.5.
 
 ## Minimum versions
 
 | | Minimum | Tested |
 |---|---|---|
 | Flutter | 3.44.8 | 3.44.8 |
-| Android | API 21 | Not run yet |
-| iOS | 15.0 | 26.4 (Simulator) |
+| Android | API 21 | API 37 (emulator) |
+| iOS | 15.0 | 26.5 (Simulator) |

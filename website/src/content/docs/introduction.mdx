@@ -19,36 +19,35 @@ snapshot** on both platforms.
 
 ## How it works
 
-Each check is a Dart `Detector`. Calling its `check()` method asks the native
-side (Kotlin on Android, Swift on iOS) to inspect the device. You get back a
-`DetectionResult` that says:
+Call a check, such as `DeviceShield.checkRoot()`, or run them all with
+`DeviceShield.check()`. The native side (Kotlin on Android, Swift on iOS)
+inspects the device and reports which **signals** fired. Each signal has a
+strength, and the result says whether the check:
 
-- whether anything was **detected**,
-- **which signals** fired, as evidence you can inspect,
-- whether the check **applies** on this platform, and
-- whether it **completed** or **failed**.
+- **detected** its condition (at least one strong or two medium signals),
+- came back **clear**,
+- doesn't **apply** on this platform, or
+- **failed** to run.
 
 Nothing is sent over the network and nothing is stored. Your app decides what
 to do with each result. See [Detection results](../concepts/detection-results/).
 
 ## Project status
 
-<Aside type="caution" title="Pre-release">
-  `device_shield` isn't on pub.dev yet, and the public API will change before
-  0.1.0. Pin to a specific commit if you try it.
+<Aside type="caution" title="Not yet published">
+  0.1.0 is being prepared for pub.dev. Until it's published, install from Git
+  and pin a commit. See [Installation](../installation/).
 </Aside>
 
-What that means in practice:
+What's been verified:
 
-- **Android has not been run on a physical device or emulator.** The native
-  code compiles and its decision logic is unit-tested, but real-device
-  behaviour is unverified.
-- **iOS has been run on the Simulator only.** Nothing has been tested on a
-  physical iPhone.
-- **iOS screenshot protection does not work** and shouldn't be used.
-- **Each check reports `detected: true` as soon as a single signal fires**,
-  including weak ones. Read the signals, not only the flag. See
-  [Detection results](../concepts/detection-results/#detected-and-confidence).
+- **Android:** every check and protection ran on an Android 17 emulator
+  (API 37). Nothing has been tested on a physical Android device, or on a
+  rooted one.
+- **iOS:** the Simulator only (iOS 26.5). Nothing has been tested on a
+  physical iPhone yet.
+- **iOS screenshot protection** is experimental until it's verified on a
+  device. See [Screenshot protection](../protection/screenshot/).
 
 [Platform support](../reference/platform-support/) lists exactly what has
 been verified where.

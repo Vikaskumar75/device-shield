@@ -2,9 +2,11 @@
 
 Runtime device-security checks for Flutter apps on Android and iOS.
 
-> **Pre-release.** Not published to pub.dev. The public API is expected to
-> change before 0.1.0. Android has not yet been verified on a physical
-> device. See [known issues](https://github.com/Vikaskumar75/device-shield/blob/main/docs/HANDOVER.md).
+Documentation: **[vikaskumar75.github.io/device-shield](https://vikaskumar75.github.io/device-shield/)**
+
+> Verified on an Android 17 emulator and the iOS 26.5 Simulator. Not yet
+> verified on physical devices. See
+> [platform support](https://vikaskumar75.github.io/device-shield/reference/platform-support/).
 
 ## What it does
 
@@ -16,7 +18,7 @@ Runtime device-security checks for Flutter apps on Android and iOS.
 | Mock location detection | ✓ | Limited |
 | Screenshot detection | API 34+ | ✓ (after the fact) |
 | Screen recording detection | — | ✓ |
-| Screenshot protection | ✓ (`FLAG_SECURE`) | Not working |
+| Screenshot protection | ✓ (`FLAG_SECURE`) | Experimental |
 | App-switcher snapshot protection | ✓ | ✓ |
 
 ## Limitations
@@ -43,13 +45,23 @@ blocking anyone.
 ```dart
 import 'package:device_shield/device_shield.dart';
 
-await DeviceShield.initialize();
+// Run every check. Nothing to initialise, nothing throws.
+final report = await DeviceShield.check();
 
-final bridge = DefaultNativeBridge();
-await DeviceShield.registerDetector(RootDetector(nativeBridge: bridge));
+if (report.root.detected || report.jailbreak.detected) {
+  print(report.root.signals); // e.g. [su_binary_path (strong)]
+}
 
-DeviceShield.subscribe((event) => print(event.type));
+// Keep a sensitive screen out of screenshots and recordings.
+await DeviceShield.setScreenshotProtection(true);
+
+// Know when the user takes a screenshot.
+DeviceShield.screenshots.listen((_) => print('Screenshot taken'));
 ```
+
+A check is `detected` when at least one strong signal fires, or two medium
+ones. Weak signals are reported but never decide the result. See
+[detection results](https://vikaskumar75.github.io/device-shield/concepts/detection-results/).
 
 See [`example/`](example/) for a complete app.
 

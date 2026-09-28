@@ -139,6 +139,11 @@ final class JailbreakDetectorTests: XCTestCase {
     XCTAssertNotNil(result["detected"])
     XCTAssertNotNil(result["confidence"])
     XCTAssertNotNil(result["signals"])
-    XCTAssertEqual(result["applicable"] as? Bool, true)
+    // The Simulator can't be jailbroken, so the check doesn't apply there.
+    #if targetEnvironment(simulator)
+      XCTAssertEqual(result["applicable"] as? Bool, false)
+    #else
+      XCTAssertEqual(result["applicable"] as? Bool, true)
+    #endif
   }
 }

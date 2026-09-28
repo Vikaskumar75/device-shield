@@ -1,52 +1,50 @@
 ---
 title: Screenshot protection
-description: Block screenshots and screen recording of sensitive screens on Android.
+description: Keep sensitive screens out of screenshots and screen recordings.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
 ```dart
-await DeviceShield.initialize();
+// When the sensitive screen opens:
+final result = await DeviceShield.setScreenshotProtection(true);
 
-final applied = await DeviceShield.enableScreenshotProtection();
-// … show the sensitive screen …
-await DeviceShield.disableScreenshotProtection();
+// When it closes:
+await DeviceShield.setScreenshotProtection(false);
 ```
 
-To protect the whole app from launch, set
-`DeviceShieldConfig(enableScreenshotProtection: true)` instead.
+`result` is `ProtectionResult.applied` once the protection is in effect,
+`failed` if there's no window yet (call it again once your UI is showing),
+and `unsupported` where the platform has none.
 
 ## Android
 
-The SDK sets `WindowManager.LayoutParams.FLAG_SECURE` on your activity's
-window. The operating system then:
+The SDK sets `FLAG_SECURE` on your activity's window. The operating system
+then:
 
-- blocks screenshots (the user sees a "can't take screenshot" message),
+- saves screenshots as a black image,
 - shows black in screen recordings and casts, and
 - hides the app's thumbnail in Recents.
 
-`enableScreenshotProtection()` returns `false` only when no activity is
-attached, for example during a background start.
+Verified on an Android 17 emulator (API 37): with protection on, both a
+system screenshot and `adb screencap` come out black, including after
+rotating the device.
 
-<Aside type="caution" title="Shared with app-switcher protection">
-  Screenshot protection and [app-switcher protection](../app-switcher/) use the
-  same `FLAG_SECURE` flag on Android. Disabling either one clears the flag for
-  both, even though the other's `is…Enabled` getter still reports `true`.
-  Enable and disable them together on Android.
-</Aside>
-
-`FLAG_SECURE` stays set after `DeviceShield.shutdown()`. Call
-`disableScreenshotProtection()` before shutting down if you want it cleared.
+[App-switcher protection](../app-switcher/) uses the same flag. The two are
+tracked separately: the flag stays set while either one is on.
 
 ## iOS
 
-<Aside type="danger" title="Does not work on iOS">
-  iOS has no supported API for blocking screenshots. The SDK's current
-  technique relies on undocumented UIKit internals. In Simulator testing,
-  screenshots were **not** blocked and the app's layout broke. The call can
-  still return `true`. Don't use it on iOS.
+<Aside type="caution" title="Experimental: not yet verified on a device">
+  iOS has no supported API for blocking screenshots. The SDK uses a widely
+  used technique that relies on undocumented UIKit behaviour: content inside a
+  secure text field's internal layer is left out of captures. Any iOS update
+  could change that.
+
+  On the iOS Simulator the protection installs and removes cleanly without
+  affecting layout or touch. The Simulator can't show whether captures are
+  blocked, and this hasn't been verified on a physical iPhone yet.
 </Aside>
 
-On iOS, use [screenshot detection](../../detection/screenshot/) to react
-after the fact, and [app-switcher protection](../app-switcher/) to hide
-content in the app switcher.
+On iOS, pair it with [screenshot detection](../../detection/screenshot/) and
+[app-switcher protection](../app-switcher/) rather than relying on it alone.

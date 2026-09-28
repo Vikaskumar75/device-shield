@@ -1,240 +1,110 @@
-# DeviceShield — Session Handover
+# device_shield — Handover
 
-**Date:** 2026-09-24 · **Branch:** `main` · **Working tree:** clean
+**Updated:** 2026-09-28 · **Branch:** `release/0.1.0` (from `main` at
+`8e8f175`) · **Working tree:** release work uncommitted
 
-Written for a fresh Claude Code session picking this up. Read this first, then
-`git log --oneline -6`.
-
----
+Written for a fresh session picking this up. Read this, then
+[`plans/release-0.1.0.md`](plans/release-0.1.0.md).
 
 ## 1. Where things stand
 
-```
-8a940f4  Correct equality note in public API guard test     ← local only
-ee7c55d  Fix Android 14+ crash and expose a usable public API ← local only
-b28c027  Merge debugger-detection into main                 ← on origin/main
-fcb88f8  Merge screen/root/mock-location chain into main    ← on origin/main
-7ed7488  Wire emulator detection into the example app       (old root)
-```
+0.1.0 is prepared for pub.dev but **not published**, and the docs site is not
+deployed. The owner triggers both. Nothing on `release/0.1.0` is committed
+yet.
 
-- `origin/main` = `b28c027`. The two merge commits **are** pushed.
-- Local `main` is **2 commits ahead**, unpushed: `ee7c55d`, `8a940f4`.
-- `main` has **no upstream tracking set**. Use `git push origin main`
-  (fast-forward, no force needed), or `git push -u origin main` to set it.
-- Recovery point: `git reset --hard origin/main` drops both local commits.
+Git notes:
+- `release/0.1.0` was created tracking `origin/main`. Push it with
+  `git push -u origin release/0.1.0`; a bare `git push` would target `main`.
+- Claude doesn't run git write commands unless asked (`CLAUDE.md`). The
+  `.claude/hooks/git_guard.py` hook prompts for approval.
 
-### What the merge did
+## 2. What 0.1.0 changed
 
-Five branches, three unrelated root commits, no shared base. Resolved by
-merging with `--allow-unrelated-histories` and keeping both roots, so all five
-branches are ancestors of `main` and show as merged.
+- **New public API.** A static `DeviceShield` with `check()`, one method per
+  check, `screenshots` / `screenRecordingChanges` streams, and
+  `setScreenshotProtection` / `setAppSwitcherProtection`. It replaces the DI
+  container, registries, policy/rule engine, cache, lifecycle state machine,
+  profiles and permission manager (about 4,900 lines of Dart removed). The
+  native channel contract is unchanged.
+- **Signal weighting (F5).** `app/lib/src/signal_strengths.dart` gives each
+  signal a strength. Detected = at least one strong signal or two medium
+  ones. A test scans the Kotlin and Swift sources and fails if a native
+  signal has no strength.
+- **Android off the main thread (F2).** `DeviceShieldPlugin.respondInBackground`.
+- **Android protection state.** Screenshot and app-switcher protection share
+  `FLAG_SECURE` but are tracked separately. The flag is re-applied after
+  configuration changes.
+- **iOS screenshot protection (F4) reimplemented** at window level, with the
+  secure layer found by its canvas view. **Blocking isn't verified yet**; it
+  needs the owner's iPhone (`MANUAL_TEST_PLAN.md` §3).
+- **Jailbreak on the iOS Simulator** now returns `notApplicable`. Before, it
+  reported a jailbreak because the Simulator sees the host Mac's paths.
+- **The example app** is a single screen showing every feature.
+- **The integration test** runs every native check on a device.
 
-The important fact: **`feature/mock-location-detection` was a strict content
-superset of everything else.** All debugger/emulator files were byte-identical
-across roots; no file existed on the old root that was absent from the chain.
-All 46 add/add conflicts resolved one way. Final tree hash was verified
-identical to `f4c3635`. **Nothing was lost — there is no merge work left.**
+## 3. Findings
 
----
+| # | Finding | Status |
+|---|---|---|
+| F1 | Android 14+ crash on attach (`DETECT_SCREEN_CAPTURE`) | **Fixed and verified** on an API 37 emulator |
+| F2 | Native checks block the UI thread | **Android fixed.** iOS still synchronous; the jailbreak check's `posix_spawn` + `waitpid` is the costly one |
+| F3 | Unusable public API | **Replaced** by the 0.1.0 API |
+| F4 | iOS screenshot protection reports success without working | **Reimplemented; awaiting physical iPhone test.** If it fails, return `supported: false` from `setScreenshotProtection` on iOS (Dart maps that to `ProtectionResult.unsupported`) |
+| F5 | One weak signal = detected | **Fixed** by signal strengths |
+| F6 | iOS mock location reads `CLLocationManager().location` without updates, so location signals rarely fire; no `isSimulatedBySoftware` | Open, on the roadmap |
+| F7 | Android screen recording unsupported; Android 15 has a callback | Open, on the roadmap |
+| F8 | Events don't carry detection results | **Obsolete.** Events were replaced by direct results |
+| F9 | App Store review risk: `posix_spawn`, write to `/private/` | Open; documented on the iOS setup page |
+| F10 | iOS example can't resolve its Swift package while the package folder is named `app` | Open. Flutter 3.44.8 / Xcode 27 bug that also reproduces with a fresh `flutter create --template=plugin`; apps depending on the plugin are unaffected. Build the example from a copy named `device_shield` (CI does). Renaming `app/` to `device_shield/` removes it |
 
-## 2. Done this session
+## 4. Open work
 
-**Finding 1 — Android 14+ crash (fixed, `ee7c55d`)**
+1. **Owner's iPhone test** of screenshot protection (`MANUAL_TEST_PLAN.md`
+   §3), then decide F4.
+2. **Physical-device runs**, Android and iOS, including a rooted or
+   jailbroken device if one is available.
+3. **Commit, push, CI.** The iOS job's simulator build step hasn't run in CI
+   yet.
+4. **Publish** (`cd app && flutter pub publish`) and **deploy the docs**
+   (enable GitHub Pages → Source: GitHub Actions). Both are owner actions.
+5. Later: F2 on iOS, F6, F7, and the roadmap items.
 
-`DeviceShieldPlugin.onAttachedToActivity` → `ScreenshotDetector.start()` →
-`Activity.registerScreenCaptureCallback()`, which API 34 gates behind
-`android.permission.DETECT_SCREEN_CAPTURE`. The permission was declared
-nowhere, so this threw `SecurityException` on attach — before any Dart ran,
-for every host app on Android 14+.
+Small cleanups:
+- Both native plugins still register the legacy `device_shield` channel for
+  the template's `getPlatformVersion`. Dart no longer uses it. Removing it
+  touches the Kotlin, Swift and `RunnerTests` tests.
+- The archived docs in `docs/plans` and `docs/reports` predate 0.1.0. See
+  `docs/README.md`.
 
-- Declared in `app/android/src/main/AndroidManifest.xml` (normal, install-time,
-  no prompt, auto-merged into host manifest, ignored below API 34).
-- `ScreenshotDetector.start()` catches `SecurityException`/
-  `IllegalStateException` anyway — a host can strip a merged permission with
-  `tools:node="remove"`, and this runs from a lifecycle callback.
-- `callback` is now assigned only *after* registration succeeds; `stop()`
-  hardened symmetrically.
-
-> ⚠️ **Not device-verified.** No Android 14 device or emulator was run. The
-> requirement comes from the API 34 docs. JVM tests cannot reach this path
-> (`Build.VERSION.SDK_INT` reads 0, so `start()` returns at the `isSupported`
-> check). **Confirming this needs a real API 34+ device — please do that
-> before trusting the fix.**
-
-**Finding 3 — unusable public API (fixed, `ee7c55d`)**
-
-`lib/device_shield.dart` exported only the `DeviceShield` facade. Every type
-needed to call it lived under `src/`. Now exports config/state, detection and
-event models, the exception hierarchy, `Detector`/`Rule`/`DetectorFactory`,
-the `subscribe()` typedefs, bridge transport, and all seven detectors.
-
-Deliberately withheld (documented in the barrel): `SecurityProfile` — no
-`initialize()` overload accepts one yet; `Logger` — no injection point;
-manager/bootstrap internals.
-
-All 10 example files rewritten onto the public import. Added
-`app/test/public_api_test.dart`, which imports **only** the barrel, so dropping an
-export fails compilation — verified by deleting the `root_detector` export and
-watching it break.
-
----
-
-## 3. Open work, highest value first
-
-### Blocking a release
-
-**F10 — the iOS example can't resolve its Swift package in place (dev
-only, not a release blocker).** With Flutter 3.44.8 and Xcode 27, `xcodebuild`
-fails with "unable to override package 'device_shield' because its identity
-'app' doesn't match override's identity (directory name) 'device_shield'"
-whenever the example app sits inside a plugin folder whose name differs from
-the package name. Since the move to `app/`, that is always the case here.
-
-What was established (2026-09-25):
-- A plugin freshly generated by `flutter create --template=plugin` fails the
-  same way when its folder is renamed, so this is a Flutter/Xcode bug, not
-  something in this plugin. Removing our `testTarget`, the placeholder
-  `ios/FlutterFramework` package, or the `FlutterFramework` dependency
-  changes nothing.
-- A **separate** app depending on the renamed plugin by path resolves fine,
-  and `url_launcher_ios` from pub.dev (symlinked as `url_launcher_ios-6.4.2`)
-  resolves fine. So apps that consume the plugin aren't affected; only an
-  example nested inside the plugin folder is.
-
-Workaround: build the example from a copy of `app/` named `device_shield`
-(CI does this). A permanent fix is renaming `app/` to `device_shield/`, or
-reporting it upstream to Flutter.
-
-**F4 — iOS screenshot protection is broken but reports success.**
-`ios/.../Protection/ScreenCaptureProtection.swift:71-92`. The secure-`UITextField`
-layer trick creates a view/layer cycle (the field is a subview of `view` while
-`view.layer` becomes a sublayer of the field's own sublayer) and picks
-`sublayers?.last`, which is iOS-version dependent. It returns `applied: true`
-regardless. The repo's own live test (`MANUAL_TEST_PLAN.md`, protect-9)
-recorded screenshots **not** blocked and layout visibly breaking.
-
-This is a decision, not a patch: return `applied: false` on iOS, or gate it
-behind explicit opt-in, until device-verified. Don't ship a protection API
-that lies about working.
-
-**F2 — native detectors block the UI thread.**
-`android/.../DeviceShieldPlugin.kt:93-116`. All `check*()` handlers run
-synchronously in `onMethodCall`. `RootDetector.check()` spawns three
-subprocesses (`which su`, `getprop` ×2), does filesystem writes under
-`/system`, and ~21 `PackageManager` lookups; `MockLocationDetector` adds 10
-more plus `LocationManager`. The example app fires this every 5s. Jank
-guaranteed, ANR plausible. Fix: background executor, post result back.
-
-### Medium
-
-**F5 — false positives.** `detected = signals.isNotEmpty()` in all four Kotlin
-detectors (`RootDetector.kt:132`, `MockLocationDetector.kt:139`,
-`EmulatorDetector.kt:88`, `DebuggerDetector.kt:53`) and the Swift ones. One
-weak signal is enough: `build_tags_test_keys` (common on OEM/custom ROMs),
-`dangerous_system_props` (`ro.debuggable=1` on every emulator and eng build),
-`busybox_present`. **Every Android emulator reports rooted.** A fake-GPS app
-merely *installed* → `detected: true`. `confidence` is computed but the
-boolean is what events and policy key on. Needs strong/weak weighting with a
-threshold.
-
-**F6 — iOS mock-location barely functions.**
-`ios/.../Detection/MockLocationDetector.swift:56-58` creates a fresh
-`CLLocationManager()` and reads `.location` without starting updates —
-typically `nil`, so velocity and accuracy signals rarely fire. Doesn't use
-`CLLocation.sourceInformation.isSimulatedBySoftware` (iOS 15+), the one
-official API for this.
-
-**F7 — Android screen-recording detection is stale.**
-`ScreenRecordingDetector.kt:26` hard-codes "no reliable signal exists".
-Android 15 (API 35) added `WindowManager.addScreenRecordingCallback`.
-
-**F8 — events drop what matters.**
-`default_security_manager.dart:177` always emits `severity: EventSeverity.info`
-with `data: {action, confidence}` — no `detected`, no `status`, no `signals`.
-A detector *failure* is indistinguishable from a clean pass to subscribers.
-`default_policy_manager.dart:65` `executeAction` is a logging no-op, so with
-no rules the SDK detects and reports only — nothing is enforced. Defensible at
-this phase, but the README must say so.
-
-**F9 — App Store review risk.** `JailbreakDetector.swift` uses
-`posix_spawn("/bin/ls")` and writes to `/private/`. Standard heuristics, but
-flag it.
-
-### Decision, not a bug
-
-**Map equality on round-trip.** `SecurityEvent.fromJson(e.toJson())` is never
-`==` to `e` — including when `data` is the default empty map — because
-`fromJson`'s `.cast()` builds a new map instance.
-
-I initially called this a defect; **that was wrong.**
-`lib/src/models/detection_result.dart:8-11` documents comparing maps by
-reference as a deliberate trade-off (deep equality would pull in the
-`collection` package), and `security_event.dart` inherits it explicitly. The
-round-trip consequence is real and may surprise anyone deduplicating events —
-worth a decision, not an oversight. `8a940f4` corrects the comment.
-
-### Hygiene
-
-- `CURRENT_STATE.md` is badly stale — says "56 lines of Dart, unmodified
-  template". The repo is ~4,900 lines of Dart plus native.
-- `README.md`, `CHANGELOG.md`, `pubspec.yaml` (description, homepage) are all
-  template placeholders.
-- Both plugin classes' doc comments still claim "every other bridge method
-  still returns notImplemented()" — untrue since several landed.
-- `DeviceShield.getPlatformVersion()` is the lone instance method on an
-  otherwise all-static facade. Template leftover.
-- No CI.
-
----
-
-## 4. Running things
-
-Works:
+## 5. Running things
 
 ```bash
-flutter analyze            # expect: No issues found!
-flutter test               # expect: 360 passing
-cd example && flutter test # expect: 1 passing
+app/tool/check.sh                     # format, analyze, tests, all linters
+cd app && flutter test                # 31 package tests
+cd app/example && flutter test        # 2 widget tests
+cd app/example && flutter test integration_test -d <device>   # real native checks
 ```
 
-**Does not work** — don't burn time rediscovering:
+- **Kotlin tests:** `flutter build apk --debug` in `app/example`, then
+  `./gradlew :device_shield:testDebugUnitTest` in `app/example/android` with
+  `JAVA_HOME` set to Android Studio's JDK. 74 passing. In Claude Code, Gradle
+  must run unsandboxed (Java ignores the sandbox proxy).
+- **Android emulator:** `flutter emulators --launch Pixel_10_Pro`. Use a
+  release APK for manual checks; a debug APK started outside `flutter run`
+  can stall on the splash screen.
+- **iOS:** build and test from a copy of `app/` named `device_shield` (F10).
+- **Swift tests** still can't run from the CLI (`swift test` can't resolve
+  UIKit/Flutter). They're linted, not executed.
 
-- **Android unit tests** now run (67 passing as of the `device_shield`
-  rename). `flutter build apk --debug` in `example/` generates the Gradle
-  wrapper, then run `./gradlew :device_shield:testDebugUnitTest` in
-  `app/example/android` with `JAVA_HOME` set to Android Studio's JDK
-  (`app/tool/setup.sh` prints the path). Inside Claude Code's sandbox, Gradle
-  can't download its distribution, because Java ignores the sandbox proxy.
-  Run it unsandboxed.
-- **iOS Swift tests.** `swift test` in `app/ios/device_shield/` fails —
-  can't resolve `UIKit`/`Flutter`. `ios/FlutterFramework` is an unpopulated
-  placeholder SPM package outside Flutter's build pipeline, and `Runner`'s
-  scheme only wires `RunnerTests`, not `device_shieldTests`. Pre-existing
-  repo/tooling gap, documented in `MANUAL_TEST_PLAN.md`.
-- If you run `swift test` anyway, delete `app/ios/device_shield/.build/`
-  afterwards — it's untracked build noise.
+Toolchain: Flutter 3.44.8, Xcode 27, ktlint 1.8.0, detekt 1.23.8,
+SwiftLint 0.65.1.
 
-Toolchain: Flutter 3.44.8 stable, via fvm at `~/fvm/default`.
+## 6. Notes
 
----
-
-## 5. Notes for whoever picks this up
-
-- **The docs are unusually honest.** `MANUAL_TEST_PLAN.md` records real
-  negative results (protect-9 tested and found not working) rather than
-  claiming success. Trust them, and keep that standard — several findings
-  above came straight out of reading them.
-- **Android has never been run on a device or emulator.** The sign-off table
-  in `MANUAL_TEST_PLAN.md` says so explicitly. F1 and F2 both follow from it.
-- The Dart core is genuinely well-built: DI container, lifecycle state
-  machine, per-detector timeout with error isolation, in-flight dedup on
-  `runAllChecks()`, `MethodCodes` as single source of truth, honest
-  `applicable: false` cross-platform answers, pure `evaluate()` functions
-  unit-tested on all three layers. The problems are at the edges, not the
-  architecture.
-- `app/test/public_api_test.dart` is the guard for the public surface. If you add
-  a type a host app needs, export it in `lib/device_shield.dart` **and**
-  reference it there.
-
-**Verdict as of this handover:** sound architecture, not shippable. F4 and F2
-each independently block a release.
+- Keep the honesty standard. Docs and results say what was verified where;
+  `MANUAL_TEST_PLAN.md` records negative results.
+- `app/test/public_api_test.dart` guards the public surface. A type host apps
+  need must be exported from `lib/device_shield.dart` **and** referenced
+  there.
+- Changing a signal's strength changes what users see as detected. Update the
+  website's signals page in the same change.

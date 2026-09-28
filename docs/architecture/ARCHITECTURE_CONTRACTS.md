@@ -1,5 +1,11 @@
 # DeviceShield — Architecture Contract Verification
 
+> **Archived: describes the pre-0.1 architecture.** The Dart layer it
+> describes (managers, registries, policy engine, DI container) was removed in
+> 0.1.0, so links into `app/lib/src/` point at files that no longer exist.
+> See the git history before `release/0.1.0` for that code, and
+> [HANDOVER.md](../HANDOVER.md) for the current design.
+
 **Purpose of this document:** freeze every architecture component's contract before Phase 2 writes a single interface. Nothing here is implementation — no Dart classes, no method bodies. This is the specification implementation must not silently drift from. Once approved, Phase 2 implements exactly what's frozen here — no more, no less.
 
 **Scope:** all 20 components from `ARCHITECTURE.md` — the 15 you named plus `DeviceShieldWidget`, `PermissionManager`, `SecurityStateManager`, and the two contracts (`Detector`, `Rule`), since the goal is a complete freeze, not a partial one.

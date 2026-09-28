@@ -4,7 +4,7 @@ description: Detect Android emulators and the iOS Simulator with device_shield.
 ---
 
 ```dart
-final result = await EmulatorDetector(nativeBridge: DefaultNativeBridge()).check();
+final result = await DeviceShield.checkEmulator();
 ```
 
 ## Android signals
@@ -19,8 +19,9 @@ final result = await EmulatorDetector(nativeBridge: DefaultNativeBridge()).check
 | `brand_device` | Both `Build.BRAND` and `Build.DEVICE` start with `generic` |
 | `qemu_pipe` | `/dev/socket/qemud` or `/dev/qemu_pipe` exists |
 
-`detected` is `true` if any signal fires. `confidence` is the fraction of the
-7 signals that fired.
+`qemu_pipe` is strong. The six build-property signals are medium, so any two
+of them together mean `detected`. The stock Android emulator (API 37, verified)
+fires `hardware` and `product`.
 
 These are build-property heuristics. They catch the stock Android emulator
 and Genymotion reliably. Custom emulators that rewrite build properties may
@@ -32,5 +33,5 @@ not be detected.
 |---|---|
 | `simulator_target` | The app was compiled for the Simulator (`targetEnvironment(simulator)`) |
 
-This is exact rather than heuristic: it's decided at compile time, so
-`confidence` is `1.0` on the Simulator and `0.0` on a device.
+This is exact rather than heuristic: it's decided at compile time, so it's
+strong on the Simulator and never fires on a device.

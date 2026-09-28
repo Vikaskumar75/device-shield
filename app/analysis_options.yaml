@@ -31,11 +31,9 @@ linter:
     - unawaited_futures
     - unnecessary_statements
 
-    # Public API of a published package. `public_member_api_docs` is
-    # deliberately not enabled yet: the public surface is due to be reshaped
-    # (see docs/CONTRIBUTING.md), and documenting members that are about to be
-    # removed is wasted work. Enable it once the v0.1 API is settled.
+    # Public API of a published package.
     - always_declare_return_types
+    - public_member_api_docs
     - type_annotate_public_apis
 
     # Consistency
